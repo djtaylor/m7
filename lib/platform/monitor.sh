@@ -175,14 +175,14 @@ if [ ! -z "$(sqlite3 ~/db/cluster.db "SELECT * FROM M7_Nodes WHERE Type='worker'
 	TEST_WORKER_ID="$(sqlite3 ~/db/cluster.db "SELECT Id FROM M7_Nodes WHERE Name='$(hostname -s)';")"
 	
 	# Copy the results to the director node
-	scp -i $M7KEY -P $TEST_DIRECTOR_SSH_PORT $TEST_RESULT_FILE $TEST_DIRECTOR_USER@$TEST_DIRECTOR_IP_ADDR:~/output/$TM_TARGET_ID/worker/$TEST_WORKER_ID.results.xml
+	scp -i $M7KEY -P $TEST_DIRECTOR_SSH_PORT -o StrictHostKeyChecking=no $TEST_RESULT_FILE $TEST_DIRECTOR_USER@$TEST_DIRECTOR_IP_ADDR:~/output/$TM_TARGET_ID/worker/$TEST_WORKER_ID.results.xml
 	if [ "$?" != "0" ]; then
 		log "error" "Failed to copy worker test results to director node..."
 	else
 		log "info" "Copying worker test results to director node: '~/output/$TM_TARGET_ID/worker/$TEST_WORKER_ID.results.xml'"
 		
 		# Remove the lock file on the director node
-		ssh -i $M7KEY -p $TEST_DIRECTOR_SSH_PORT $TEST_DIRECTOR_USER@$TEST_DIRECTOR_IP_ADDR rm -f ~/lock/$TM_TARGET_ID/worker/$TEST_WORKER_ID
+		ssh -i $M7KEY -p $TEST_DIRECTOR_SSH_PORT -o StrictHostKeyChecking=no $TEST_DIRECTOR_USER@$TEST_DIRECTOR_IP_ADDR rm -f ~/lock/$TM_TARGET_ID/worker/$TEST_WORKER_ID
 		if [ "$?" != "0" ]; then
 			log "error" "Failed to remove lock file for worker node on director node..."
 		else
