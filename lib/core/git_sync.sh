@@ -21,7 +21,14 @@ git_sync() {
 	cd && rm -rf /tmp/m7_git_sync
 	
 	# Delete the local '.git' directory
-	rm -rf /opt/vpls/m7/.git
+	rm -rf ~/.git
+	
+	# Delete the '.gitignore' files
+	rm -f ~/output/.gitignore
+	rm -f ~/db/.gitignore
+	rm -f ~/log/.gitignore
+	rm -f ~/plans/.gitignore
+	rm -f ~/lock/.gitignore
 	
 }
 
