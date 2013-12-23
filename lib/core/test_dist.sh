@@ -40,21 +40,21 @@ test_dist() {
 		        	TEST_DIST_WORKER_IP_ADDR="$(sqlite3 ~/db/cluster.db "SELECT IPAddr FROM M7_Nodes WHERE Id='$TEST_DIST_WORKER_ID';")"
 		        	
 		        	# Create the test plans directory
-					ssh -v -i $M7KEY -p $TEST_DIST_WORKER_SSH_PORT $TEST_DIST_WORKER_USER@$TEST_DIST_WORKER_IP_ADDR mkdir -p ~/plans
+					ssh -i $M7KEY -p $TEST_DIST_WORKER_SSH_PORT $TEST_DIST_WORKER_USER@$TEST_DIST_WORKER_IP_ADDR mkdir -p ~/plans
 					if [ "$?" != "0" ]; then
 						log "error" "Failed to generate test plans directory on worker node '$TEST_DIST_WORKER_ID'..."
 					elseq
 						log "info" "Generating test plan directory on worker node '$TEST_DIST_WORKER_ID'..."
 					
 						# Copy the test plan to the worker node
-						scp -v -i $M7KEY -P $TEST_DIST_WORKER_SSH_PORT ${TEST_DIST_ARGS[0]} $TEST_DIST_WORKER_USER@$TEST_DIST_WORKER_IP_ADDR:~/plans/.
+						scp -i $M7KEY -P $TEST_DIST_WORKER_SSH_PORT ${TEST_DIST_ARGS[0]} $TEST_DIST_WORKER_USER@$TEST_DIST_WORKER_IP_ADDR:~/plans/.
 						if [ "$?" != "0" ]; then
 							log "error" "Failed to copy test plan to worker node '$TEST_DIST_WORKER_ID'..."	
 						else
 							log "info" "Copying test plan to worker node '$TEST_DIST_WORKER_ID'..."
 						
 							# Execute the test plan on the worker node
-							ssh -v -i $M7KEY -p $TEST_DIST_WORKER_SSH_PORT $TEST_DIST_WORKER_USER@$TEST_DIST_WORKER_IP_ADDR 'bash -c -l "m7 run '${TEST_DIST_ARGS[0]}'"'
+							ssh -i $M7KEY -p $TEST_DIST_WORKER_SSH_PORT $TEST_DIST_WORKER_USER@$TEST_DIST_WORKER_IP_ADDR 'bash -c -l "m7 run '${TEST_DIST_ARGS[0]}'"'
 							if [ "$?" != "0" ]; then
 								log "error" "Failed to launch test process on worker node '$TEST_WORKER_ID'..."
 							else
