@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<plan>
+	<id>16204593</id>
+	<params>
+		<category>web</category>
+		<proto>http</proto>
+		<host>174.139.0.178</host>
+		<threads>1</threads>
+		<test id="0">
+			<type>single-download</type>
+			<samples>5</samples>
+			<path>/downloads/rand.40M.img</path>
+		</test>
+	</params>
+</plan>

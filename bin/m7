@@ -1,0 +1,25 @@
+#!/bin/bash
+
+# Library Index
+source ~/lib/index.sh
+
+# VPLS M7 (Messier 7) Distributed Testing Platform
+#
+# This is the primary executable for the M7 testing platform. This platform
+# is designed to run on a distributed group of nodes in disparate geographical
+# locations.
+
+# Test arguments processor
+case "$1" in
+	
+	# Run Test Plan
+	"run")
+		test_dist "$2"
+		test_exec "$2"
+		;;
+	
+	*)
+		log "error" "Invalid argument supplied to M7 test utility..."
+		exit 1
+	
+esac
