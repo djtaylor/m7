@@ -17,6 +17,11 @@ case "$1" in
 		test_dist "$2"
 		test_exec "$2"
 		;;
+		
+	# Git Repository Sync
+	"gitsync")
+		git_sync
+		;;
 	
 	*)
 		log "error" "Invalid argument supplied to M7 test utility..."
