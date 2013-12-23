@@ -43,7 +43,7 @@ test_dist() {
 					ssh -i $M7KEY -p $TEST_DIST_WORKER_SSH_PORT $TEST_DIST_WORKER_USER@$TEST_DIST_WORKER_IP_ADDR mkdir -p ~/plans
 					if [ "$?" != "0" ]; then
 						log "error" "Failed to generate test plans directory on worker node '$TEST_DIST_WORKER_ID'..."
-					elseq
+					else
 						log "info" "Generating test plan directory on worker node '$TEST_DIST_WORKER_ID'..."
 					
 						# Copy the test plan to the worker node
