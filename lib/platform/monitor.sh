@@ -80,8 +80,24 @@ do
 			THREAD_AVG_SPEED="$(curl_parse "avgSpeed" "$THREAD_SUMMARY_LINE")"
 			THREAD_DL_TIME="$(curl_parse "dlTime" "$THREAD_SUMMARY_LINE")"
 			
-			# Get the average speed without unit
-			THREAD_AVG_SPEED_RAW="$(echo $THREAD_AVG_SPEED | sed "s/\(^[0-9]*\).*$/\1/g")"
+			# Attempt the determine the speed unit
+			if [[ $THREAD_AVG_SPEED =~ ^[0-9]*$ ]]; then
+				
+				# Convert from 'bps' to 'kbps'
+				THREAD_AVG_SPEED_RAW="$(echo "$THREAD_AVG_SPEED/1024" | bc)"
+			fi
+			if [[ $THREAD_AVG_SPEED =~ ^[0-9]*k$ ]]; then
+				
+				# Strip out the trailing 'k'
+				THREAD_AVG_SPEED_RAW="$(echo $THREAD_AVG_SPEED | sed "s/\(^[0-9]*\).*$/\1/g")"
+			fi
+			if [[ $THREAD_AVG_SPEED =~ ^[0-9\.]*M$ ]]; then
+				
+				# Strip the trailing 'M' and convert to 'kbps'
+				THREAD_AVG_SPEED_RAW="$(echo $THREAD_AVG_SPEED | sed "s/\(^[0-9\.]*\)M$/\1/g")"
+				THREAD_AVG_SPEED_RAW="$(echo "$THREAD_AVG_SPEED_RAW*1024" | bc)"
+				
+			fi
 			THREAD_AVG_SPEED_ARRAY+=("$THREAD_AVG_SPEED_RAW")
 			
 			# Get the average download time in seconds
@@ -103,7 +119,7 @@ do
 		THREAD_AVG_SPEED_SUM=0
 		for THREAD_AVG_SPEED_VAL in "${THREAD_AVG_SPEED_ARRAY[@]}"
 		do
-			THREAD_AVG_SPEED_SUM="$(expr $THREAD_AVG_SPEED_SUM + $THREAD_AVG_SPEED_VAL)"
+			THREAD_AVG_SPEED_SUM="$(echo "$THREAD_AVG_SPEED_SUM+$THREAD_AVG_SPEED_VAL" | bc)"
 		done
 		THREAD_AVG_SPEED_RESULT="$(echo "$THREAD_AVG_SPEED_SUM/$THREAD_AVG_SPEED_COUNT" | bc)"
 		TEST_AVG_SPEED_ARRAY+=("$THREAD_AVG_SPEED_RESULT")
@@ -113,7 +129,7 @@ do
 		THREAD_DL_TIME_SUM=0
 		for THREAD_DL_TIME_VAL in "${THREAD_DL_TIME_ARRAY[@]}"
 		do
-			THREAD_DL_TIME_SUM="$(expr $THREAD_DL_TIME_SUM + $THREAD_DL_TIME_VAL)"
+			THREAD_DL_TIME_SUM="$(expr "$THREAD_DL_TIME_SUM+$THREAD_DL_TIME_VAL" | bc)"
 		done
 		THREAD_DL_TIME_RESULT="$(echo "$THREAD_DL_TIME_SUM/$THREAD_DL_TIME_COUNT" | bc)"
 		TEST_DL_TIME_ARRAY+=("$THREAD_DL_TIME_RESULT")
