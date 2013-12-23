@@ -66,13 +66,14 @@ test_dist() {
 								# Generate the worker monitor script
 								TEST_DIST_WORKER_MONITOR="/tmp/$TEST_DIST_ID.workers.sh"
 								cat ~/lib/platform/workers.sh > $TEST_DIST_WORKER_MONITOR && chmod +x $TEST_DIST_WORKER_MONITOR
-								
-								# Launch the worker monitor script
-								nohup sh $TEST_DIST_WORKER_MONITOR "$TEST_DIST_ID" >/dev/null 2>&1 &
 							fi
 						fi
 					fi
 		        done
+		        
+		        # Launch the worker monitor script
+				nohup sh $TEST_DIST_WORKER_MONITOR "$TEST_DIST_ID" >/dev/null 2>&1 &
+		        
 			fi
 		fi
 	fi
