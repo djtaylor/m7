@@ -20,6 +20,9 @@ git_sync() {
 	# Leave the working directory and delete it
 	cd && rm -rf /tmp/m7_git_sync
 	
+	# Delete the local '.git' directory
+	rm -rf /opt/vpls/m7/.git
+	
 }
 
 readonly -f git_sync
