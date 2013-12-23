@@ -117,6 +117,7 @@ do
 		# Find the average value for speed
 		THREAD_AVG_SPEED_COUNT="${#THREAD_AVG_SPEED_ARRAY[@]}"
 		THREAD_AVG_SPEED_SUM=0
+		THREAD_AVG_SPEED_RESULT=""
 		for THREAD_AVG_SPEED_VAL in "${THREAD_AVG_SPEED_ARRAY[@]}"
 		do
 			THREAD_AVG_SPEED_SUM="$(echo "$THREAD_AVG_SPEED_SUM+$THREAD_AVG_SPEED_VAL" | bc)"
@@ -127,6 +128,7 @@ do
 		# Find the average value for download time
 		THREAD_DL_TIME_COUNT="${#THREAD_DL_TIME_ARRAY[@]}"
 		THREAD_DL_TIME_SUM=0
+		THREAD_DL_TIME_RESULT=""
 		for THREAD_DL_TIME_VAL in "${THREAD_DL_TIME_ARRAY[@]}"
 		do
 			THREAD_DL_TIME_SUM="$(expr "$THREAD_DL_TIME_SUM+$THREAD_DL_TIME_VAL" | bc)"
@@ -147,6 +149,7 @@ do
 	# Find the test average value for speed
 	TEST_AVG_SPEED_COUNT="${#TEST_AVG_SPEED_ARRAY[@]}"
 	TEST_AVG_SPEED_SUM=0
+	TEST_AVG_SPEED_RESULT=""
 	for TEST_AVG_SPEED_VAL in "${TEST_AVG_SPEED_ARRAY[@]}"
 	do
 		TEST_AVG_SPEED_SUM="$(expr $TEST_AVG_SPEED_SUM + $TEST_AVG_SPEED_VAL)"
@@ -156,6 +159,7 @@ do
 	# Find the test average value for download time
 	TEST_DL_TIME_COUNT="${#TEST_DL_TIME_ARRAY[@]}"
 	TEST_DL_TIME_SUM=0
+	TEST_DL_TIME_RESULT=""
 	for TEST_DL_TIME_VAL in "${TEST_DL_TIME_ARRAY[@]}"
 	do
 		TEST_DL_TIME_SUM="$(expr $TEST_DL_TIME_SUM + $TEST_DL_TIME_VAL)"
