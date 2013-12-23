@@ -27,7 +27,7 @@ test_dist() {
 			
 				# Get the test plan ID number and generate the worker lock directory
 				TEST_DIST_ID="$(xml "parse" "${TEST_DIST_ARGS[0]}" "id/text()")"
-				mkdir -p ~/lock/worker/$TEST_DIST_ID
+				mkdir -p ~/lock/$TEST_DIST_ID/worker
 			
 				# Run the test on each worker node and generate a lock file
 				for TEST_DIST_WORKER_ID in "${TEST_DIST_WORKERS[@]}"
@@ -53,7 +53,7 @@ test_dist() {
 							log "info" "Copying test plan to worker node '$TEST_DIST_WORKER_ID'..."
 						
 							# Execute the test plan on the worker node
-							ssh -i $M7KEY -p $TEST_DIST_WORKER_SSH_PORT $TEST_DIST_WORKER_USER@$TEST_DIST_WORKER_IP_ADDR "m7 run '${TEST_DIST_ARGS[0]}'"
+							ssh -i $M7KEY -p $TEST_DIST_WORKER_SSH_PORT $TEST_DIST_WORKER_USER@$TEST_DIST_WORKER_IP_ADDR 'bash -c -l "m7 run '${TEST_DIST_ARGS[0]}'"'
 							if [ "$?" != "0" ]; then
 								log "error" "Failed to launch test process on worker node '$TEST_WORKER_ID'..."
 							else
