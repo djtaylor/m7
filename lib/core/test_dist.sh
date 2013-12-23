@@ -25,9 +25,10 @@ test_dist() {
 				exit 1
 			else
 			
-				# Get the test plan ID number and generate the worker lock directory
+				# Get the test plan ID number and generate the worker lock/output directory
 				TEST_DIST_ID="$(xml "parse" "${TEST_DIST_ARGS[0]}" "id/text()")"
 				mkdir -p ~/lock/$TEST_DIST_ID/worker
+				mkdir -p ~/output/$TEST_DIST_ID/worker
 			
 				# Run the test on each worker node and generate a lock file
 				for TEST_DIST_WORKER_ID in "${TEST_DIST_WORKERS[@]}"
