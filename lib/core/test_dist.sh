@@ -42,8 +42,7 @@ test_dist() {
 		        	
 		        	# Create the test plans directory
 					log "info-proc" "Generating test plan directory on worker node:['$TEST_DIST_WORKER_NAME']..."
-					ssh -i $M7KEY -p $TEST_DIST_WORKER_SSH_PORT -o StrictHostKeyChecking=no $TEST_DIST_WORKER_USER@$TEST_DIST_WORKER_IP_ADDR \
-					'bash -c -l "mkdir -p ~/plans"' &>> $M7LOG_XFER
+					ssh -i $M7KEY -p $TEST_DIST_WORKER_SSH_PORT -o StrictHostKeyChecking=no $TEST_DIST_WORKER_USER@$TEST_DIST_WORKER_IP_ADDR mkdir -p ~/plans &>> $M7LOG_XFER
 					
 					# If the directory was not generated
 					if [ "$?" != "0" ]; then
