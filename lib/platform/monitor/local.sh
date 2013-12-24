@@ -44,9 +44,8 @@ do
 	TEST_RESULT_ID="$(echo $TEST_RESULT_PATH | sed "s/^.*\/test-\([0-9]*$\)/\1/g")"
 	
 	# Get the target file URL and download type
-	TEST_TARGET_PATH="$(xml "parse" "${TEST_EXEC_ARGS[0]}" "params/test[@id='$TEST_RESULT_ID']/path/text()")"
-	TEST_TARGET_TYPE="$(xml "parse" "${TEST_EXEC_ARGS[0]}" "params/test[@id='$TEST_RESULT_ID']/type/text()")"
-	TEST_TARGET_URL="$TEST_TARGET_PROTO://$TEST_TARGET_HOST/$TEST_TARGET_PATH"
+	TEST_TARGET_PATH="$(xml "parse" "$TM_SOURCE_PLAN" "params/test[@id='$TEST_RESULT_ID']/path/text()")"
+	TEST_TARGET_TYPE="$(xml "parse" "$TM_SOURCE_PLAN" "params/test[@id='$TEST_RESULT_ID']/type/text()")"
 	
 	# Open the test XML block
 	TEST_SUMMARY_BLOCK+="\t<test id='$TEST_RESULT_ID'>\n"
@@ -54,6 +53,7 @@ do
 	
 	# Print either a single file or list of files
 	if [ "$TEST_TARGET_TYPE" = "single-download" ]; then
+		TEST_TARGET_URL="$TEST_TARGET_PROTO://$TEST_TARGET_HOST/$TEST_TARGET_PATH"
 		TEST_SUMMARY_BLOCK+="\t\t<fileurl>$TEST_TARGET_URL</fileurl>\n"
 	fi
 	if [ "$TEST_TARGET_TYPE" = "multi-download" ]; then
