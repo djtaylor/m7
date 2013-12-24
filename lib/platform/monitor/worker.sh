@@ -19,4 +19,4 @@ do
 done
 
 # Self destruct this script
-rm -f /tmp/$TM_TARGET_ID.workers.sh
+rm -f /tmp/$TM_TARGET_ID.worker.monitor.sh

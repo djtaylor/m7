@@ -67,7 +67,7 @@ else
         	echo "RUNNING TEST SAMPLE('$SD_SAMPLES_COUNT')" | tee -a $SD_TEST_LOG
             echo "----------------------------------------------------------------------" | tee -a $SD_TEST_LOG
             cd $SD_TEST_BASE/tmp
-            curl -v -k -O ${SD_TEST_ARGS[5]}://${SD_TEST_ARGS[4]}${SD_TEST_ARGS[6]} 2>&1 | tee -a $SD_TEST_LOG
+            curl -v -k -O ${SD_TEST_ARGS[5]}://${SD_TEST_ARGS[4]}/${SD_TEST_ARGS[6]} 2>&1 | tee -a $SD_TEST_LOG
         done
         echo "######################################################################" | tee -a $SD_TEST_LOG
         echo "TEST COMPLETED" | tee -a $SD_TEST_LOG

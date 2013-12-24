@@ -21,7 +21,7 @@ test_dist() {
 		        
 			# If no test plan supplied
 			if [ ! -f "${TEST_DIST_ARGS[0]}" ]; then
-				log "error" "No test plan (arg1) supplied..."
+				log "error" "Missing required arguments:['1 - Source test plan']..."
 				exit 1
 			else
 			
@@ -34,38 +34,51 @@ test_dist() {
 				for TEST_DIST_WORKER_ID in "${TEST_DIST_WORKERS[@]}"
 		        do
 		        	
-		        	# Get the worker node user, ssh port, and IP address
+		        	# Get the worker node name, user, ssh port, and IP address
+					TEST_DIST_WORKER_NAME="$(sqlite3 ~/db/cluster.db "SELECT Name FROM M7_Nodes WHERE Id='$TEST_DIST_WORKER_ID';")"
 					TEST_DIST_WORKER_USER="$(sqlite3 ~/db/cluster.db "SELECT User FROM M7_Nodes WHERE Id='$TEST_DIST_WORKER_ID';")"
 		        	TEST_DIST_WORKER_SSH_PORT="$(sqlite3 ~/db/cluster.db "SELECT SSHPort FROM M7_Nodes WHERE Id='$TEST_DIST_WORKER_ID';")"
 		        	TEST_DIST_WORKER_IP_ADDR="$(sqlite3 ~/db/cluster.db "SELECT IPAddr FROM M7_Nodes WHERE Id='$TEST_DIST_WORKER_ID';")"
 		        	
 		        	# Create the test plans directory
-					ssh -i $M7KEY -p $TEST_DIST_WORKER_SSH_PORT -o StrictHostKeyChecking=no $TEST_DIST_WORKER_USER@$TEST_DIST_WORKER_IP_ADDR mkdir -p ~/plans
+					log "info-proc" "Generating test plan directory on worker node:['$TEST_DIST_WORKER_NAME']..."
+					ssh -i $M7KEY -p $TEST_DIST_WORKER_SSH_PORT -o StrictHostKeyChecking=no $TEST_DIST_WORKER_USER@$TEST_DIST_WORKER_IP_ADDR \
+					'bash -c -l "mkdir -p ~/plans"' &> /dev/null
+					
+					# If the directory was not generated
 					if [ "$?" != "0" ]; then
-						log "error" "Failed to generate test plans directory on worker node '$TEST_DIST_WORKER_ID'..."
+						log "info" "$FAILED"
+						log "error" "Failed to generate test plans directory on worker node:['$TEST_DIST_WORKER_ID']..."
 					else
-						log "info" "Generating test plan directory on worker node '$TEST_DIST_WORKER_ID'..."
+						log "info" "$SUCCESS"
 					
 						# Copy the test plan to the worker node
-						scp -i $M7KEY -P $TEST_DIST_WORKER_SSH_PORT -o StrictHostKeyChecking=no ${TEST_DIST_ARGS[0]} $TEST_DIST_WORKER_USER@$TEST_DIST_WORKER_IP_ADDR:~/plans/.
+						log "info-proc" "Copying test plan to worker node:['$TEST_DIST_WORKER_NAME']..."
+						scp -i $M7KEY -P $TEST_DIST_WORKER_SSH_PORT -o StrictHostKeyChecking=no ${TEST_DIST_ARGS[0]} $TEST_DIST_WORKER_USER@$TEST_DIST_WORKER_IP_ADDR:~/plans/. &> /dev/null
+						
+						# If the test plan failed to copy
 						if [ "$?" != "0" ]; then
-							log "error" "Failed to copy test plan to worker node '$TEST_DIST_WORKER_ID'..."	
+							log "info" "$FAILED"
+							log "error" "Failed to copy test plan to worker node:['$TEST_DIST_WORKER_ID']..."	
 						else
-							log "info" "Copying test plan to worker node '$TEST_DIST_WORKER_ID'..."
 						
 							# Execute the test plan on the worker node
-							ssh -i $M7KEY -p $TEST_DIST_WORKER_SSH_PORT -o StrictHostKeyChecking=no $TEST_DIST_WORKER_USER@$TEST_DIST_WORKER_IP_ADDR 'bash -c -l "m7 run '${TEST_DIST_ARGS[0]}'"'
+							log "info-proc" "Executing test plan on worker node['$TEST_DIST_WORKER_ID']..."
+							ssh -i $M7KEY -p $TEST_DIST_WORKER_SSH_PORT -o StrictHostKeyChecking=no $TEST_DIST_WORKER_USER@$TEST_DIST_WORKER_IP_ADDR \
+							'bash -c -l "m7 run '${TEST_DIST_ARGS[0]}'"' &> /dev/null
+							
+							# If the test plan failed to execute
 							if [ "$?" != "0" ]; then
-								log "error" "Failed to launch test process on worker node '$TEST_WORKER_ID'..."
+								log "info" "$FAILED"
+								log "error" "Failed to launch test process on worker node:['$TEST_WORKER_ID']..."
 							else
-								log "info" "Executing test plan on worker node '$TEST_DIST_WORKER_ID'..."
 								
 								# Create the worker lock file
 								touch ~/lock/$TEST_DIST_ID/worker/$TEST_DIST_WORKER_ID && echo "$(date +"%H:%M:%S")" > ~/lock/$TEST_DIST_ID/worker/$TEST_DIST_WORKER_ID
 								
 								# Generate the worker monitor script
-								TEST_DIST_WORKER_MONITOR="/tmp/$TEST_DIST_ID.workers.sh"
-								cat ~/lib/platform/workers.sh > $TEST_DIST_WORKER_MONITOR && chmod +x $TEST_DIST_WORKER_MONITOR
+								TEST_DIST_WORKER_MONITOR="/tmp/$TEST_DIST_ID.worker.monitor.sh"
+								cat ~/lib/platform/monitor/worker.sh > $TEST_DIST_WORKER_MONITOR && chmod +x $TEST_DIST_WORKER_MONITOR
 							fi
 						fi
 					fi
@@ -73,7 +86,6 @@ test_dist() {
 		        
 		        # Launch the worker monitor script
 				nohup sh $TEST_DIST_WORKER_MONITOR "$TEST_DIST_ID" >/dev/null 2>&1 &
-		        
 			fi
 		fi
 	fi

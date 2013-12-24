@@ -96,19 +96,6 @@ test_exec() {
 						do
 							let TEST_EXEC_THREAD_COUNT++
 							
-							# Define the arguments for this thread
-							declare -a TEST_EXEC_WEB_SD_ARGS
-							TEST_EXEC_WEB_SD_ARGS=(\
-								"$TEST_EXEC_ID"		       # Test plan ID number
-								"$TEST_EXEC_WEB_TEST_ID"   # Test definition ID number
-								"$TEST_EXEC_CAT"		   # Test plan category
-								"$TEST_EXEC_THREAD_COUNT"  # Thread number for this test run
-								"$TEST_EXEC_WEB_HOST"	   # Target host for test
-								"$TEST_EXEC_WEB_PROTO"	   # Protocol to download the files via
-								"$TEST_EXEC_WEB_FPATH"     # File path relative to host
-								"$TEST_EXEC_WEB_SAMPLES"   # Number of samples per thread
-								"$TEST_EXEC_WEB_TYPE")	   # Test category type
-							
 							# Define the thread script
 							TEST_EXEC_WEB_SD_SCRIPT="/tmp/$TEST_EXEC_ID.$TEST_EXEC_CAT.test-$TEST_EXEC_WEB_TEST_ID.thread-$TEST_EXEC_THREAD_COUNT.sh"
 							
@@ -133,6 +120,50 @@ test_exec() {
 						
 					"multi-download")
 					
+						# Build a string of all files
+						TEST_EXEC_MULTI_WORKSPACE="/tmp/$TEST_EXEC_ID.$TEST_EXEC_WEB_TEST_ID.multi"
+						echo "cat //plan/params/test[@id='$TEST_EXEC_WEB_TEST_ID']/paths/path" | xmllint --shell ${TEST_EXEC_ARGS[0]} > $TEST_EXEC_MULTI_WORKSPACE
+						declare TEST_EXEC_MULTI_STRING
+						while read TEST_EXEC_MULTI_PATH
+						do
+							if [[ $TEST_EXEC_MULTI_PATH =~ ^.*path.*$ ]]; then
+								if [ -z "$TEST_EXEC_MULTI_STRING" ]; then
+									TEST_EXEC_MULTI_STRING="$(echo $TEST_EXEC_MULTI_PATH | sed "s/^<path>\([^<]*\)<\/path>$/\1/g");"
+								else
+									TEST_EXEC_MULTI_STRING+=";$(echo $TEST_EXEC_MULTI_PATH | sed "s/^<path>\([^<]*\)<\/path>$/\1/g")"
+								fi
+							fi
+						done < $TEST_EXEC_MULTI_WORKSPACE
+					
+						# Get the number of samples
+						TEST_EXEC_WEB_SAMPLES="$(xml "parse" "${TEST_EXEC_ARGS[0]}" "params/test[@id='$TEST_EXEC_WEB_TEST_ID']/samples/text()")"
+					
+						# Run based on the number of threads
+						TEST_EXEC_THREAD_COUNT="0"
+						while [ "$TEST_EXEC_THREAD_LIMIT" -gt "$TEST_EXEC_THREAD_COUNT" ]
+						do
+							let TEST_EXEC_THREAD_COUNT++
+							
+							# Define the thread script
+							TEST_EXEC_WEB_SD_SCRIPT="/tmp/$TEST_EXEC_ID.$TEST_EXEC_CAT.test-$TEST_EXEC_WEB_TEST_ID.thread-$TEST_EXEC_THREAD_COUNT.sh"
+							
+							# Create the thread script
+							cat ~/lib/platform/tests/$TEST_EXEC_CAT/$TEST_EXEC_WEB_TYPE.sh > $TEST_EXEC_WEB_SD_SCRIPT; chmod +x $TEST_EXEC_WEB_SD_SCRIPT
+							
+							# Update the arguments in the script
+							sed -i "s/{TEST_PLAN_ID}/$TEST_EXEC_ID/g" $TEST_EXEC_WEB_SD_SCRIPT
+							sed -i "s/{TEST_DEF_ID}/$TEST_EXEC_WEB_TEST_ID/g" $TEST_EXEC_WEB_SD_SCRIPT
+							sed -i "s/{TEST_CAT}/$TEST_EXEC_CAT/g" $TEST_EXEC_WEB_SD_SCRIPT
+							sed -i "s/{TEST_THREAD_NUM}/$TEST_EXEC_THREAD_COUNT/g" $TEST_EXEC_WEB_SD_SCRIPT
+							sed -i "s/{TEST_TARGET_HOST}/$(regex_str "$TEST_EXEC_WEB_HOST")/g" $TEST_EXEC_WEB_SD_SCRIPT
+							sed -i "s/{TEST_HOST_PROTO}/$TEST_EXEC_WEB_PROTO/g" $TEST_EXEC_WEB_SD_SCRIPT
+							sed -i "s/{TEST_FILE_PATH}/$(regex_str "$TEST_EXEC_MULTI_STRING")/g" $TEST_EXEC_WEB_SD_SCRIPT
+							sed -i "s/{TEST_SAMPLES}/$TEST_EXEC_WEB_SAMPLES/g" $TEST_EXEC_WEB_SD_SCRIPT
+							sed -i "s/{TEST_CAT_TYPE}/$TEST_EXEC_WEB_TYPE/g" $TEST_EXEC_WEB_SD_SCRIPT
+							
+							# Launch the thread
+							nohup sh $TEST_EXEC_WEB_SD_SCRIPT >/dev/null 2>&1 &
+						done
 						;;
 						
 					*)
@@ -142,11 +173,20 @@ test_exec() {
 			done
 			
 			# Generate the test monitor script
-			TEST_EXEC_MON="/tmp/$TEST_EXEC_ID.monitor.sh"
-			cat ~/lib/platform/monitor.sh > $TEST_EXEC_MON && chmod +x $TEST_EXEC_MON
+			TEST_EXEC_MON="/tmp/$TEST_EXEC_ID.local.monitor.sh"
+			cat ~/lib/platform/monitor/local.sh > $TEST_EXEC_MON && chmod +x $TEST_EXEC_MON
 			
 			# Launch the test monitor script
-			nohup sh $TEST_EXEC_MON "$TEST_EXEC_ID" >/dev/null 2>&1 &
+			nohup sh $TEST_EXEC_MON "$TEST_EXEC_ID" "${TEST_EXEC_ARGS[0]}" >/dev/null 2>&1 &
+			
+			# If running from a director node
+			if [ ! -z "$(sqlite3 ~/db/cluster.db "SELECT * FROM M7_Nodes WHERE Type='director' AND Name='$(hostname -s)';")" ]; then
+				
+				# Create and launch the cluster monitor script
+				TEXT_EXEC_CLUSTER_MON="/tmp/$TEST_EXEC_ID.cluster.monitor.sh"
+				cat ~/lib/platform/monitor/cluster.sh > $TEST_EXEC_CLUSTER_MON && chmod +x $TEST_EXEC_CLUSTER_MON
+				nohup sh $TEST_EXEC_CLUSTER_MON "$TEST_EXEC_ID" "${TEST_EXEC_ARGS[0]}" >/dev/null 2>&1 &
+			fi
 			;;
 			
 		*)
