@@ -141,7 +141,7 @@ do
 			declare -a THREAD_SAMPLE_DL_TIME_ARRAY
 			
 			# Build the averages for each sample group
-			THREAD_SAMPLE_COUNT=1
+			THREAD_SAMPLE_COUNT=0
 			THREAD_FILE_COUNT=0
 			while read THREAD_SUMMARY_LINE
 			do
@@ -153,8 +153,8 @@ do
 					let THREAD_SAMPLE_COUNT++
 					
 					# Calculate and store the average speed and download time
-					TEST_AVG_SPEED_ARRAY+=("$(calc "arrayAvg" "THREAD_SAMPLE_AVG_SPEED_ARRAY[@]")")
-					TEST_DL_TIME_ARRAY+=("$(calc "arrayAvg" "THREAD_SAMPLE_DL_TIME_ARRAY[@]")")
+					THREAD_AVG_SPEED_ARRAY+=("$(calc "arrayAvg" "THREAD_SAMPLE_AVG_SPEED_ARRAY[@]")")
+					THREAD_DL_TIME_ARRAY+=("$(calc "arrayAvg" "THREAD_SAMPLE_DL_TIME_ARRAY[@]")")
 					
 					# Define the sample summary block
 					TEST_SUMMARY_BLOCK+="\t\t\t\t\t<sample-$THREAD_SAMPLE_COUNT>\n"
