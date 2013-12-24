@@ -70,7 +70,7 @@ test_exec() {
 						sed -i "s/{TEST_PLAN_ID}/$TEST_EXEC_ID/g" $TEST_EXEC_NET_PING_SCRIPT
 						sed -i "s/{TEST_DEF_ID}/$TEST_EXEC_NET_TEST_ID/g" $TEST_EXEC_NET_PING_SCRIPT
 						sed -i "s/{TEST_CAT}/$TEST_EXEC_CAT/g" $TEST_EXEC_NET_PING_SCRIPT
-						sed -i "s/{TEST_PING_COUNT}//g" $TEST_EXEC_NET_PING_SCRIPT
+						sed -i "s/{TEST_PING_COUNT}/$TEST_EXEC_NET_PING_COUNT/g" $TEST_EXEC_NET_PING_SCRIPT
 						sed -i "s/{TEST_CAT_TYPE}/$TEST_EXEC_NET_TYPE/g" $TEST_EXEC_NET_PING_SCRIPT
 						
 						# Launch the thread
