@@ -61,11 +61,11 @@ do
 		# Build an array of all files to download
 		TEST_MULTI_FILES_WORKSPACE="/tmp/$TM_TARGET_ID.$TEST_RESULT_ID.multi"
 		echo "cat //plan/params/test[@id='$TEST_RESULT_ID']/paths/path" | xmllint --shell $TM_SOURCE_PLAN > $TEST_MULTI_FILES_WORKSPACE
-		declare TEST_MULTI_FILES_ARRAY
+		declare -a TEST_MULTI_FILES_ARRAY
 		while read TEST_MULTI_FILE
 		do
-			TEST_MULTI_FILES_ARRAY+=("$TEST_TARGET_PROTO://$TEST_TARGET_HOST$(echo $TEST_MULTI_FILE | sed "s/^<path>\([^<]*\)<\/path>$/\1/g")")
-		done < $TEST_EXEC_MULTI_WORKSPACE
+			TEST_MULTI_FILES_ARRAY+=("$TEST_TARGET_PROTO://$TEST_TARGET_HOST/$(echo $TEST_MULTI_FILE | sed "s/^<path>\([^<]*\)<\/path>$/\1/g")")
+		done < $TEST_MULTI_FILES_WORKSPACE
 		
 		# Print the files block
 		TEST_SUMMARY_BLOCK+="\t\t<files>\n"
@@ -93,7 +93,7 @@ do
 		TEST_SUMMARY_BLOCK+="\t\t\t<thread-$THREAD_OUTPUT_ID>\n"
 		
 		# Build aworkspace of the summary lines in each output log
-		THREAD_SUMMARY_WS="$M7_TEST_WS/test-${TEST_RESULT_ID}.$THREAD_OUTPUT_ID" && touch $THREAD_SUMMARY_WS
+		THREAD_SUMMARY_WS="$M7_TEST_WS/test-$TEST_RESULT_ID.$THREAD_OUTPUT_ID" && touch $THREAD_SUMMARY_WS
 		cat $THREAD_OUTPUT_PATH | grep "Closing" | sed "s/^.*\o015\(.*$\)/\1/g" > $THREAD_SUMMARY_WS
 		
 		# Initialize the property averages arrays
