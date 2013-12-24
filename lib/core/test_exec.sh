@@ -64,7 +64,7 @@ test_exec() {
 						cat ~/lib/platform/tests/$TEST_EXEC_CAT/$TEST_EXEC_NET_TYPE.sh > $TEST_EXEC_NET_PING_SCRIPT; chmod +x $TEST_EXEC_NET_PING_SCRIPT
 						
 						# Get the ping count
-						TEST_EXEC_NET_PING_COUNT="$(xml "parse" "${TEST_EXEC_ARGS[0]}" "params/test[@id='$TEST_EXEC_WEB_TEST_ID']/count/text()")"
+						TEST_EXEC_NET_PING_COUNT="$(xml "parse" "${TEST_EXEC_ARGS[0]}" "params/test[@id='$TEST_EXEC_NET_TEST_ID']/count/text()")"
 						
 						# Update the arguments in the script
 						sed -i "s/{TEST_PLAN_ID}/$TEST_EXEC_ID/g" $TEST_EXEC_NET_PING_SCRIPT
