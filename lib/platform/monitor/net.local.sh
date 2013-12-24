@@ -52,7 +52,7 @@ do
 		"ping")
 			
 			# Get the ping count
-			TEST_PING_COUNT="$(xml "parse" "$NM_SOURCE_PLAN" "params/test[@id='$TEST_RESULT_ID']/count/text()""
+			TEST_PING_COUNT="$(xml "parse" "$NM_SOURCE_PLAN" "params/test[@id='$TEST_RESULT_ID']/count/text()")"
 				
 			# Read the output logs for each ping
 			for TEST_PING_LOG in $(find ~/output/$NM_TARGET_ID/local/$TEST_RESULT_DIR/tmp -type f)

@@ -20,7 +20,7 @@ mkdir -p $PING_TEST_BASE/tmp
 
 # Generate the test lockfile directory and create the test thread lockfile
 PING_TEST_LOCK_DIR=~/lock/${PING_TEST_ARGS[0]}/local
-PING_TEST_LOCK="$PING_TEST_LOCK_DIR/test-${PING_TEST_ARGS[1]}
+PING_TEST_LOCK="$PING_TEST_LOCK_DIR/test-${PING_TEST_ARGS[1]}"
 mkdir -p $PING_TEST_LOCK_DIR
 touch $PING_TEST_LOCK
 
