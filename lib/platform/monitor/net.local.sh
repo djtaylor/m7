@@ -122,7 +122,6 @@ do
 					TEST_SUMMARY_BLOCK+="\t\t<host name='$TEST_TROUTE_HOST'>\n"
 					TEST_SUMMARY_BLOCK+="\t\t\t<ip>$TEST_TROUTE_IP_ADDR</ip>\n"
 					TEST_SUMMARY_BLOCK+="\t\t\t<hops>\n"
-					TEST_SUMMARY_BLOCK+="\t\t\t\t<hops>\n"
 					
 					# Generate entries for each hop
 					while read TEST_TROUTE_HOP
@@ -135,6 +134,7 @@ do
                 			
                 			# If the first hop is not empty
 							if [ "$TEST_TROUTE_HOP_IP_ADDR" != "*" ]; then
+								TEST_TROUTE_HOP_TRY="1"
 								TEST_TROUTE_HOP_TIME="$(echo "$TEST_TROUTE_HOP" | sed "s/^[^ ]*[ ]*[^ ]*[ ]*\([^ ]*\)[ ]*[^ ]*[ ]*[^ ]*[ ].*$/\1/g")"
 							else
 								
@@ -143,16 +143,19 @@ do
 								
 								# If the second hop is not empty
 								if [ "$TEST_TROUTE_HOP_IP_ADDR" != "*" ]; then
+									TEST_TROUTE_HOP_TRY="2"
 									TEST_TROUTE_HOP_TIME="$(echo "$TEST_TROUTE_HOP" | sed "s/^[^ ]*[ ]*[^ ]*[ ]*[^ ]*[ ]*\([^ ]*\)[ ]*[^ ]*[ ].*$/\1/g")"
 								else
 									
 									# Get the third IP address and time
-									TEST_TROUTE_HOP_IP_ADDR="$(echo "$TEST_TROUTE_HOP" | sed "s/^[^ ]*[ ]*[^ ]*[ ]*[^ ]*[ ]*\([^ ]*\)[ ]*[^ ]*[ ].*$/\1/g")"
+									TEST_TROUTE_HOP_IP_ADDR="$(echo "$TEST_TROUTE_HOP" | sed "s/^[^ ]*[ ]*[^ ]*[ ]*[^ ]*[ ]*\([^ ]*\).*$/\1/g")"
 									
 									# If the third hop is not empty
 									if [ "$TEST_TROUTE_HOP_IP_ADDR" != "*" ]; then
+										TEST_TROUTE_HOP_TRY="3"
 										TEST_TROUTE_HOP_TIME="$(echo "$TEST_TROUTE_HOP" | sed "s/^[^ ]*[ ]*[^ ]*[ ]*[^ ]*[ ]*[^ ]*[ ]*\([^ ]*\)[ ].*$/\1/g")"
 									else
+										TEST_TROUTE_HOP_TRY="fail"
 										TEST_TROUTE_HOP_TIME="*"
 									fi	
 								fi
@@ -160,6 +163,7 @@ do
                 			
                 			# Define the hop XML block
 							TEST_SUMMARY_BLOCK+="\t\t\t\t<hop-$TEST_TROUTE_HOP_NUM>\n"
+							TEST_SUMMARY_BLOCK+="\t\t\t\t\t<try>$TEST_TROUTE_HOP_TRY</try>\n"
 							TEST_SUMMARY_BLOCK+="\t\t\t\t\t<ip>$TEST_TROUTE_HOP_IP_ADDR</ip>\n"
 							TEST_SUMMARY_BLOCK+="\t\t\t\t\t<time unit='ms'>$TEST_TROUTE_HOP_TIME</time>\n"
 							TEST_SUMMARY_BLOCK+="\t\t\t\t</hop-$TEST_TROUTE_HOP_NUM>\n"
