@@ -216,6 +216,12 @@ do
 	# Close the test XML block
 	TEST_SUMMARY_BLOCK+="\t\t</threads>\n"
 	TEST_SUMMARY_BLOCK+="\t</test>\n"
+	
+	# Initialize the test average result arrays
+	unset TEST_AVG_SPEED_ARRAY
+	unset TEST_DL_TIME_ARRAY
+	declare -a TEST_AVG_SPEED_ARRAY
+	declare -a TEST_DL_TIME_ARRAY
 done
 
 # Close the test plan block
