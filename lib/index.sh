@@ -8,6 +8,7 @@
 # Platform Variables
 M7LOG_ERROR=~/log/error.log
 M7LOG_MAIN=~/log/main.log
+M7LOG_XFER=~/log/xfer.log
 M7DB=~/db/cluster.db
 M7KEY=~/.ssh/m7.key
 
