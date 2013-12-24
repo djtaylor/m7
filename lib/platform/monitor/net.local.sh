@@ -1,0 +1,168 @@
+#!/bin/bash
+
+# Load the library index
+source ~/lib/index.sh
+
+# Target test ID and source plan
+NM_TARGET_ID="$1"
+NM_SOURCE_PLAN="$2"
+
+while :
+do
+	
+	# If all lock files have been cleared
+	if [ -z "$(ls -A ~/lock/$NM_TARGET_ID/local)" ]; then
+		break
+	else
+		sleep 2
+	fi
+done
+
+# Create the test aggregation workspace
+M7_TEST_WS="/tmp/m7.$NM_TARGET_ID"
+mkdir -p $M7_TEST_WS
+
+# Define the results file for the test
+TEST_RESULT_FILE=~/output/$NM_TARGET_ID/local/results.xml
+
+# Get the plan category
+TEST_CATEGORY="$(xml "parse" "$NM_SOURCE_PLAN" "params/category/text()")"
+
+# Open the plan XML block
+TEST_SUMMARY_BLOCK="<plan>\n"
+TEST_SUMMARY_BLOCK+="\t<category>$TEST_CATEGORY</category>\n"
+
+# Aggregate the results of the test runs
+for TEST_RESULT_PATH in $(find ~/output/$NM_TARGET_ID/local -mindepth 1 -maxdepth 1 -type d)
+do
+	
+	# Get the test directory and ID
+	TEST_RESULT_DIR="$(echo $TEST_RESULT_PATH | sed "s/^.*\/\([^\/]*$\)/\1/g")"
+	TEST_RESULT_ID="$(echo $TEST_RESULT_PATH | sed "s/^.*\/test-\([0-9]*$\)/\1/g")"
+	
+	# Get the network test type
+	TEST_NET_TYPE="$(xml "parse" "$NM_SOURCE_PLAN" "params/test[@id='$TEST_RESULT_ID']/type/text()")"
+	
+	# Open the test XML block
+	TEST_SUMMARY_BLOCK+="\t<test id='$TEST_RESULT_ID'>\n"
+	TEST_SUMMARY_BLOCK+="\t\t<type>$TEST_NET_TYPE</type>\n"
+	
+	case "$TEST_NET_TYPE" in
+		
+		"ping")
+			
+			# Get the ping count
+			TEST_PING_COUNT="$(xml "parse" "$NM_SOURCE_PLAN" "params/test[@id='$TEST_RESULT_ID']/count/text()""
+			
+			# Process the thread directories
+			for TEST_PING_THREAD in $(find ~/output/$NM_TARGET_ID/local/$TEST_RESULT_DIR/thread-* -mindepth 1 -maxdepth 1 -type d)
+			do
+				
+				# Get the thread tag and ID
+				THREAD_PING_TAG="$(echo $TEST_PING_THREAD | sed "s/^.*\/\(thread-[0-9]*\)\/.*$/\1/g")"
+				THREAD_PING_ID="$(echo $THREAD_PING_TAG | sed "s/^thread-\([0-9]*$\)/\1/g")"
+				
+				# Open the thread XML block
+				TEST_SUMMARY_BLOCK+="\t\t<thread-$THREAD_PING_ID>\n"
+				
+				# Read the output logs for each ping
+				for THREAD_PING_LOG in $(find ~/output/$NM_TARGET_ID/local/$THREAD_RESULT_DIR/$THREAD_PING_TAG/tmp -type f)
+				do
+					
+					# First get the exit code to see if the ping was successful
+					THREAD_PING_EXIT_CODE="$(cat $THREAD_PING_LOG | grep "EXIT" | sed "s/^EXIT:'\([0-9]*\)'/\1/g")"
+					
+					# Get the target host and IP address
+					THREAD_PING_HOST="$(echo $THREAD_PING_LONG | sed "s/^.*\/\([^\.]*\)\.log$/\1/g")"
+					THREAD_PING_IP_ADDR="$(sqlite3 ~/db/cluster.db "SELECT IPAddr FROM M7_Nodes WHERE Name='$THREAD_PING_HOST';")"
+					
+					# If the ping has any exit code besides '0'
+					if [ "$THREAD_PING_EXIT_CODE" != "0" ]; then
+						
+						# Generate the host ping block
+						TEST_SUMMARY_BLOCK+="\t\t\t<host name='$THREAD_PING_HOST'>\n"
+						TEST_SUMMARY_BLOCK+="\t\t\t\t<ip>$THREAD_PING_IP_ADDR</ip>\n"
+						TEST_SUMMARY_BLOCK+="\t\t\t\t<exit>$THREAD_PING_EXIT_CODE</exit>\n"
+						TEST_SUMMARY_BLOCK+="\t\t\t</host>\n"
+					else
+						
+						# Get the ping statistics
+						THREAD_PING_PKT_LOSS="$(cat $THREAD_PING_LOG | grep "packet" | sed "s/^.*[ ]\([0-9]*%\)[ ].*$/\1/g")"
+						THREAD_PING_MIN_TIME="$(cat $THREAD_PING_LOG | grep rtt | sed "s/^.*=[ ]\([0-9\.]*\)\/.*$/\1/g")"
+						THREAD_PING_AVG_TIME="$(cat $THREAD_PING_LOG | grep rtt | sed "s/^.*=[ ][0-9\.]*\/\([0-9\.]*\)\/.*$/\1/g")"
+						THREAD_PING_MAX_TIME="$(cat $THREAD_PING_LOG | grep rtt | sed "s/^.*=[ ][0-9\.]*\/[0-9\.]*\/\([0-9\.]*\)\/.*$/\1/g")"
+						THREAD_PING_AVG_DEV="$(cat $THREAD_PING_LOG | grep rtt | sed "s/^.*=[ ][0-9\.]*\/[0-9\.]*\/[0-9\.]*\/\([0-9\.]*\)[ ].*$/\1/g")"
+						
+						# Generate the host ping block
+						TEST_SUMMARY_BLOCK+="\t\t\t<host name='$THREAD_PING_HOST'>\n"
+						TEST_SUMMARY_BLOCK+="\t\t\t\t<ip>$THREAD_PING_IP_ADDR</ip>\n"
+						TEST_SUMMARY_BLOCK+="\t\t\t\t<packetLoss unit='%'>$THREAD_PING_PKT_LOST</packetLoss>\n"
+						TEST_SUMMARY_BLOCK+="\t\t\t\t<minTime unit='ms'>$THREAD_PING_MIN_TIME</minTime>\n"
+						TEST_SUMMARY_BLOCK+="\t\t\t\t<avgTime unit='ms'>$THREAD_PING_AVG_TIME</avgTime>\n"
+						TEST_SUMMARY_BLOCK+="\t\t\t\t<maxTime unit='ms'>$THREAD_PING_MAX_TIME</maxTime>\n"
+						TEST_SUMMARY_BLOCK+="\t\t\t\t<avgDev unit='ms'>$THREAD_PING_AVG_DEV</avgDev>\n"
+						TEST_SUMMARY_BLOCK+="\t\t\t</host>\n"
+					fi
+				done
+				TEST_SUMMARY_BLOCK+="\t\t</thread-$THREAD_PING_ID>\n"
+			done
+			;;
+			
+		"traceroute")
+			:
+			;;
+			
+		"mtr")
+			:
+	esac
+	TEST_SUMMARY_BLOCK+="\t</test>"
+done
+
+# Close the test plan block
+TEST_SUMMARY_BLOCK+="</plan>"
+
+# Create the test plan results file
+echo -e "$TEST_SUMMARY_BLOCK" > $TEST_RESULT_FILE
+
+# If running on a worker node
+if [ ! -z "$(sqlite3 ~/db/cluster.db "SELECT * FROM M7_Nodes WHERE Type='worker' AND Name='$(hostname -s)';")" ]; then
+	
+	# Get the director node name, user, SSH port, and IP address
+	TEST_DIRECTOR_NAME="$(sqlite3 ~/db/cluster.db "SELECT Name FROM M7_Nodes WHERE Type='director';")"
+	TEST_DIRECTOR_USER="$(sqlite3 ~/db/cluster.db "SELECT User FROM M7_Nodes WHERE Type='director';")"
+	TEST_DIRECTOR_SSH_PORT="$(sqlite3 ~/db/cluster.db "SELECT SSHPort FROM M7_Nodes WHERE Type='director';")"
+	TEST_DIRECTOR_IP_ADDR="$(sqlite3 ~/db/cluster.db "SELECT IPAddr FROM M7_Nodes WHERE Type='director';")"
+	
+	# Get the local worker name and ID
+	TEST_WORKER_NAME="$(sqlite3 ~/db/cluster.db "SELECT Name FROM M7_Nodes WHERE Name='$(hostname -s)';")"
+	TEST_WORKER_ID="$(sqlite3 ~/db/cluster.db "SELECT Id FROM M7_Nodes WHERE Name='$(hostname -s)';")"
+	
+	# Copy the results to the director node
+	log "info-proc" "Copying worker test results to director node:['~/output/$TM_TARGET_ID/worker/$TEST_WORKER_NAME.results.xml']..."
+	scp -i $M7KEY -P $TEST_DIRECTOR_SSH_PORT -o StrictHostKeyChecking=no $TEST_RESULT_FILE \
+	$TEST_DIRECTOR_USER@$TEST_DIRECTOR_IP_ADDR:~/output/$TM_TARGET_ID/worker/$TEST_WORKER_NAME.results.xml >> $M7LOG_XFER 2>&1
+	
+	# If the results failed to copy to the director node
+	if [ "$?" != "0" ]; then
+		log "info" "$FAILED"
+		log "error" "Failed to copy worker test results to director node:['$TEST_DIRECTOR_USER@$TEST_DIRECTOR_IP_ADDR:$TEST_DIRECTOR_SSH_PORT']..."
+	else
+		log "info" "$SUCCESS"
+		
+		# Remove the lock file on the director node
+		log "info-proc" "Removing lock file for worker node on director node..."
+		ssh -i $M7KEY -p $TEST_DIRECTOR_SSH_PORT -o StrictHostKeyChecking=no $TEST_DIRECTOR_USER@$TEST_DIRECTOR_IP_ADDR "bash -c -l 'rm -f ~/lock/$TM_TARGET_ID/worker/$TEST_WORKER_ID'" >> $M7LOG_XFER 2>&1
+		
+		# If the lock file was not removed
+		if [ "$?" != "0" ]; then
+			log "info" "$FAILED"
+			log "error" "Failed to remove lock file for worker node on director node:['$TEST_DIRECTOR_USER@$TEST_DIRECTOR_IP_ADDR:$TEST_DIRECTOR_SSH_PORT']..."
+		else
+			log "info" "$SUCCESS"
+		fi
+	fi
+fi
+
+# Self destruct the monitor script and destroy the workspace
+rm -rf $M7_TEST_WS
+rm -f /tmp/$TM_TARGET_ID.local.monitor.sh
