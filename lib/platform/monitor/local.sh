@@ -235,7 +235,7 @@ if [ ! -z "$(sqlite3 ~/db/cluster.db "SELECT * FROM M7_Nodes WHERE Type='worker'
 		
 		# Remove the lock file on the director node
 		log "info-proc" "Removing lock file for worker node on director node..."
-		ssh -i $M7KEY -p $TEST_DIRECTOR_SSH_PORT -o StrictHostKeyChecking=no $TEST_DIRECTOR_USER@$TEST_DIRECTOR_IP_ADDR rm -f ~/lock/$TM_TARGET_ID/worker/$TEST_WORKER_ID &>> $M7LOG_XFER
+		ssh -i $M7KEY -p $TEST_DIRECTOR_SSH_PORT -o StrictHostKeyChecking=no $TEST_DIRECTOR_USER@$TEST_DIRECTOR_IP_ADDR rm -f ~/lock/$TM_TARGET_ID/worker/$TEST_WORKER_ID
 		
 		# If the lock file was not removed
 		if [ "$?" != "0" ]; then
