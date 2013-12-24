@@ -17,7 +17,7 @@ calc() {
 		# The following method takes a time argument in the HH:MM:SS format and converts
 		# it to a single value of seconds.
 		"dlTime")
-			echo "${CALC_ARGS[0]}" | awk -F: '{ print ($1 * 3600) + ($2 * 60) + $3 }'
+			echo "${CALC_ARGS[1]}" | awk -F: '{ print ($1 * 3600) + ($2 * 60) + $3 }'
 			;;
 		
 		# Calculate Download Speed (Kbps)
@@ -28,18 +28,18 @@ calc() {
 		"xferSpeed")
 			
 			# Convert from 'Bps' to 'Kbps'
-			if [[ ${CALC_ARGS[0]} =~ ^[0-9]*$ ]]; then
-				CALC_XFER_SPEED_RAW="$(echo "${CALC_ARGS[0]}/1024" | bc)"
+			if [[ ${CALC_ARGS[1]} =~ ^[0-9]*$ ]]; then
+				CALC_XFER_SPEED_RAW="$(echo "${CALC_ARGS[1]}/1024" | bc)"
 			fi
 			
 			# Format 'Kbps'
-			if [[ ${CALC_ARGS[0]} =~ ^[0-9]*k$ ]]; then
-				CALC_XFER_SPEED_RAW="$(echo ${CALC_ARGS[0]} | sed "s/\(^[0-9]*\).*$/\1/g")"
+			if [[ ${CALC_ARGS[1]} =~ ^[0-9]*k$ ]]; then
+				CALC_XFER_SPEED_RAW="$(echo ${CALC_ARGS[1]} | sed "s/\(^[0-9]*\).*$/\1/g")"
 			fi
 			
 			# Convert from 'Mbps' to 'Kbps'
-			if [[ ${CALC_ARGS[0]} =~ ^[0-9\.]*M$ ]]; then
-				CALC_XFER_SPEED_RAW="$(echo ${CALC_ARGS[0]} | sed "s/\(^[0-9\.]*\)M$/\1/g")"
+			if [[ ${CALC_ARGS[1]} =~ ^[0-9\.]*M$ ]]; then
+				CALC_XFER_SPEED_RAW="$(echo ${CALC_ARGS[1]} | sed "s/\(^[0-9\.]*\)M$/\1/g")"
 				CALC_XFER_SPEED_RAW="$(echo "$THREAD_AVG_SPEED_RAW*1024" | bc)"
 			fi
 			
@@ -55,7 +55,7 @@ calc() {
 		"arrayAvg")
 			
 			# Expand the source array
-			declare -a CALC_SOURCE_ARRAY=("${!1}")
+			declare -a CALC_SOURCE_ARRAY=("${!2}")
 			
 			# Find the average value for the array
 			CALC_ARRAY_COUNT="${#CALC_SOURCE_ARRAY[@]}"

@@ -78,7 +78,7 @@ else
 			for MD_FILE in "${MD_FILES_ARRAY[@]}"
 			do
 				let MD_FILE_COUNT++
-				echo "# Sample '$SD_SAMPLES_COUNT' - File '$MD_FILE_COUNT'" | tee $MD_TEST_LOG
+				echo "# Sample '$MD_SAMPLES_COUNT' - File '$MD_FILE_COUNT'" | tee -a $MD_TEST_LOG
 				curl -v -k -O ${MD_TEST_ARGS[5]}://${MD_TEST_ARGS[4]}/$MD_FILE 2>&1 | tee -a $MD_TEST_LOG
 			done
         done
