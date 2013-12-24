@@ -76,7 +76,7 @@ do
 				else
 					
 					# Get the ping statistics
-					TEST_PING_PKT_LOSS="$(cat $TEST_PING_LOG | grep "packet" | sed "s/^.*[ ]\([0-9]*%\)[ ].*$/\1/g")"
+					TEST_PING_PKT_LOSS="$(cat $TEST_PING_LOG | grep "packet" | sed "s/^.*[ ]\([0-9]*\)%[ ].*$/\1/g")"
 					TEST_PING_MIN_TIME="$(cat $TEST_PING_LOG | grep rtt | sed "s/^.*=[ ]\([0-9\.]*\)\/.*$/\1/g")"
 					TEST_PING_AVG_TIME="$(cat $TEST_PING_LOG | grep rtt | sed "s/^.*=[ ][0-9\.]*\/\([0-9\.]*\)\/.*$/\1/g")"
 					TEST_PING_MAX_TIME="$(cat $TEST_PING_LOG | grep rtt | sed "s/^.*=[ ][0-9\.]*\/[0-9\.]*\/\([0-9\.]*\)\/.*$/\1/g")"
@@ -96,7 +96,81 @@ do
 			;;
 			
 		"traceroute")
-			:
+			
+			# Read the output logs for each traceroute
+			for TEST_TROUTE_LOG in $(find ~/output/$NM_TARGET_ID/local/$TEST_RESULT_DIR/tmp -type f)
+			do
+				
+				# First get the exit code to see if the traceroute was successful
+				TEST_TROUTE_EXIT_CODE="$(cat $TEST_TROUTE_LOG | grep "EXIT" | sed "s/^EXIT:'\([0-9]*\)'/\1/g")"
+				
+				# Get the target host and IP address
+				TEST_TROUTE_HOST="$(echo $TEST_TROUTE_LOG | sed "s/^.*\/\([^\.]*\)\.log$/\1/g")"
+				TEST_TROUTE_IP_ADDR="$(sqlite3 ~/db/cluster.db "SELECT IPAddr FROM M7_Nodes WHERE Name='$TEST_TROUTE_HOST';")"
+				
+				# If the traceroute has any exit code besides '0'
+				if [ "$TEST_TROUTE_EXIT_CODE" != "0" ]; then
+					
+					# Generate the host traceroute block
+					TEST_SUMMARY_BLOCK+="\t\t<host name='$TEST_TROUTE_HOST'>\n"
+					TEST_SUMMARY_BLOCK+="\t\t\t<ip>$TEST_TROUTE_IP_ADDR</ip>\n"
+					TEST_SUMMARY_BLOCK+="\t\t\t<exit>$TEST_TROUTE_EXIT_CODE</exit>\n"
+					TEST_SUMMARY_BLOCK+="\t\t</host>\n"
+				else
+					
+					# Generate the host traceroute block
+					TEST_SUMMARY_BLOCK+="\t\t<host name='$TEST_TROUTE_HOST'>\n"
+					TEST_SUMMARY_BLOCK+="\t\t\t<ip>$TEST_TROUTE_IP_ADDR</ip>\n"
+					TEST_SUMMARY_BLOCK+="\t\t\t<hops>\n"
+					TEST_SUMMARY_BLOCK+="\t\t\t\t<hops>\n"
+					
+					# Generate entries for each hop
+					while read TEST_TROUTE_HOP
+					do
+						if [ ! -z "$(echo "$TEST_TROUTE_HOP" | grep -e "^[0-9 ]*[ ].*$")" ]; then
+                
+                			# Get the hop number, IP, and time
+							TEST_TROUTE_HOP_NUM="$(echo "$TEST_TROUTE_HOP" | sed "s/\(^[^ ]*\)[ ]*[^ ]*[ ]*[^ ]*[ ]*[^ ]*[ ]*[^ ]*[ ].*$/\1/g")"
+                			TEST_TROUTE_HOP_IP_ADDR="$(echo "$TEST_TROUTE_HOP" | sed "s/^[^ ]*[ ]*\([^ ]*\)[ ]*[^ ]*[ ]*[^ ]*[ ]*[^ ]*[ ].*$/\1/g")"
+                			
+                			# If the first hop is not empty
+							if [ "$TEST_TROUTE_HOP_IP_ADDR" != "*" ]; then
+								TEST_TROUTE_HOP_TIME="$(echo "$TEST_TROUTE_HOP" | sed "s/^[^ ]*[ ]*[^ ]*[ ]*\([^ ]*\)[ ]*[^ ]*[ ]*[^ ]*[ ].*$/\1/g")"
+							else
+								
+								# Get the second IP address and time
+								TEST_TROUTE_HOP_IP_ADDR="$(echo "$TEST_TROUTE_HOP" | sed "s/^[^ ]*[ ]*[^ ]*[ ]*\([^ ]*\)[ ]*[^ ]*[ ]*[^ ]*[ ].*$/\1/g")"
+								
+								# If the second hop is not empty
+								if [ "$TEST_TROUTE_HOP_IP_ADDR" != "*" ]; then
+									TEST_TROUTE_HOP_TIME="$(echo "$TEST_TROUTE_HOP" | sed "s/^[^ ]*[ ]*[^ ]*[ ]*[^ ]*[ ]*\([^ ]*\)[ ]*[^ ]*[ ].*$/\1/g")"
+								else
+									
+									# Get the third IP address and time
+									TEST_TROUTE_HOP_IP_ADDR="$(echo "$TEST_TROUTE_HOP" | sed "s/^[^ ]*[ ]*[^ ]*[ ]*[^ ]*[ ]*\([^ ]*\)[ ]*[^ ]*[ ].*$/\1/g")"
+									
+									# If the third hop is not empty
+									if [ "$TEST_TROUTE_HOP_IP_ADDR" != "*" ]; then
+										TEST_TROUTE_HOP_TIME="$(echo "$TEST_TROUTE_HOP" | sed "s/^[^ ]*[ ]*[^ ]*[ ]*[^ ]*[ ]*[^ ]*[ ]*\([^ ]*\)[ ].*$/\1/g")"
+									else
+										TEST_TROUTE_HOP_TIME="*"
+									fi	
+								fi
+							fi
+                			
+                			# Define the hop XML block
+							TEST_SUMMARY_BLOCK+="\t\t\t\t<hop-$TEST_TROUTE_HOP_NUM>\n"
+							TEST_SUMMARY_BLOCK+="\t\t\t\t\t<ip>$TEST_TROUTE_HOP_IP_ADDR</ip>\n"
+							TEST_SUMMARY_BLOCK+="\t\t\t\t\t<time unit='ms'>$TEST_TROUTE_HOP_TIME</time>\n"
+							TEST_SUMMARY_BLOCK+="\t\t\t\t</hop-$TEST_TROUTE_HOP_NUM>\n"
+        				fi
+					done < $TEST_TROUTE_LOG			
+					
+					# Close the hops block
+					TEST_SUMMARY_BLOCK+="\t\t\t</hops>\n"
+					TEST_SUMMARY_BLOCK+="\t\t</host>\n"
+				fi
+			done
 			;;
 			
 		"mtr")
