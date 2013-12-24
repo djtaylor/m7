@@ -54,17 +54,19 @@ do
 	# Print either a single file or list of files
 	if [ "$TEST_TARGET_TYPE" = "single-download" ]; then
 		TEST_TARGET_URL="$TEST_TARGET_PROTO://$TEST_TARGET_HOST/$TEST_TARGET_PATH"
-		TEST_SUMMARY_BLOCK+="\t\t<fileurl>$TEST_TARGET_URL</fileurl>\n"
+		TEST_SUMMARY_BLOCK+="\t\t<file>$TEST_TARGET_URL</file>\n"
 	fi
 	if [ "$TEST_TARGET_TYPE" = "multi-download" ]; then
 		
 		# Build an array of all files to download
-		TEST_MULTI_FILES_WORKSPACE="/tmp/$TM_TARGET_ID.$TEST_RESULT_ID.multi"
+		TEST_MULTI_FILES_WORKSPACE="$M7_TEST_WS/$TM_TARGET_ID.$TEST_RESULT_ID.multi"
 		echo "cat //plan/params/test[@id='$TEST_RESULT_ID']/paths/path" | xmllint --shell $TM_SOURCE_PLAN > $TEST_MULTI_FILES_WORKSPACE
 		declare -a TEST_MULTI_FILES_ARRAY
 		while read TEST_MULTI_FILE
 		do
-			TEST_MULTI_FILES_ARRAY+=("$TEST_TARGET_PROTO://$TEST_TARGET_HOST/$(echo $TEST_MULTI_FILE | sed "s/^<path>\([^<]*\)<\/path>$/\1/g")")
+			if [[ $TEST_MULTI_FILE =~ ^.*path.*$ ]]; then
+				TEST_MULTI_FILES_ARRAY+=("$TEST_TARGET_PROTO://$TEST_TARGET_HOST/$(echo $TEST_MULTI_FILE | sed "s/^<path>\([^<]*\)<\/path>$/\1/g")")
+			fi
 		done < $TEST_MULTI_FILES_WORKSPACE
 		
 		# Print the files block
@@ -104,7 +106,7 @@ do
 		TEST_SUMMARY_BLOCK+="\t\t\t\t<samples>\n"
 		
 		# If downloading a single file
-		if [ "$TEST_TARGET_TYPE" = "single-file" ]; then
+		if [ "$TEST_TARGET_TYPE" = "single-download" ]; then
 			
 			# Process the summary lines and build the results XML file
 			THREAD_SAMPLE_COUNT="0"
@@ -129,7 +131,7 @@ do
 		fi
 		
 		# If downloading multiple files
-		if [ "$TEST_TARGET_TYPE" = "multi-file" ]; then
+		if [ "$TEST_TARGET_TYPE" = "multi-download" ]; then
 			
 			# Get the total files in each sample
 			THREAD_SAMPLE_FILE_COUNT="${#TEST_MULTI_FILES_ARRAY[@]}"
