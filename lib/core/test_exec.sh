@@ -55,7 +55,7 @@ test_exec() {
 			do
 				
 				# Get the test type and launch the test
-				TEST_EXEC_NET_TYPE="$(xml "parse" "${TEST_EXEC_ARGS[0]}" "params/test[@id='$TEST_EXEC_WEB_TEST_ID']/type/text()")"
+				TEST_EXEC_NET_TYPE="$(xml "parse" "${TEST_EXEC_ARGS[0]}" "params/test[@id='$TEST_EXEC_NET_TEST_ID']/type/text()")"
 				case "$TEST_EXEC_NET_TYPE" in
 					
 					"ping")
