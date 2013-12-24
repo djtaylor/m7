@@ -63,7 +63,7 @@ do
 				
 				# Get the target host and IP address
 				TEST_PING_HOST="$(echo $TEST_PING_LOG | sed "s/^.*\/\([^\.]*\)\.log$/\1/g")"
-				TEST_PING_IP_ADDR="$(sqlite3 ~/db/cluster.db "SELECT IPAddr FROM M7_Nodes WHERE Name='$THREAD_PING_HOST';")"
+				TEST_PING_IP_ADDR="$(sqlite3 ~/db/cluster.db "SELECT IPAddr FROM M7_Nodes WHERE Name='$TEST_PING_HOST';")"
 				
 				# If the ping has any exit code besides '0'
 				if [ "$TEST_PING_EXIT_CODE" != "0" ]; then
@@ -85,7 +85,7 @@ do
 					# Generate the host ping block
 					TEST_SUMMARY_BLOCK+="\t\t<host name='$TEST_PING_HOST'>\n"
 					TEST_SUMMARY_BLOCK+="\t\t\t<ip>$TEST_PING_IP_ADDR</ip>\n"
-					TEST_SUMMARY_BLOCK+="\t\t\t<packetLoss unit='%'>$TEST_PING_PKT_LOST</packetLoss>\n"
+					TEST_SUMMARY_BLOCK+="\t\t\t<packetLoss unit='%'>$TEST_PING_PKT_LOSS</packetLoss>\n"
 					TEST_SUMMARY_BLOCK+="\t\t\t<minTime unit='ms'>$TEST_PING_MIN_TIME</minTime>\n"
 					TEST_SUMMARY_BLOCK+="\t\t\t<avgTime unit='ms'>$TEST_PING_AVG_TIME</avgTime>\n"
 					TEST_SUMMARY_BLOCK+="\t\t\t<maxTime unit='ms'>$TEST_PING_MAX_TIME</maxTime>\n"
@@ -102,7 +102,7 @@ do
 		"mtr")
 			:
 	esac
-	TEST_SUMMARY_BLOCK+="\t</test>"
+	TEST_SUMMARY_BLOCK+="\t</test>\n"
 done
 
 # Close the test plan block
@@ -125,9 +125,9 @@ if [ ! -z "$(sqlite3 ~/db/cluster.db "SELECT * FROM M7_Nodes WHERE Type='worker'
 	TEST_WORKER_ID="$(sqlite3 ~/db/cluster.db "SELECT Id FROM M7_Nodes WHERE Name='$(hostname -s)';")"
 	
 	# Copy the results to the director node
-	log "info-proc" "Copying worker test results to director node:['~/output/$TM_TARGET_ID/worker/$TEST_WORKER_NAME.results.xml']..."
+	log "info-proc" "Copying worker test results to director node:['~/output/$NM_TARGET_ID/worker/$TEST_WORKER_NAME.results.xml']..."
 	scp -i $M7KEY -P $TEST_DIRECTOR_SSH_PORT -o StrictHostKeyChecking=no $TEST_RESULT_FILE \
-	$TEST_DIRECTOR_USER@$TEST_DIRECTOR_IP_ADDR:~/output/$TM_TARGET_ID/worker/$TEST_WORKER_NAME.results.xml >> $M7LOG_XFER 2>&1
+	$TEST_DIRECTOR_USER@$TEST_DIRECTOR_IP_ADDR:~/output/$NM_TARGET_ID/worker/$TEST_WORKER_NAME.results.xml >> $M7LOG_XFER 2>&1
 	
 	# If the results failed to copy to the director node
 	if [ "$?" != "0" ]; then
@@ -138,7 +138,7 @@ if [ ! -z "$(sqlite3 ~/db/cluster.db "SELECT * FROM M7_Nodes WHERE Type='worker'
 		
 		# Remove the lock file on the director node
 		log "info-proc" "Removing lock file for worker node on director node..."
-		ssh -i $M7KEY -p $TEST_DIRECTOR_SSH_PORT -o StrictHostKeyChecking=no $TEST_DIRECTOR_USER@$TEST_DIRECTOR_IP_ADDR "bash -c -l 'rm -f ~/lock/$TM_TARGET_ID/worker/$TEST_WORKER_ID'" >> $M7LOG_XFER 2>&1
+		ssh -i $M7KEY -p $TEST_DIRECTOR_SSH_PORT -o StrictHostKeyChecking=no $TEST_DIRECTOR_USER@$TEST_DIRECTOR_IP_ADDR "bash -c -l 'rm -f ~/lock/$NM_TARGET_ID/worker/$TEST_WORKER_ID'" >> $M7LOG_XFER 2>&1
 		
 		# If the lock file was not removed
 		if [ "$?" != "0" ]; then
@@ -152,4 +152,4 @@ fi
 
 # Self destruct the monitor script and destroy the workspace
 rm -rf $M7_TEST_WS
-rm -f /tmp/$TM_TARGET_ID.local.monitor.sh
+rm -f /tmp/$NM_TARGET_ID.local.monitor.sh
