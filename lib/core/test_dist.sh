@@ -64,7 +64,8 @@ test_dist() {
 						
 							# Execute the test plan on the worker node
 							log "info-proc" "Executing test plan on worker node['$TEST_DIST_WORKER_NAME(id=$TEST_DIST_WORKER_ID)']..."
-							ssh -i $M7KEY -p $TEST_DIST_WORKER_SSH_PORT -o StrictHostKeyChecking=no $TEST_DIST_WORKER_USER@$TEST_DIST_WORKER_IP_ADDR 'bash -c -l "m7 run '${TEST_DIST_ARGS[0]}'"' >> $M7LOG_XFER 2>&1
+							ssh -i $M7KEY -p $TEST_DIST_WORKER_SSH_PORT -o StrictHostKeyChecking=no $TEST_DIST_WORKER_USER@$TEST_DIST_WORKER_IP_ADDR \
+							"bash -c -l 'm7 run "${TEST_DIST_ARGS[0]}"' > /dev/null 2>&1 &" >> $M7LOG_XFER 2>&1
 							
 							# If the test plan failed to execute
 							if [ "$?" != "0" ]; then
