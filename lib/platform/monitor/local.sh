@@ -163,6 +163,8 @@ do
 					TEST_SUMMARY_BLOCK+="\t\t\t\t\t</sample-$THREAD_SAMPLE_COUNT>\n"
 					
 					# Reset the thread sample arrays
+					unset THREAD_SAMPLE_AVG_SPEED_ARRAY
+					unset THREAD_SAMPLE_DL_TIME_ARRAY
 					declare -a THREAD_SAMPLE_AVG_SPEED_ARRAY
 					declare -a THREAD_SAMPLE_DL_TIME_ARRAY
 				else
@@ -193,6 +195,12 @@ do
 		
 		# Close the thread block
 		TEST_SUMMARY_BLOCK+="\t\t\t</thread-$THREAD_OUTPUT_ID>\n"
+		
+		# Initialize the property averages arrays
+		unset THREAD_AVG_SPEED_ARRAY
+		unset THREAD_DL_TIME_ARRAY
+		declare -a THREAD_AVG_SPEED_ARRAY
+		declare -a THREAD_DL_TIME_ARRAY
 	done
 	
 	# Find and store the average test value for download speed and time
