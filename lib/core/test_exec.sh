@@ -39,9 +39,6 @@ test_exec() {
 	TEST_EXEC_ID="$(xml "parse" "${TEST_EXEC_ARGS[0]}" "id/text()")"
 	TEST_EXEC_CAT="$(xml "parse" "${TEST_EXEC_ARGS[0]}" "params/category/text()")"
 	
-	# Set the number of test threads
-	TEST_EXEC_THREAD_LIMIT="$(xml "parse" "${TEST_EXEC_ARGS[0]}" "params/threads/text()")"
-	
 	# Test category processor
 	case "$TEST_EXEC_CAT" in
 		
@@ -60,32 +57,24 @@ test_exec() {
 					
 					"ping")
 					
-						# Run based on the number of threads
-						TEST_EXEC_THREAD_COUNT="0"
-						while [ "$TEST_EXEC_THREAD_LIMIT" -gt "$TEST_EXEC_THREAD_COUNT" ]
-						do
-							let TEST_EXEC_THREAD_COUNT++
-							
-							# Define the thread script
-							TEST_EXEC_NET_PING_SCRIPT="/tmp/$TEST_EXEC_ID.$TEST_EXEC_CAT.test-$TEST_EXEC_NET_TEST_ID.thread-$TEST_EXEC_THREAD_COUNT.sh"
-							
-							# Create the thread script
-							cat ~/lib/platform/tests/$TEST_EXEC_CAT/$TEST_EXEC_NET_TYPE.sh > $TEST_EXEC_NET_PING_SCRIPT; chmod +x $TEST_EXEC_NET_PING_SCRIPT
-							
-							# Get the ping count
-							TEST_EXEC_NET_PING_COUNT="$(xml "parse" "${TEST_EXEC_ARGS[0]}" "params/test[@id='$TEST_EXEC_WEB_TEST_ID']/count/text()")"
-							
-							# Update the arguments in the script
-							sed -i "s/{TEST_PLAN_ID}/$TEST_EXEC_ID/g" $TEST_EXEC_NET_PING_SCRIPT
-							sed -i "s/{TEST_DEF_ID}/$TEST_EXEC_WEB_TEST_ID/g" $TEST_EXEC_NET_PING_SCRIPT
-							sed -i "s/{TEST_CAT}/$TEST_EXEC_CAT/g" $TEST_EXEC_NET_PING_SCRIPT
-							sed -i "s/{TEST_THREAD_NUM}/$TEST_EXEC_THREAD_COUNT/g" $TEST_EXEC_NET_PING_SCRIPT
-							sed -i "s/{TEST_PING_COUNT}//g" $TEST_EXEC_NET_PING_SCRIPT
-							sed -i "s/{TEST_CAT_TYPE}/$TEST_EXEC_WEB_TYPE/g" $TEST_EXEC_NET_PING_SCRIPT
-							
-							# Launch the thread
-							nohup sh $TEST_EXEC_NET_PING_SCRIPT >/dev/null 2>&1 &
-						done
+						# Define the thread script
+						TEST_EXEC_NET_PING_SCRIPT="/tmp/$TEST_EXEC_ID.$TEST_EXEC_CAT.test-$TEST_EXEC_NET_TEST_ID.sh"
+						
+						# Create the thread script
+						cat ~/lib/platform/tests/$TEST_EXEC_CAT/$TEST_EXEC_NET_TYPE.sh > $TEST_EXEC_NET_PING_SCRIPT; chmod +x $TEST_EXEC_NET_PING_SCRIPT
+						
+						# Get the ping count
+						TEST_EXEC_NET_PING_COUNT="$(xml "parse" "${TEST_EXEC_ARGS[0]}" "params/test[@id='$TEST_EXEC_WEB_TEST_ID']/count/text()")"
+						
+						# Update the arguments in the script
+						sed -i "s/{TEST_PLAN_ID}/$TEST_EXEC_ID/g" $TEST_EXEC_NET_PING_SCRIPT
+						sed -i "s/{TEST_DEF_ID}/$TEST_EXEC_WEB_TEST_ID/g" $TEST_EXEC_NET_PING_SCRIPT
+						sed -i "s/{TEST_CAT}/$TEST_EXEC_CAT/g" $TEST_EXEC_NET_PING_SCRIPT
+						sed -i "s/{TEST_PING_COUNT}//g" $TEST_EXEC_NET_PING_SCRIPT
+						sed -i "s/{TEST_CAT_TYPE}/$TEST_EXEC_WEB_TYPE/g" $TEST_EXEC_NET_PING_SCRIPT
+						
+						# Launch the thread
+						nohup sh $TEST_EXEC_NET_PING_SCRIPT >/dev/null 2>&1 &
 						;;
 						
 					"traceroute")
@@ -124,6 +113,9 @@ test_exec() {
 			# Get the web test protocol and host
 			TEST_EXEC_WEB_PROTO="$(xml "parse" "${TEST_EXEC_ARGS[0]}" "params/proto/text()")"
 			TEST_EXEC_WEB_HOST="$(xml "parse" "${TEST_EXEC_ARGS[0]}" "params/host/text()")"
+			
+			# Set the number of test threads
+			TEST_EXEC_THREAD_LIMIT="$(xml "parse" "${TEST_EXEC_ARGS[0]}" "params/threads/text()")"
 			
 			# Get each test definition by ID number
 			TEST_EXEC_WEB_TESTS=( `echo "cat //plan/params/test/@id" | xmllint --shell "${TEST_EXEC_ARGS[0]}" | grep "id" | sed "s/id=\"\([0-9]*\)\"/\1/g"` )

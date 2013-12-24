@@ -53,58 +53,45 @@ do
 			
 			# Get the ping count
 			TEST_PING_COUNT="$(xml "parse" "$NM_SOURCE_PLAN" "params/test[@id='$TEST_RESULT_ID']/count/text()""
-			
-			# Process the thread directories
-			for TEST_PING_THREAD in $(find ~/output/$NM_TARGET_ID/local/$TEST_RESULT_DIR/thread-* -mindepth 1 -maxdepth 1 -type d)
+				
+			# Read the output logs for each ping
+			for TEST_PING_LOG in $(find ~/output/$NM_TARGET_ID/local/$TEST_RESULT_DIR/tmp -type f)
 			do
 				
-				# Get the thread tag and ID
-				THREAD_PING_TAG="$(echo $TEST_PING_THREAD | sed "s/^.*\/\(thread-[0-9]*\)\/.*$/\1/g")"
-				THREAD_PING_ID="$(echo $THREAD_PING_TAG | sed "s/^thread-\([0-9]*$\)/\1/g")"
+				# First get the exit code to see if the ping was successful
+				TEST_PING_EXIT_CODE="$(cat $TEST_PING_LOG | grep "EXIT" | sed "s/^EXIT:'\([0-9]*\)'/\1/g")"
 				
-				# Open the thread XML block
-				TEST_SUMMARY_BLOCK+="\t\t<thread-$THREAD_PING_ID>\n"
+				# Get the target host and IP address
+				TEST_PING_HOST="$(echo $TEST_PING_LOG | sed "s/^.*\/\([^\.]*\)\.log$/\1/g")"
+				TEST_PING_IP_ADDR="$(sqlite3 ~/db/cluster.db "SELECT IPAddr FROM M7_Nodes WHERE Name='$THREAD_PING_HOST';")"
 				
-				# Read the output logs for each ping
-				for THREAD_PING_LOG in $(find ~/output/$NM_TARGET_ID/local/$THREAD_RESULT_DIR/$THREAD_PING_TAG/tmp -type f)
-				do
+				# If the ping has any exit code besides '0'
+				if [ "$TEST_PING_EXIT_CODE" != "0" ]; then
 					
-					# First get the exit code to see if the ping was successful
-					THREAD_PING_EXIT_CODE="$(cat $THREAD_PING_LOG | grep "EXIT" | sed "s/^EXIT:'\([0-9]*\)'/\1/g")"
+					# Generate the host ping block
+					TEST_SUMMARY_BLOCK+="\t\t<host name='$TEST_PING_HOST'>\n"
+					TEST_SUMMARY_BLOCK+="\t\t\t<ip>$TEST_PING_IP_ADDR</ip>\n"
+					TEST_SUMMARY_BLOCK+="\t\t\t<exit>$TEST_PING_EXIT_CODE</exit>\n"
+					TEST_SUMMARY_BLOCK+="\t\t</host>\n"
+				else
 					
-					# Get the target host and IP address
-					THREAD_PING_HOST="$(echo $THREAD_PING_LONG | sed "s/^.*\/\([^\.]*\)\.log$/\1/g")"
-					THREAD_PING_IP_ADDR="$(sqlite3 ~/db/cluster.db "SELECT IPAddr FROM M7_Nodes WHERE Name='$THREAD_PING_HOST';")"
+					# Get the ping statistics
+					TEST_PING_PKT_LOSS="$(cat $TEST_PING_LOG | grep "packet" | sed "s/^.*[ ]\([0-9]*%\)[ ].*$/\1/g")"
+					TEST_PING_MIN_TIME="$(cat $TEST_PING_LOG | grep rtt | sed "s/^.*=[ ]\([0-9\.]*\)\/.*$/\1/g")"
+					TEST_PING_AVG_TIME="$(cat $TEST_PING_LOG | grep rtt | sed "s/^.*=[ ][0-9\.]*\/\([0-9\.]*\)\/.*$/\1/g")"
+					TEST_PING_MAX_TIME="$(cat $TEST_PING_LOG | grep rtt | sed "s/^.*=[ ][0-9\.]*\/[0-9\.]*\/\([0-9\.]*\)\/.*$/\1/g")"
+					TEST_PING_AVG_DEV="$(cat $TEST_PING_LOG | grep rtt | sed "s/^.*=[ ][0-9\.]*\/[0-9\.]*\/[0-9\.]*\/\([0-9\.]*\)[ ].*$/\1/g")"
 					
-					# If the ping has any exit code besides '0'
-					if [ "$THREAD_PING_EXIT_CODE" != "0" ]; then
-						
-						# Generate the host ping block
-						TEST_SUMMARY_BLOCK+="\t\t\t<host name='$THREAD_PING_HOST'>\n"
-						TEST_SUMMARY_BLOCK+="\t\t\t\t<ip>$THREAD_PING_IP_ADDR</ip>\n"
-						TEST_SUMMARY_BLOCK+="\t\t\t\t<exit>$THREAD_PING_EXIT_CODE</exit>\n"
-						TEST_SUMMARY_BLOCK+="\t\t\t</host>\n"
-					else
-						
-						# Get the ping statistics
-						THREAD_PING_PKT_LOSS="$(cat $THREAD_PING_LOG | grep "packet" | sed "s/^.*[ ]\([0-9]*%\)[ ].*$/\1/g")"
-						THREAD_PING_MIN_TIME="$(cat $THREAD_PING_LOG | grep rtt | sed "s/^.*=[ ]\([0-9\.]*\)\/.*$/\1/g")"
-						THREAD_PING_AVG_TIME="$(cat $THREAD_PING_LOG | grep rtt | sed "s/^.*=[ ][0-9\.]*\/\([0-9\.]*\)\/.*$/\1/g")"
-						THREAD_PING_MAX_TIME="$(cat $THREAD_PING_LOG | grep rtt | sed "s/^.*=[ ][0-9\.]*\/[0-9\.]*\/\([0-9\.]*\)\/.*$/\1/g")"
-						THREAD_PING_AVG_DEV="$(cat $THREAD_PING_LOG | grep rtt | sed "s/^.*=[ ][0-9\.]*\/[0-9\.]*\/[0-9\.]*\/\([0-9\.]*\)[ ].*$/\1/g")"
-						
-						# Generate the host ping block
-						TEST_SUMMARY_BLOCK+="\t\t\t<host name='$THREAD_PING_HOST'>\n"
-						TEST_SUMMARY_BLOCK+="\t\t\t\t<ip>$THREAD_PING_IP_ADDR</ip>\n"
-						TEST_SUMMARY_BLOCK+="\t\t\t\t<packetLoss unit='%'>$THREAD_PING_PKT_LOST</packetLoss>\n"
-						TEST_SUMMARY_BLOCK+="\t\t\t\t<minTime unit='ms'>$THREAD_PING_MIN_TIME</minTime>\n"
-						TEST_SUMMARY_BLOCK+="\t\t\t\t<avgTime unit='ms'>$THREAD_PING_AVG_TIME</avgTime>\n"
-						TEST_SUMMARY_BLOCK+="\t\t\t\t<maxTime unit='ms'>$THREAD_PING_MAX_TIME</maxTime>\n"
-						TEST_SUMMARY_BLOCK+="\t\t\t\t<avgDev unit='ms'>$THREAD_PING_AVG_DEV</avgDev>\n"
-						TEST_SUMMARY_BLOCK+="\t\t\t</host>\n"
-					fi
-				done
-				TEST_SUMMARY_BLOCK+="\t\t</thread-$THREAD_PING_ID>\n"
+					# Generate the host ping block
+					TEST_SUMMARY_BLOCK+="\t\t<host name='$TEST_PING_HOST'>\n"
+					TEST_SUMMARY_BLOCK+="\t\t\t<ip>$TEST_PING_IP_ADDR</ip>\n"
+					TEST_SUMMARY_BLOCK+="\t\t\t<packetLoss unit='%'>$TEST_PING_PKT_LOST</packetLoss>\n"
+					TEST_SUMMARY_BLOCK+="\t\t\t<minTime unit='ms'>$TEST_PING_MIN_TIME</minTime>\n"
+					TEST_SUMMARY_BLOCK+="\t\t\t<avgTime unit='ms'>$TEST_PING_AVG_TIME</avgTime>\n"
+					TEST_SUMMARY_BLOCK+="\t\t\t<maxTime unit='ms'>$TEST_PING_MAX_TIME</maxTime>\n"
+					TEST_SUMMARY_BLOCK+="\t\t\t<avgDev unit='ms'>$TEST_PING_AVG_DEV</avgDev>\n"
+					TEST_SUMMARY_BLOCK+="\t\t</host>\n"
+				fi
 			done
 			;;
 			
