@@ -183,7 +183,7 @@ test_exec() {
 			if [ ! -z "$(sqlite3 ~/db/cluster.db "SELECT * FROM M7_Nodes WHERE Type='director' AND Name='$(hostname -s)';")" ]; then
 				
 				# Create and launch the cluster monitor script
-				TEXT_EXEC_CLUSTER_MON="/tmp/$TEST_EXEC_ID.cluster.monitor.sh"
+				TEST_EXEC_CLUSTER_MON="/tmp/$TEST_EXEC_ID.cluster.monitor.sh"
 				cat ~/lib/platform/monitor/cluster.sh > $TEST_EXEC_CLUSTER_MON && chmod +x $TEST_EXEC_CLUSTER_MON
 				nohup sh $TEST_EXEC_CLUSTER_MON "$TEST_EXEC_ID" "${TEST_EXEC_ARGS[0]}" >/dev/null 2>&1 &
 			fi

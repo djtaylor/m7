@@ -231,7 +231,7 @@ if [ ! -z "$(sqlite3 ~/db/cluster.db "SELECT * FROM M7_Nodes WHERE Type='worker'
 		log "info" "$FAILED"
 		log "error" "Failed to copy worker test results to director node:['$TEST_DIRECTOR_USER@$TEST_DIRECTOR_IP_ADDR:$TEST_DIRECTOR_SSH_PORT']..."
 	else
-		log "info" "$SUCCESS""
+		log "info" "$SUCCESS"
 		
 		# Remove the lock file on the director node
 		log "info-proc" "Removing lock file for worker node on director node..."
