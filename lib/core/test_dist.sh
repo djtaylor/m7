@@ -61,6 +61,7 @@ test_dist() {
 							log "info" "$FAILED"
 							log "error" "Failed to copy test plan to worker node:['$TEST_DIST_WORKER_ID']..."	
 						else
+							log "info" "$SUCCESS"
 						
 							# Execute the test plan on the worker node
 							log "info-proc" "Executing test plan on worker node['$TEST_DIST_WORKER_ID']..."
@@ -72,6 +73,7 @@ test_dist() {
 								log "info" "$FAILED"
 								log "error" "Failed to launch test process on worker node:['$TEST_WORKER_ID']..."
 							else
+								log "info" "$SUCCESS""
 								
 								# Create the worker lock file
 								touch ~/lock/$TEST_DIST_ID/worker/$TEST_DIST_WORKER_ID && echo "$(date +"%H:%M:%S")" > ~/lock/$TEST_DIST_ID/worker/$TEST_DIST_WORKER_ID
