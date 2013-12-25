@@ -91,7 +91,7 @@ test_exec() {
 						sed -i "s/{TEST_DEF_ID}/$TEST_EXEC_NET_TEST_ID/g" $TEST_EXEC_NET_TROUTE_SCRIPT
 						sed -i "s/{TEST_CAT}/$TEST_EXEC_CAT/g" $TEST_EXEC_NET_TROUTE_SCRIPT
 						sed -i "s/{TEST_CAT_TYPE}/$TEST_EXEC_NET_TYPE/g" $TEST_EXEC_NET_TROUTE_SCRIPT
-						sed -i "s/{TEST_PLAN}/$(regex_str "${TEST_EXEC_ARGS[0]}")/g" $TEST_EXEC_TROUTE_PING_SCRIPT
+						sed -i "s/{TEST_PLAN}/$(regex_str "${TEST_EXEC_ARGS[0]}")/g" $TEST_EXEC_NET_TROUTE_SCRIPT
 						
 						# Launch the test
 						nohup sh $TEST_EXEC_NET_TROUTE_SCRIPT >/dev/null 2>&1 &
