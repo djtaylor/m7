@@ -47,4 +47,4 @@ foreach my $hop (@traceroute){
         print "\t\t\t\t\t<avgDev unit=\"ms\">$hop->{stdev}</avgDev>\n";
         print "\t\t\t\t</hop>\n";
 }
-print "\t\t\t<\hops>\n";
+print "\t\t\t</hops>\n";
