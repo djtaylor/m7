@@ -32,7 +32,7 @@ TROUTE_TEST_LOG="$TROUTE_TEST_BASE/output.log"
 # Start the test loop
 echo "######################################################################" | tee $TROUTE_TEST_LOG
 echo "INITIALIZING TEST: '${TROUTE_TEST_ARGS[2]}':'${TROUTE_TEST_ARGS[3]}'" | tee -a $TROUTE_TEST_LOG
-echo "> Test Log File:    '$TROUTE_TEST_LOG'" | tee -a $TROUTE_TEST_LOG
+echo "> Test Log File:   '$TROUTE_TEST_LOG'" | tee -a $TROUTE_TEST_LOG
 echo "######################################################################" | tee -a $TROUTE_TEST_LOG
 
 # Build an array of all cluster nodes except the localhost

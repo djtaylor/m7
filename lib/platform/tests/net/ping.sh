@@ -35,7 +35,7 @@ PING_TEST_LOG="$PING_TEST_BASE/output.log"
 echo "######################################################################" | tee $PING_TEST_LOG
 echo "INITIALIZING TEST: '${PING_TEST_ARGS[2]}':'${PING_TEST_ARGS[4]}'" | tee -a $PING_TEST_LOG
 echo "> Test Ping Count: '${PING_TEST_ARGS[3]}'" | tee -a $PING_TEST_LOG
-echo "> Test Log File:    '$PING_TEST_LOG'" | tee -a $PING_TEST_LOG
+echo "> Test Log File:   '$PING_TEST_LOG'" | tee -a $PING_TEST_LOG
 echo "######################################################################" | tee -a $PING_TEST_LOG
 
 # Build an array of all cluster nodes except the localhost

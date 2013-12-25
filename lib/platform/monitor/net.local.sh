@@ -95,7 +95,7 @@ do
 					TEST_SUMMARY_BLOCK+="\t\t<host name='$TEST_PING_HOST'>\n"
 					TEST_SUMMARY_BLOCK+="\t\t\t<type>$TEST_PING_HOST_TYPE</type>\n"
 					TEST_SUMMARY_BLOCK+="\t\t\t<ip>$TEST_PING_IP_ADDR</ip>\n"
-					TEST_SUMMARY_BLOCK+="\t\t\t<packetLoss unit='%'>$TEST_PING_PKT_LOSS</packetLoss>\n"
+					TEST_SUMMARY_BLOCK+="\t\t\t<pktLoss unit='%'>$TEST_PING_PKT_LOSS</pktLoss>\n"
 					TEST_SUMMARY_BLOCK+="\t\t\t<minTime unit='ms'>$TEST_PING_MIN_TIME</minTime>\n"
 					TEST_SUMMARY_BLOCK+="\t\t\t<avgTime unit='ms'>$TEST_PING_AVG_TIME</avgTime>\n"
 					TEST_SUMMARY_BLOCK+="\t\t\t<maxTime unit='ms'>$TEST_PING_MAX_TIME</maxTime>\n"
@@ -198,7 +198,76 @@ do
 			;;
 			
 		"mtr")
-			:
+			
+			# Get the packet count
+			TEST_MTR_COUNT="$(xml "parse" "$NM_SOURCE_PLAN" "params/test[@id='$TEST_RESULT_ID']/count/text()")"
+				
+			# Read the output logs for each MTR
+			for TEST_MTR_LOG in $(find ~/output/$NM_TARGET_ID/local/$TEST_RESULT_DIR/tmp -type f)
+			do
+				
+				# First get the exit code to see if the MTR was successful
+				TEST_MTR_EXIT_CODE="$(cat $TEST_MTR_LOG | grep "EXIT" | sed "s/^EXIT:'\([0-9]*\)'/\1/g")"
+				
+				# Get the target host and IP address
+				TEST_MTR_HOST="$(echo $TEST_MTR_LOG | sed "s/^.*\/\([^\.]*\)\.log$/\1/g")"
+				
+				# If processing a supplementary host
+				if [ -z  "$(sqlite3 ~/db/cluster.db "SELECT * FROM M7_Nodes WHERE Name='$TEST_MTR_HOST';")" ]; then
+					TEST_MTR_HOST_TYPE="supplementary"
+					TEST_MTR_IP_ADDR="$(xml "parse" "$NM_SOURCE_PLAN" "params/hosts/host[@name='$TEST_MTR_HOST']/text()")"
+				else
+					TEST_MTR_HOST_TYPE="cluster"
+					TEST_MTR_IP_ADDR="$(sqlite3 ~/db/cluster.db "SELECT IPAddr FROM M7_Nodes WHERE Name='$TEST_MTR_HOST';")"
+				fi
+				
+				# If the ping has any exit code besides '0'
+				if [ "$TEST_PING_EXIT_CODE" != "0" ]; then
+					
+					# Generate the host MTR block
+					TEST_SUMMARY_BLOCK+="\t\t<host name='$TEST_MTR_HOST'>\n"
+					TEST_SUMMARY_BLOCK+="\t\t\t<type>$TEST_MTR_HOST_TYPE</type>\n"
+					TEST_SUMMARY_BLOCK+="\t\t\t<ip>$TEST_MTR_IP_ADDR</ip>\n"
+					TEST_SUMMARY_BLOCK+="\t\t\t<exit>$TEST_MTR_EXIT_CODE</exit>\n"
+					TEST_SUMMARY_BLOCK+="\t\t</host>\n"
+				else
+					
+					# Open the host MTR block
+					TEST_SUMMARY_BLOCK+="\t\t<host name='$TEST_MTR_HOST'>\n"
+					TEST_SUMMARY_BLOCK+="\t\t\t<type>$TEST_MTR_HOST_TYPE</type>\n"
+					TEST_SUMMARY_BLOCK+="\t\t\t<ip>$TEST_MTR_IP_ADDR</ip>\n"
+					TEST_SUMMARY_BLOCK+="\t\t\t<hops>\n"
+					
+					# Get the MTR statistics
+					while read TEST_MTR_LOG_LINE
+					do
+						if [ ! -z "$(echo "$TEST_MTR_LOG_LINE" | grep -e "^[0-9\. ]*[ ].*$")" ]; then
+							
+							# Get the hop statistics
+							TEST_MTR_HOP_COUNT="$(echo "$TEST_MTR_LOG_LINE" | sed "s/^[ ]*\([0-9]*\)\..*$/\1/g")"
+							TEST_MTR_HOP_IP_ADDR="$(echo "$TEST_MTR_LOG_LINE" | sed "s/^[ ]*[0-9\.]*[ ]*\([0-9\.]*\)[ ]*.*$/\1/g")"
+							TEST_MTR_PKT_LOSS="$(echo "$TEST_MTR_LOG_LINE" | sed "s/^[ ]*[0-9\.]*[ ]*[0-9\.]*[ ]*\([0-9\.]*\)%.*$/\1/g")"
+							TEST_MTR_MIN_TIME="$(echo "$TEST_MTR_LOG_LINE" | sed "s/^[ ]*[0-9\.]*[ ]*[0-9\.]*[ ]*[0-9\.]*%[ ]*[0-9]*[ ]*[0-9\.]*[ ]*[0-9\.]*[ ]*\([0-9\.]*\)[ ]*.*$/\1/g")"
+							TEST_MTR_AVG_TIME="$(echo "$TEST_MTR_LOG_LINE" | sed "s/^[ ]*[0-9\.]*[ ]*[0-9\.]*[ ]*[0-9\.]*%[ ]*[0-9]*[ ]*[0-9\.]*[ ]*\([0-9\.]*\)[ ]*.*$/\1/g")"
+							TEST_MTR_MAX_TIME="$(echo "$TEST_MTR_LOG_LINE" | sed "s/^[ ]*[0-9\.]*[ ]*[0-9\.]*[ ]*[0-9\.]*%[ ]*[0-9]*[ ]*[0-9\.]*[ ]*[0-9\.]*[ ]*[0-9\.]*[ ]*\([0-9\.]*\)[ ]*.*$/\1/g")"
+							TEST_MTR_AVG_DEV="$(echo "$TEST_MTR_LOG_LINE" | sed "s/^[ ]*[0-9\.]*[ ]*[0-9\.]*[ ]*[0-9\.]*%[ ]*[0-9]*[ ]*[0-9\.]*[ ]*[0-9\.]*[ ]*[0-9\.]*[ ]*[0-9\.]*[ ]*\([0-9\.]*$\)/\1/g")"
+							
+							# Generate the MTR hop entry
+							TEST_SUMMARY_LINE+="\t\t\t\t<hop-$TEST_MTR_HOP_COUNT>\n"
+							TEST_SUMMARY_LINE+="\t\t\t\t\t<ip>$TEST_MTR_HOP_IP_ADDR</ip>\n"
+							TEST_SUMMARY_LINE+="\t\t\t\t\t<pktLoss unit='%'>$TEST_MTR_PKT_LOSS</pktLoss>\n"
+							TEST_SUMMARY_LINE+="\t\t\t\t\t<minTime unit='ms'>$TEST_MTR_MIN_TIME</minTime>\n"
+							TEST_SUMMARY_LINE+="\t\t\t\t\t<avgTime unit='ms'>$TEST_MTR_AVG_TIME</avgTime>\n"
+							TEST_SUMMARY_LINE+="\t\t\t\t\t<maxTime unit='ms'>$TEST_MTR_MAX_TIME</maxTime>\n"
+							TEST_SUMMARY_LINE+="\t\t\t\t\t<avgDev unit='ms'>$TEST_MTR_AVG_DEV</avgDev>\n"
+							TEST_SUMMARY_LINE+="\t\t\t\t</hop-$TEST_MTR_HOP_COUNT>\n"
+						fi
+					done < $TEST_MTR_LOG
+					TEST_SUMMARY_BLOCK+="\t\t\t</hops>"
+					TEST_SUMMARY_BLOCK+="\t\t</host>\n"
+				fi
+			done
+			
 	esac
 	TEST_SUMMARY_BLOCK+="\t</test>\n"
 done

@@ -98,7 +98,26 @@ test_exec() {
 						;;
 					
 					"mtr")
-						:
+						
+						# Define the test script
+						TEST_EXEC_NET_MTR_SCRIPT="/tmp/$TEST_EXEC_ID.$TEST_EXEC_CAT.test-$TEST_EXEC_NET_TEST_ID.sh"
+						
+						# Create the test script
+						cat ~/lib/platform/tests/$TEST_EXEC_CAT/$TEST_EXEC_NET_TYPE.sh > $TEST_EXEC_NET_MTR_SCRIPT; chmod +x $TEST_EXEC_NET_MTR_SCRIPT
+						
+						# Get the MTR packet count
+						TEST_EXEC_NET_MTR_COUNT="$(xml "parse" "${TEST_EXEC_ARGS[0]}" "params/test[@id='$TEST_EXEC_NET_TEST_ID']/count/text()")"
+						
+						# Update the arguments in the script
+						sed -i "s/{TEST_PLAN_ID}/$TEST_EXEC_ID/g" $TEST_EXEC_NET_MTR_SCRIPT
+						sed -i "s/{TEST_DEF_ID}/$TEST_EXEC_NET_TEST_ID/g" $TEST_EXEC_NET_MTR_SCRIPT
+						sed -i "s/{TEST_CAT}/$TEST_EXEC_CAT/g" $TEST_EXEC_NET_MTR_SCRIPT
+						sed -i "s/{TEST_MTR_COUNT}/$TEST_EXEC_NET_MTR_COUNT/g" $TEST_EXEC_NET_MTR_SCRIPT
+						sed -i "s/{TEST_CAT_TYPE}/$TEST_EXEC_NET_TYPE/g" $TEST_EXEC_NET_MTR_SCRIPT
+						sed -i "s/{TEST_PLAN}/$(regex_str "${TEST_EXEC_ARGS[0]}")/g" $TEST_EXEC_NET_MTR_SCRIPT
+						
+						# Launch the test
+						nohup sh $TEST_EXEC_NET_MTR_SCRIPT >/dev/null 2>&1 &
 						;;
 						
 					*)
