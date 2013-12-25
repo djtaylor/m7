@@ -198,9 +198,6 @@ do
 			;;
 			
 		"mtr")
-			
-			# Get the packet count
-			TEST_MTR_COUNT="$(xml "parse" "$NM_SOURCE_PLAN" "params/test[@id='$TEST_RESULT_ID']/count/text()")"
 				
 			# Read the output logs for each MTR
 			for TEST_MTR_LOG in $(find ~/output/$NM_TARGET_ID/local/$TEST_RESULT_DIR/tmp -type f)
@@ -236,44 +233,9 @@ do
 					TEST_SUMMARY_BLOCK+="\t\t<host name='$TEST_MTR_HOST'>\n"
 					TEST_SUMMARY_BLOCK+="\t\t\t<type>$TEST_MTR_HOST_TYPE</type>\n"
 					TEST_SUMMARY_BLOCK+="\t\t\t<ip>$TEST_MTR_IP_ADDR</ip>\n"
-					TEST_SUMMARY_BLOCK+="\t\t\t<hops>\n"
 					
-					# Get the MTR statistics
-					while read TEST_MTR_LOG_LINE
-					do
-						if [ ! -z "$(echo "$TEST_MTR_LOG_LINE" | grep -e "^[0-9\. ]*[ ].*$")" ]; then
-							
-							# Get the hop statistics
-							TEST_MTR_HOP_COUNT="$(echo "$TEST_MTR_LOG_LINE" | sed "s/^[ ]*\([0-9]*\)\..*$/\1/g")"
-							TEST_MTR_HOP_IP_ADDR="$(echo "$TEST_MTR_LOG_LINE" | sed "s/^[ ]*[0-9\.]*[ ]*\([0-9?\.]*\)[ ]*.*$/\1/g")"
-							
-							# If the hop isn't responding
-							if [ "$TEST_MTR_HOP_IP_ADDR" = "???" ]; then
-								TEST_MTR_PKT_LOSS="100.0"
-								TEST_MTR_MIN_TIME="0.0"
-								TEST_MTR_AVG_TIME="0.0"
-								TEST_MTR_MAX_TIME="0.0"
-								TEST_MTR_AVG_DEV="0.0"
-							else
-								TEST_MTR_PKT_LOSS="$(echo "$TEST_MTR_LOG_LINE" | sed "s/^[ ]*[0-9\.]*[ ]*[0-9\.]*[ ]*\([0-9\.]*\)%.*$/\1/g")"
-								TEST_MTR_MIN_TIME="$(echo "$TEST_MTR_LOG_LINE" | sed "s/^[ ]*[0-9\.]*[ ]*[0-9\.]*[ ]*[0-9\.]*%[ ]*[0-9]*[ ]*[0-9\.]*[ ]*[0-9\.]*[ ]*\([0-9\.]*\)[ ]*.*$/\1/g")"
-								TEST_MTR_AVG_TIME="$(echo "$TEST_MTR_LOG_LINE" | sed "s/^[ ]*[0-9\.]*[ ]*[0-9\.]*[ ]*[0-9\.]*%[ ]*[0-9]*[ ]*[0-9\.]*[ ]*\([0-9\.]*\)[ ]*.*$/\1/g")"
-								TEST_MTR_MAX_TIME="$(echo "$TEST_MTR_LOG_LINE" | sed "s/^[ ]*[0-9\.]*[ ]*[0-9\.]*[ ]*[0-9\.]*%[ ]*[0-9]*[ ]*[0-9\.]*[ ]*[0-9\.]*[ ]*[0-9\.]*[ ]*\([0-9\.]*\)[ ]*.*$/\1/g")"
-								TEST_MTR_AVG_DEV="$(echo "$TEST_MTR_LOG_LINE" | sed "s/^[ ]*[0-9\.]*[ ]*[0-9\.]*[ ]*[0-9\.]*%[ ]*[0-9]*[ ]*[0-9\.]*[ ]*[0-9\.]*[ ]*[0-9\.]*[ ]*[0-9\.]*[ ]*\([0-9\.]*$\)/\1/g")"
-							fi
-							
-							# Generate the MTR hop entry
-							TEST_SUMMARY_BLOCK+="\t\t\t\t<hop number='$TEST_MTR_HOP_COUNT'>\n"
-							TEST_SUMMARY_BLOCK+="\t\t\t\t\t<ip>$TEST_MTR_HOP_IP_ADDR</ip>\n"
-							TEST_SUMMARY_BLOCK+="\t\t\t\t\t<pktLoss unit='%'>$TEST_MTR_PKT_LOSS</pktLoss>\n"
-							TEST_SUMMARY_BLOCK+="\t\t\t\t\t<minTime unit='ms'>$TEST_MTR_MIN_TIME</minTime>\n"
-							TEST_SUMMARY_BLOCK+="\t\t\t\t\t<avgTime unit='ms'>$TEST_MTR_AVG_TIME</avgTime>\n"
-							TEST_SUMMARY_BLOCK+="\t\t\t\t\t<maxTime unit='ms'>$TEST_MTR_MAX_TIME</maxTime>\n"
-							TEST_SUMMARY_BLOCK+="\t\t\t\t\t<avgDev unit='ms'>$TEST_MTR_AVG_DEV</avgDev>\n"
-							TEST_SUMMARY_BLOCK+="\t\t\t\t</hop>\n"
-						fi
-					done < $TEST_MTR_LOG
-					TEST_SUMMARY_BLOCK+="\t\t\t</hops>\n"
+					# Parse the MTR log and convert it to XML
+					TEST_SUMMARY_BLOCK+="$(/usr/bin/perl ~/lib/perl/mtr_parse.pl $TEST_MTR_LOG)"
 					TEST_SUMMARY_BLOCK+="\t\t</host>\n"
 				fi
 			done
