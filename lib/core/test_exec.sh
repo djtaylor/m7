@@ -39,6 +39,11 @@ test_exec() {
 	TEST_EXEC_ID="$(xml "parse" "${TEST_EXEC_ARGS[0]}" "id/text()")"
 	TEST_EXEC_CAT="$(xml "parse" "${TEST_EXEC_ARGS[0]}" "params/category/text()")"
 	
+	# Make sure the results directory exists if running from the director node
+	if [ ! -z "$(sqlite3 ~/db/cluster.db "SELECT * FROM M7_Nodes WHERE Type='director' AND Name='$(hostname -s)';")" ]; then
+		mkdir -p ~/results/$TEST_EXEC_ID
+	fi
+	
 	# Test category processor
 	case "$TEST_EXEC_CAT" in
 		
