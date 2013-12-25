@@ -11,8 +11,8 @@ while :
 do
 	
 	# If all local and worker local files have been cleared
-	if [ -z "$(ls -A ~/lock/$TM_TARGET_ID/local)" ] \
-	&& [ -z "$(ls -A ~/lock/$TM_TARGET_ID/worker)" ]; then
+	if [ -z "$(ls -A ~/lock/$CM_TARGET_ID/local)" ] \
+	&& [ -z "$(ls -A ~/lock/$CM_TARGET_ID/worker)" ]; then
 		break
 	else
 		sleep 2
