@@ -114,13 +114,20 @@ test_exec() {
 			# Launch the test monitor script
 			nohup sh $TEST_EXEC_MON "$TEST_EXEC_ID" "${TEST_EXEC_ARGS[0]}" >/dev/null 2>&1 &
 			
+			echo "Monitor script launched..." > ~/monitor.debug
+			echo "Director Check: '$(sqlite3 ~/db/cluster.db "SELECT * FROM M7_Nodes WHERE Type='director' AND Name='$(hostname -s)';")'" >> ~/monitor.debug
+			
 			# If running from a director node
 			if [ ! -z "$(sqlite3 ~/db/cluster.db "SELECT * FROM M7_Nodes WHERE Type='director' AND Name='$(hostname -s)';")" ]; then
-				
+			
+				echo "Running from director node..." >> ~/monitor.debug
+						
 				# Create and launch the cluster monitor script
 				TEST_EXEC_CLUSTER_MON="/tmp/$TEST_EXEC_ID.cluster.monitor.sh"
 				cat ~/lib/platform/monitor/cluster.sh > $TEST_EXEC_CLUSTER_MON && chmod +x $TEST_EXEC_CLUSTER_MON
 				nohup sh $TEST_EXEC_CLUSTER_MON "$TEST_EXEC_ID" "${TEST_EXEC_ARGS[0]}" >/dev/null 2>&1 &
+				
+				echo "Monitor script: '$TEST_EXEC_CLUSTER_MON'" >> ~/monitor.debug
 			fi
 			;;
 		
