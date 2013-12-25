@@ -75,7 +75,7 @@ if [ ${#PING_SHOSTS_ARRAY[@]} -gt 0 ]; then
 		# Run the ping command
 		echo "RUNNING PING TEST('$PING_SHOST:$PING_SHOST_IP_ADDR')" | tee -a $PING_TEST_LOG
 		echo "Log: '$PING_SHOST_LOG'" | tee -a $PING_TEST_LOG
-		ping -c ${PING_TEST_ARGS[3]} $PING_SHOST > $PING_SHOST_LOG && PING_SHOST_EXIT_CODE="$(echo $?)"
+ping -c ${PING_TEST_ARGS[3]} $PING_SHOST_IP_ADDR > $PING_SHOST_LOG && PING_SHOST_EXIT_CODE="$(echo $?)"
 		echo "Exit Code: '$PING_SHOST_EXIT_CODE'" | tee -a $PING_TEST_LOG
 		echo "EXIT:'$PING_SHOST_EXIT_CODE'" >> $PING_SHOST_LOG	
 	done
