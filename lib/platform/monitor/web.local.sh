@@ -92,7 +92,7 @@ do
 		THREAD_OUTPUT_ID="$(echo $THREAD_OUTPUT_TAG | sed "s/^thread-\([0-9]*$\)/\1/g")"
 		
 		# Open the thread XML block
-		TEST_SUMMARY_BLOCK+="\t\t\t<thread-$THREAD_OUTPUT_ID>\n"
+		TEST_SUMMARY_BLOCK+="\t\t\t<thread number='$THREAD_OUTPUT_ID'>\n"
 		
 		# Build aworkspace of the summary lines in each output log
 		THREAD_SUMMARY_WS="$M7_TEST_WS/test-$TEST_RESULT_ID.$THREAD_OUTPUT_ID" && touch $THREAD_SUMMARY_WS
@@ -123,10 +123,10 @@ do
 				THREAD_DL_TIME_ARRAY+=("$(calc "dlTime" "$THREAD_DL_TIME")")
 				
 				# Define the sample summary block
-				TEST_SUMMARY_BLOCK+="\t\t\t\t\t<sample-$THREAD_SAMPLE_COUNT>\n"
+				TEST_SUMMARY_BLOCK+="\t\t\t\t\t<sample number='$THREAD_SAMPLE_COUNT'>\n"
 				TEST_SUMMARY_BLOCK+="\t\t\t\t\t\t<speed unit='kbps'>$(calc "xferSpeed" "$THREAD_AVG_SPEED")</avgSpeed>\n"
 				TEST_SUMMARY_BLOCK+="\t\t\t\t\t\t<time unit='seconds'>$(calc "dlTime" "$THREAD_DL_TIME")</dlTime>\n"
-				TEST_SUMMARY_BLOCK+="\t\t\t\t\t</sample-$THREAD_SAMPLE_COUNT>\n"
+				TEST_SUMMARY_BLOCK+="\t\t\t\t\t</sample>\n"
 			done < $THREAD_SUMMARY_WS
 		fi
 		
@@ -157,10 +157,10 @@ do
 					THREAD_DL_TIME_ARRAY+=("$(calc "arrayAvg" "THREAD_SAMPLE_DL_TIME_ARRAY[@]")")
 					
 					# Define the sample summary block
-					TEST_SUMMARY_BLOCK+="\t\t\t\t\t<sample-$THREAD_SAMPLE_COUNT>\n"
+					TEST_SUMMARY_BLOCK+="\t\t\t\t\t<sample number='$THREAD_SAMPLE_COUNT'>\n"
 					TEST_SUMMARY_BLOCK+="\t\t\t\t\t\t<speed unit='kbps'>$(calc "arrayAvg" "THREAD_SAMPLE_AVG_SPEED_ARRAY[@]")</avgSpeed>\n"
 					TEST_SUMMARY_BLOCK+="\t\t\t\t\t\t<time unit='seconds'>$(calc "arrayAvg" "THREAD_SAMPLE_DL_TIME_ARRAY[@]")</dlTime>\n"
-					TEST_SUMMARY_BLOCK+="\t\t\t\t\t</sample-$THREAD_SAMPLE_COUNT>\n"
+					TEST_SUMMARY_BLOCK+="\t\t\t\t\t</sample>\n"
 					
 					# Reset the thread sample arrays
 					unset THREAD_SAMPLE_AVG_SPEED_ARRAY
@@ -194,7 +194,7 @@ do
 		TEST_SUMMARY_BLOCK+="\t\t\t\t</average>\n"
 		
 		# Close the thread block
-		TEST_SUMMARY_BLOCK+="\t\t\t</thread-$THREAD_OUTPUT_ID>\n"
+		TEST_SUMMARY_BLOCK+="\t\t\t</thread>\n"
 		
 		# Initialize the property averages arrays
 		unset THREAD_AVG_SPEED_ARRAY

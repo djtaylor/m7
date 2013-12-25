@@ -182,11 +182,11 @@ do
 							fi
                 			
                 			# Define the hop XML block
-							TEST_SUMMARY_BLOCK+="\t\t\t\t<hop-$TEST_TROUTE_HOP_NUM>\n"
+							TEST_SUMMARY_BLOCK+="\t\t\t\t<hop number='$TEST_TROUTE_HOP_NUM'>\n"
 							TEST_SUMMARY_BLOCK+="\t\t\t\t\t<try>$TEST_TROUTE_HOP_TRY</try>\n"
 							TEST_SUMMARY_BLOCK+="\t\t\t\t\t<ip>$TEST_TROUTE_HOP_IP_ADDR</ip>\n"
 							TEST_SUMMARY_BLOCK+="\t\t\t\t\t<time unit='ms'>$TEST_TROUTE_HOP_TIME</time>\n"
-							TEST_SUMMARY_BLOCK+="\t\t\t\t</hop-$TEST_TROUTE_HOP_NUM>\n"
+							TEST_SUMMARY_BLOCK+="\t\t\t\t</hop>\n"
         				fi
 					done < $TEST_TROUTE_LOG			
 					
@@ -241,7 +241,9 @@ do
 					# Get the MTR statistics
 					while read TEST_MTR_LOG_LINE
 					do
+						echo "TEST_MTR_LOG_LINE: '$TEST_MTR_LOG_LINE'" >> ~/mtr.debug
 						if [ ! -z "$(echo "$TEST_MTR_LOG_LINE" | grep -e "^[0-9\. ]*[ ].*$")" ]; then
+							echo "MTR line found" >> ~/mtr.debug
 							
 							# Get the hop statistics
 							TEST_MTR_HOP_COUNT="$(echo "$TEST_MTR_LOG_LINE" | sed "s/^[ ]*\([0-9]*\)\..*$/\1/g")"
@@ -253,14 +255,14 @@ do
 							TEST_MTR_AVG_DEV="$(echo "$TEST_MTR_LOG_LINE" | sed "s/^[ ]*[0-9\.]*[ ]*[0-9\.]*[ ]*[0-9\.]*%[ ]*[0-9]*[ ]*[0-9\.]*[ ]*[0-9\.]*[ ]*[0-9\.]*[ ]*[0-9\.]*[ ]*\([0-9\.]*$\)/\1/g")"
 							
 							# Generate the MTR hop entry
-							TEST_SUMMARY_LINE+="\t\t\t\t<hop-$TEST_MTR_HOP_COUNT>\n"
+							TEST_SUMMARY_LINE+="\t\t\t\t<hop number='$TEST_MTR_HOP_COUNT'>\n"
 							TEST_SUMMARY_LINE+="\t\t\t\t\t<ip>$TEST_MTR_HOP_IP_ADDR</ip>\n"
 							TEST_SUMMARY_LINE+="\t\t\t\t\t<pktLoss unit='%'>$TEST_MTR_PKT_LOSS</pktLoss>\n"
 							TEST_SUMMARY_LINE+="\t\t\t\t\t<minTime unit='ms'>$TEST_MTR_MIN_TIME</minTime>\n"
 							TEST_SUMMARY_LINE+="\t\t\t\t\t<avgTime unit='ms'>$TEST_MTR_AVG_TIME</avgTime>\n"
 							TEST_SUMMARY_LINE+="\t\t\t\t\t<maxTime unit='ms'>$TEST_MTR_MAX_TIME</maxTime>\n"
 							TEST_SUMMARY_LINE+="\t\t\t\t\t<avgDev unit='ms'>$TEST_MTR_AVG_DEV</avgDev>\n"
-							TEST_SUMMARY_LINE+="\t\t\t\t</hop-$TEST_MTR_HOP_COUNT>\n"
+							TEST_SUMMARY_LINE+="\t\t\t\t</hop>\n"
 						fi
 					done < $TEST_MTR_LOG
 					TEST_SUMMARY_BLOCK+="\t\t\t</hops>\n"
