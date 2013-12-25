@@ -23,5 +23,9 @@ done
 cp -a ~/results/$CM_TARGET_ID ~/html/results/.
 cp $CM_SOURCE_PLAN ~/html/results/$CM_TARGET_ID/plan.xml
 
+# Clean up the output and lock directories
+rm -rf ~/output/$CM_TARGET_ID
+rm -rf ~/lock/$CM_TARGET_ID
+
 # Self destruct the script
 rm -f /tmp/$CM_TARGET_ID.cluster.monitor.sh

@@ -332,9 +332,11 @@ else
 	mv $TEST_RESULT_FILE ~/results/$NM_TARGET_ID/$(hostname -s).xml
 fi
 
-# Clean up the output and lock directories
-rm -rf ~/output/$NM_TARGET_ID
-rm -rf ~/lock/$NM_TARGET_ID
+# Clean up the output and lock directories if on a non-director node
+if [ -z "$(sqlite3 ~/db/cluster.db "SELECT * FROM M7_Nodes WHERE Type='worker' AND Name='$(hostname -s)';")" ]; then
+	rm -rf ~/output/$NM_TARGET_ID
+	rm -rf ~/lock/$NM_TARGET_ID
+fi
 
 # Self destruct the monitor script and destroy the workspace
 rm -rf $M7_TEST_WS
