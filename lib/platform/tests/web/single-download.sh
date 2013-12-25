@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# Load the library index
+source ~/lib/index.sh
+
 # Web Test - Single File Download
 #
 # !arg0		'Test plan ID'
