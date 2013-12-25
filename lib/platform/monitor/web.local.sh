@@ -124,8 +124,8 @@ do
 				
 				# Define the sample summary block
 				TEST_SUMMARY_BLOCK+="\t\t\t\t\t<sample number='$THREAD_SAMPLE_COUNT'>\n"
-				TEST_SUMMARY_BLOCK+="\t\t\t\t\t\t<speed unit='kbps'>$(calc "xferSpeed" "$THREAD_AVG_SPEED")</avgSpeed>\n"
-				TEST_SUMMARY_BLOCK+="\t\t\t\t\t\t<time unit='seconds'>$(calc "dlTime" "$THREAD_DL_TIME")</dlTime>\n"
+				TEST_SUMMARY_BLOCK+="\t\t\t\t\t\t<speed unit='kbps'>$(calc "xferSpeed" "$THREAD_AVG_SPEED")</speed>\n"
+				TEST_SUMMARY_BLOCK+="\t\t\t\t\t\t<time unit='seconds'>$(calc "dlTime" "$THREAD_DL_TIME")</time>\n"
 				TEST_SUMMARY_BLOCK+="\t\t\t\t\t</sample>\n"
 			done < $THREAD_SUMMARY_WS
 		fi
@@ -158,8 +158,8 @@ do
 					
 					# Define the sample summary block
 					TEST_SUMMARY_BLOCK+="\t\t\t\t\t<sample number='$THREAD_SAMPLE_COUNT'>\n"
-					TEST_SUMMARY_BLOCK+="\t\t\t\t\t\t<speed unit='kbps'>$(calc "arrayAvg" "THREAD_SAMPLE_AVG_SPEED_ARRAY[@]")</avgSpeed>\n"
-					TEST_SUMMARY_BLOCK+="\t\t\t\t\t\t<time unit='seconds'>$(calc "arrayAvg" "THREAD_SAMPLE_DL_TIME_ARRAY[@]")</dlTime>\n"
+					TEST_SUMMARY_BLOCK+="\t\t\t\t\t\t<speed unit='kbps'>$(calc "arrayAvg" "THREAD_SAMPLE_AVG_SPEED_ARRAY[@]")</speed>\n"
+					TEST_SUMMARY_BLOCK+="\t\t\t\t\t\t<time unit='seconds'>$(calc "arrayAvg" "THREAD_SAMPLE_DL_TIME_ARRAY[@]")</time>\n"
 					TEST_SUMMARY_BLOCK+="\t\t\t\t\t</sample>\n"
 					
 					# Reset the thread sample arrays
