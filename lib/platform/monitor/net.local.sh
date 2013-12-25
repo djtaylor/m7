@@ -63,7 +63,13 @@ do
 				
 				# Get the target host and IP address
 				TEST_PING_HOST="$(echo $TEST_PING_LOG | sed "s/^.*\/\([^\.]*\)\.log$/\1/g")"
-				TEST_PING_IP_ADDR="$(sqlite3 ~/db/cluster.db "SELECT IPAddr FROM M7_Nodes WHERE Name='$TEST_PING_HOST';")"
+				
+				# If processing a supplementary host
+				if [ ! -z  "$(echo "$TEST_PING_HOST" | grep -e "^[0-9\.]*$")" ]; then
+					TEST_PING_IP_ADDR="$TEST_PING_HOST"
+				else
+					TEST_PING_IP_ADDR="$(sqlite3 ~/db/cluster.db "SELECT IPAddr FROM M7_Nodes WHERE Name='$TEST_PING_HOST';")"
+				fi
 				
 				# If the ping has any exit code besides '0'
 				if [ "$TEST_PING_EXIT_CODE" != "0" ]; then
@@ -106,7 +112,13 @@ do
 				
 				# Get the target host and IP address
 				TEST_TROUTE_HOST="$(echo $TEST_TROUTE_LOG | sed "s/^.*\/\([^\.]*\)\.log$/\1/g")"
-				TEST_TROUTE_IP_ADDR="$(sqlite3 ~/db/cluster.db "SELECT IPAddr FROM M7_Nodes WHERE Name='$TEST_TROUTE_HOST';")"
+				
+				# If processing a supplementary host
+				if [ ! -z  "$(echo "$TEST_TROUTE_HOST" | grep -e "^[0-9\.]*$")" ]; then
+					TEST_TROUTE_IP_ADDR="$TEST_TROUTE_HOST"
+				else
+					TEST_TROUTE_IP_ADDR="$(sqlite3 ~/db/cluster.db "SELECT IPAddr FROM M7_Nodes WHERE Name='$TEST_PING_HOST';")"
+				fi
 				
 				# If the traceroute has any exit code besides '0'
 				if [ "$TEST_TROUTE_EXIT_CODE" != "0" ]; then
