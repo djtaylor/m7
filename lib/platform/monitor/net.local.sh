@@ -241,18 +241,16 @@ do
 					# Get the MTR statistics
 					while read TEST_MTR_LOG_LINE
 					do
-						echo "TEST_MTR_LOG_LINE: '$TEST_MTR_LOG_LINE'" >> ~/mtr.debug
 						if [ ! -z "$(echo "$TEST_MTR_LOG_LINE" | grep -e "^[0-9\. ]*[ ].*$")" ]; then
-							echo "MTR line found" >> ~/mtr.debug
 							
 							# Get the hop statistics
 							TEST_MTR_HOP_COUNT="$(echo "$TEST_MTR_LOG_LINE" | sed "s/^[ ]*\([0-9]*\)\..*$/\1/g")"
-							TEST_MTR_HOP_IP_ADDR="$(echo "$TEST_MTR_LOG_LINE" | sed "s/^[ ]*[0-9\.]*[ ]*\([0-9\.]*\)[ ]*.*$/\1/g")"
-							TEST_MTR_PKT_LOSS="$(echo "$TEST_MTR_LOG_LINE" | sed "s/^[ ]*[0-9\.]*[ ]*[0-9\.]*[ ]*\([0-9\.]*\)%.*$/\1/g")"
-							TEST_MTR_MIN_TIME="$(echo "$TEST_MTR_LOG_LINE" | sed "s/^[ ]*[0-9\.]*[ ]*[0-9\.]*[ ]*[0-9\.]*%[ ]*[0-9]*[ ]*[0-9\.]*[ ]*[0-9\.]*[ ]*\([0-9\.]*\)[ ]*.*$/\1/g")"
-							TEST_MTR_AVG_TIME="$(echo "$TEST_MTR_LOG_LINE" | sed "s/^[ ]*[0-9\.]*[ ]*[0-9\.]*[ ]*[0-9\.]*%[ ]*[0-9]*[ ]*[0-9\.]*[ ]*\([0-9\.]*\)[ ]*.*$/\1/g")"
-							TEST_MTR_MAX_TIME="$(echo "$TEST_MTR_LOG_LINE" | sed "s/^[ ]*[0-9\.]*[ ]*[0-9\.]*[ ]*[0-9\.]*%[ ]*[0-9]*[ ]*[0-9\.]*[ ]*[0-9\.]*[ ]*[0-9\.]*[ ]*\([0-9\.]*\)[ ]*.*$/\1/g")"
-							TEST_MTR_AVG_DEV="$(echo "$TEST_MTR_LOG_LINE" | sed "s/^[ ]*[0-9\.]*[ ]*[0-9\.]*[ ]*[0-9\.]*%[ ]*[0-9]*[ ]*[0-9\.]*[ ]*[0-9\.]*[ ]*[0-9\.]*[ ]*[0-9\.]*[ ]*\([0-9\.]*$\)/\1/g")"
+							TEST_MTR_HOP_IP_ADDR="$(echo "$TEST_MTR_LOG_LINE" | sed "s/^[ ]*[0-9\.]*[ ]*\([0-9?\.]*\)[ ]*.*$/\1/g")"
+							TEST_MTR_PKT_LOSS="$(echo "$TEST_MTR_LOG_LINE" | sed "s/^[ ]*[0-9\.]*[ ]*[0-9?\.]*[ ]*\([0-9\.]*\)%.*$/\1/g")"
+							TEST_MTR_MIN_TIME="$(echo "$TEST_MTR_LOG_LINE" | sed "s/^[ ]*[0-9\.]*[ ]*[0-9?\.]*[ ]*[0-9\.]*%[ ]*[0-9]*[ ]*[0-9\.]*[ ]*[0-9\.]*[ ]*\([0-9\.]*\)[ ]*.*$/\1/g")"
+							TEST_MTR_AVG_TIME="$(echo "$TEST_MTR_LOG_LINE" | sed "s/^[ ]*[0-9\.]*[ ]*[0-9?\.]*[ ]*[0-9\.]*%[ ]*[0-9]*[ ]*[0-9\.]*[ ]*\([0-9\.]*\)[ ]*.*$/\1/g")"
+							TEST_MTR_MAX_TIME="$(echo "$TEST_MTR_LOG_LINE" | sed "s/^[ ]*[0-9\.]*[ ]*[0-9?\.]*[ ]*[0-9\.]*%[ ]*[0-9]*[ ]*[0-9\.]*[ ]*[0-9\.]*[ ]*[0-9\.]*[ ]*\([0-9\.]*\)[ ]*.*$/\1/g")"
+							TEST_MTR_AVG_DEV="$(echo "$TEST_MTR_LOG_LINE" | sed "s/^[ ]*[0-9\.]*[ ]*[0-9?\.]*[ ]*[0-9\.]*%[ ]*[0-9]*[ ]*[0-9\.]*[ ]*[0-9\.]*[ ]*[0-9\.]*[ ]*[0-9\.]*[ ]*\([0-9\.]*$\)/\1/g")"
 							
 							# Generate the MTR hop entry
 							TEST_SUMMARY_BLOCK+="\t\t\t\t<hop number='$TEST_MTR_HOP_COUNT'>\n"
