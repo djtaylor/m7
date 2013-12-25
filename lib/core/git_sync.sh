@@ -31,7 +31,7 @@ git_sync() {
 	rm -f ~/lock/.gitignore
 	
 	# Update folder permissions
-	chmod 700 $HOME
+	chmod 755 $HOME
 	
 }
 

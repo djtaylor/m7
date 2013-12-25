@@ -19,23 +19,9 @@ do
 	fi
 done
 
-# Get the notification email
-CM_EMAIL="$(xml "parse" "$CM_SOURCE_PLAN" "email/text()")"
-
-# 1.) Aggregated test results into a directory
-# 2.) Compress the directory
-# 3.) Generate email body and subject
-# 4.) Send email to notification address
-
-# Compress the results directory
-cd ~/results && tar czf $CM_TARGET_ID-results.tar.gz $CM_TARGET_ID
-
-# Define the email subject and body
-CM_EMAIL_SUBJECT="M7 Test Complete - '$CM_TARGET_ID'"
-CM_EMAIL_BODY="Testing has been completed for M7 test '$CM_TARGET_ID'. See the attached XML file to review the test plan, and the attached archive file to view the results from each M7 node."
-
-# Copy the results into the HTML directory
+# Copy the results and plan into the HTML directory
 cp -a ~/results/$CM_TARGET_ID ~/html/results/.
+cp $CM_SOURCE_PLAN ~/html/results/$CM_TARGET_ID/plan.xml
 
 # Self destruct the script
 rm -f /tmp/$CM_TARGET_ID.cluster.monitor.sh
