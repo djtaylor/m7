@@ -155,7 +155,7 @@ do
 										TEST_TROUTE_HOP_TRY="3"
 										TEST_TROUTE_HOP_TIME="$(echo "$TEST_TROUTE_HOP" | sed "s/^[^ ]*[ ]*[^ ]*[ ]*[^ ]*[ ]*[^ ]*[ ]*\([^ ]*\)[ ].*$/\1/g")"
 									else
-										TEST_TROUTE_HOP_TRY="fail"
+										TEST_TROUTE_HOP_TRY="?"
 										TEST_TROUTE_HOP_TIME="*"
 									fi	
 								fi

@@ -10,7 +10,8 @@ TROUTE_TEST_ARGS=(\
 "{TEST_PLAN_ID}"
 "{TEST_DEF_ID}"
 "{TEST_CAT}"
-"{TEST_CAT_TYPE}")
+"{TEST_CAT_TYPE}"
+"{TEST_NET_SHOSTS}")
 
 # Set the base directory from the plan ID, test ID
 TROUTE_TEST_BASE=~/output/${TROUTE_TEST_ARGS[0]}/local/test-${TROUTE_TEST_ARGS[1]}
@@ -44,13 +45,37 @@ do
 	# Define the node traceroute log file
 	TROUTE_NODE_LOG="$TROUTE_TEST_BASE/tmp/$TROUTE_NODE.log" && touch $TROUTE_NODE_LOG
 	
-	# Run the ping command
+	# Run the traceroute command
 	echo "RUNNING TRACEROUTE TEST('$TROUTE_NODE:$TROUTE_NODE_IP_ADDR')" | tee -a $TROUTE_TEST_LOG
 	echo "Log: '$TROUTE_NODE_LOG'" | tee -a $TROUTE_TEST_LOG
 	traceroute -n $TROUTE_NODE_IP_ADDR > $TROUTE_NODE_LOG && TROUTE_NODE_EXIT_CODE="$(echo $?)"
 	echo "Exit Code: '$TROUTE_NODE_EXIT_CODE'" | tee -a $TROUTE_TEST_LOG
 	echo "EXIT:'$TROUTE_NODE_EXIT_CODE'" >> $TROUTE_NODE_LOG
 done
+
+# If any supplementary hosts are defined
+if [ "${TROUTE_TEST_ARGS[4]}" != "null" ]; then
+	
+	# Convert the hosts string into an array
+	TROUTE_OIFS="$IFS"
+	IFS=";" read -a TROUTE_SHOSTS_ARRAY <<< "${TROUTE_TEST_ARGS[4]}"
+	IFS="$TROUTE_OIFS"
+	
+	# Traceroute to every supplementary node
+	for TROUTE_SHOST in "${TROUTE_SHOSTS_ARRAY[@]}"
+	do
+		
+		# Define the node traceroute log file
+		TROUTE_NODE_LOG="$TROUTE_TEST_BASE/tmp/$TROUTE_SHOST.log"
+		
+		# Run the traceroute command
+		echo "RUNNING TRACEROUTE TEST('$TROUTE_SHOST')" | tee -a $TROUTE_TEST_LOG
+		echo "Log: '$TROUTE_NODE_LOG'" | tee -a $TROUTE_TEST_LOG
+		traceroute -n $TROUTE_SHOST > $TROUTE_NODE_LOG && TROUTE_NODE_EXIT_CODE="$(echo $?)"
+		echo "Exit Code: '$TROUTE_NODE_EXIT_CODE'" | tee -a $TROUTE_TEST_LOG
+		echo "EXIT:'$TROUTE_NODE_EXIT_CODE'" >> $TROUTE_NODE_LOG	
+	done
+fi
 echo "######################################################################" | tee -a $TROUTE_TEST_LOG
 echo "TEST COMPLETED" | tee -a $TROUTE_TEST_LOG
 echo "######################################################################" | tee -a $TROUTE_TEST_LOG
