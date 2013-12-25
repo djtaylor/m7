@@ -13,7 +13,7 @@ PING_TEST_ARGS=(\
 "{TEST_CAT}"
 "{TEST_PING_COUNT}"
 "{TEST_CAT_TYPE}"
-"{TEST_NET_SHOSTS}")
+"{TEST_PLAN}")
 
 # Set the base directory from the plan ID, test ID, and thread number
 PING_TEST_BASE=~/output/${PING_TEST_ARGS[0]}/local/test-${PING_TEST_ARGS[1]}
@@ -38,6 +38,9 @@ echo "######################################################################" | 
 # Build an array of all cluster nodes except the localhost
 PING_NODES_ARRAY=( `sqlite3 ~/db/cluster.db "SELECT Name FROM M7_Nodes WHERE Name!='$(hostname -s)';"` )
 
+# Build an array of supplementary hosts
+PING_SHOSTS_ARRAY=( `echo "cat //plan/params/hosts/host/@name" | xmllint --shell "${PING_TEST_ARGS[5]}" | grep "name" | sed "s/^.*name=\"\([^\"]*\)\".*$/\1/g"` )
+
 # Ping every node in the cluster
 for PING_NODE in "${PING_NODES_ARRAY[@]}"
 do
@@ -57,26 +60,24 @@ do
 done
 
 # If any supplementary hosts are defined
-if [ "${PING_TEST_ARGS[4]}" != "null" ]; then
-	
-	# Convert the hosts string into an array
-	PING_OIFS="$IFS"
-	IFS=";" read -a PING_SHOSTS_ARRAY <<< "${PING_TEST_ARGS[4]}"
-	IFS="$PING_OIFS"
+if [ ${#PING_SHOSTS_ARRAY[@]} -gt 0 ]; then
 	
 	# Ping to every supplementary node
 	for PING_SHOST in "${PING_SHOSTS_ARRAY[@]}"
 	do
 		
+		# Get the node IP address
+		PING_SHOST_IP_ADDR="$(xml "parse" "${PING_TEST_ARGS[5]}" "params/hosts/host[@name='$PING_SHOST']/text()")"
+		
 		# Define the node ping log file
-		PING_NODE_LOG="$PING_TEST_BASE/tmp/$PING_SHOST.log"
+		PING_SHOST_LOG="$PING_TEST_BASE/tmp/$PING_SHOST.log"
 		
 		# Run the ping command
-		echo "RUNNING PING TEST('$PING_SHOST')" | tee -a $PING_TEST_LOG
-		echo "Log: '$PING_NODE_LOG'" | tee -a $PING_TEST_LOG
-		traceroute -n $PING_SHOST > $PING_NODE_LOG && PING_NODE_EXIT_CODE="$(echo $?)"
-		echo "Exit Code: '$PING_NODE_EXIT_CODE'" | tee -a $PING_TEST_LOG
-		echo "EXIT:'$PING_NODE_EXIT_CODE'" >> $PING_NODE_LOG	
+		echo "RUNNING PING TEST('$PING_SHOST:$PING_SHOST_IP_ADDR')" | tee -a $PING_TEST_LOG
+		echo "Log: '$PING_SHOST_LOG'" | tee -a $PING_TEST_LOG
+		ping -c ${PING_TEST_ARGS[3]} $PING_SHOST > $PING_SHOST_LOG && PING_SHOST_EXIT_CODE="$(echo $?)"
+		echo "Exit Code: '$PING_SHOST_EXIT_CODE'" | tee -a $PING_TEST_LOG
+		echo "EXIT:'$PING_SHOST_EXIT_CODE'" >> $PING_SHOST_LOG	
 	done
 fi
 echo "######################################################################" | tee -a $PING_TEST_LOG

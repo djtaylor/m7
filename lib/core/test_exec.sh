@@ -47,21 +47,6 @@ test_exec() {
 			# Get each test definition by ID number
 			TEST_EXEC_NET_TESTS=( `echo "cat //plan/params/test/@id" | xmllint --shell "${TEST_EXEC_ARGS[0]}" | grep "id" | sed "s/id=\"\([0-9]*\)\"/\1/g"` )
 		
-			# Check if any supplementary hosts are defined
-			TEST_EXEC_NET_SHOSTS_ARRAY=( `echo "cat //plan/params/hosts/host/text()" | xmllint --shell "${TEST_EXEC_ARGS[0]}" | grep -e "^[0-9\.]*$"` )
-			if [ ${#TEST_EXEC_NET_SHOSTS_ARRAY[@]} -gt 0 ]; then
-				for TEST_EXEC_NET_SHOST in "${TEST_EXEC_NET_HOSTS_ARRAY[@]}"
-				do
-					if [ -z "$TEST_EXEC_NET_SHOST_STRING" ]; then
-						TEST_EXEC_NET_SHOST_STRING="$TEST_EXEC_NET_SHOST"
-					else
-						TEST_EXEC_NET_SHOST_STRING+=";$TEST_EXEC_NET_SHOST"
-					fi
-				done
-			else
-				TEST_EXEC_NET_SHOST_STIRNG="null"
-			fi
-		
 			# Process each unique test definition
 			for TEST_EXEC_NET_TEST_ID in "${TEST_EXEC_NET_TESTS[@]}"
 			do
@@ -87,7 +72,7 @@ test_exec() {
 						sed -i "s/{TEST_CAT}/$TEST_EXEC_CAT/g" $TEST_EXEC_NET_PING_SCRIPT
 						sed -i "s/{TEST_PING_COUNT}/$TEST_EXEC_NET_PING_COUNT/g" $TEST_EXEC_NET_PING_SCRIPT
 						sed -i "s/{TEST_CAT_TYPE}/$TEST_EXEC_NET_TYPE/g" $TEST_EXEC_NET_PING_SCRIPT
-						sed -i "s/{TEST_NET_SHOSTS}/$(regex_str "$TEST_EXEC_NET_SHOST_STRING")/g" $TEST_EXEC_NET_PING_SCRIPT
+						sed -i "s/{TEST_PLAN}/$(regex_str "${TEST_EXEC_ARGS[0]}")/g" $TEST_EXEC_NET_PING_SCRIPT
 						
 						# Launch the test
 						nohup sh $TEST_EXEC_NET_PING_SCRIPT >/dev/null 2>&1 &
@@ -106,7 +91,7 @@ test_exec() {
 						sed -i "s/{TEST_DEF_ID}/$TEST_EXEC_NET_TEST_ID/g" $TEST_EXEC_NET_TROUTE_SCRIPT
 						sed -i "s/{TEST_CAT}/$TEST_EXEC_CAT/g" $TEST_EXEC_NET_TROUTE_SCRIPT
 						sed -i "s/{TEST_CAT_TYPE}/$TEST_EXEC_NET_TYPE/g" $TEST_EXEC_NET_TROUTE_SCRIPT
-						sed -i "s/{TEST_NET_SHOSTS}/$(regex_str "$TEST_EXEC_NET_SHOST_STRING")/g" $TEST_EXEC_NET_TROUTE_SCRIPT
+						sed -i "s/{TEST_PLAN}/$(regex_str "${TEST_EXEC_ARGS[0]}")/g" $TEST_EXEC_TROUTE_PING_SCRIPT
 						
 						# Launch the test
 						nohup sh $TEST_EXEC_NET_TROUTE_SCRIPT >/dev/null 2>&1 &

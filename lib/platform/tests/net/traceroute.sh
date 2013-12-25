@@ -11,7 +11,7 @@ TROUTE_TEST_ARGS=(\
 "{TEST_DEF_ID}"
 "{TEST_CAT}"
 "{TEST_CAT_TYPE}"
-"{TEST_NET_SHOSTS}")
+"{TEST_PLAN}")
 
 # Set the base directory from the plan ID, test ID
 TROUTE_TEST_BASE=~/output/${TROUTE_TEST_ARGS[0]}/local/test-${TROUTE_TEST_ARGS[1]}
@@ -35,6 +35,9 @@ echo "######################################################################" | 
 # Build an array of all cluster nodes except the localhost
 TROUTE_NODES_ARRAY=( `sqlite3 ~/db/cluster.db "SELECT Name FROM M7_Nodes WHERE Name!='$(hostname -s)';"` )
 
+# Build an array of supplementary hosts
+TROUTE_SHOSTS_ARRAY=( `echo "cat //plan/params/hosts/host/@name" | xmllint --shell "${TROUTE_TEST_ARGS[4]}" | grep "name" | sed "s/^.*name=\"\([^\"]*\)\".*$/\1/g"` )
+
 # Traceroute to every node in the cluster
 for TROUTE_NODE in "${TROUTE_NODES_ARRAY[@]}"
 do
@@ -54,26 +57,24 @@ do
 done
 
 # If any supplementary hosts are defined
-if [ "${TROUTE_TEST_ARGS[4]}" != "null" ]; then
-	
-	# Convert the hosts string into an array
-	TROUTE_OIFS="$IFS"
-	IFS=";" read -a TROUTE_SHOSTS_ARRAY <<< "${TROUTE_TEST_ARGS[4]}"
-	IFS="$TROUTE_OIFS"
+if [ ${#TROUTE_SHOSTS_ARRAY[@]} -gt 0 ]; then
 	
 	# Traceroute to every supplementary node
 	for TROUTE_SHOST in "${TROUTE_SHOSTS_ARRAY[@]}"
 	do
 		
+		# Get the node IP address
+		TROUTE_SHOST_IP_ADDR="$(xml "parse" "${TEST_EXEC_ARGS[0]}" "params/hosts/host[@name='$TROUTE_SHOST']/text()")"
+		
 		# Define the node traceroute log file
-		TROUTE_NODE_LOG="$TROUTE_TEST_BASE/tmp/$TROUTE_SHOST.log"
+		TROUTE_SHOST_LOG="$TROUTE_TEST_BASE/tmp/$TROUTE_SHOST.log"
 		
 		# Run the traceroute command
-		echo "RUNNING TRACEROUTE TEST('$TROUTE_SHOST')" | tee -a $TROUTE_TEST_LOG
-		echo "Log: '$TROUTE_NODE_LOG'" | tee -a $TROUTE_TEST_LOG
-		traceroute -n $TROUTE_SHOST > $TROUTE_NODE_LOG && TROUTE_NODE_EXIT_CODE="$(echo $?)"
-		echo "Exit Code: '$TROUTE_NODE_EXIT_CODE'" | tee -a $TROUTE_TEST_LOG
-		echo "EXIT:'$TROUTE_NODE_EXIT_CODE'" >> $TROUTE_NODE_LOG	
+		echo "RUNNING TRACEROUTE TEST('$TROUTE_SHOST:$TROUTE_SHOST_IP_ADDR')" | tee -a $TROUTE_TEST_LOG
+		echo "Log: '$TROUTE_SHOST_LOG'" | tee -a $TROUTE_TEST_LOG
+		traceroute -n $TROUTE_SHOST > $TROUTE_SHOST_LOG && TROUTE_SHOST_EXIT_CODE="$(echo $?)"
+		echo "Exit Code: '$TROUTE_SHOST_EXIT_CODE'" | tee -a $TROUTE_TEST_LOG
+		echo "EXIT:'$TROUTE_SHOST_EXIT_CODE'" >> $TROUTE_SHOST_LOG	
 	done
 fi
 echo "######################################################################" | tee -a $TROUTE_TEST_LOG
