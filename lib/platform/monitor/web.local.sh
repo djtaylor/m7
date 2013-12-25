@@ -269,6 +269,10 @@ if [ ! -z "$(sqlite3 ~/db/cluster.db "SELECT * FROM M7_Nodes WHERE Type='worker'
 	fi
 fi
 
+# Clean up the output and lock directories
+rm -rf ~/output/$TM_TARGET_ID
+rm -rf ~/lock/$TM_TARGET_ID
+
 # Self destruct the monitor script and destroy the workspace
 rm -rf $M7_TEST_WS
 rm -f /tmp/$TM_TARGET_ID.local.monitor.sh
