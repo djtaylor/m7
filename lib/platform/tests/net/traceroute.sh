@@ -67,7 +67,7 @@ if [ ${#TROUTE_SHOSTS_ARRAY[@]} -gt 0 ]; then
 	do
 		
 		# Get the node IP address
-		TROUTE_SHOST_IP_ADDR="$(xml "parse" "${TEST_EXEC_ARGS[0]}" "params/hosts/host[@name='$TROUTE_SHOST']/text()")"
+		TROUTE_SHOST_IP_ADDR="$(xml "parse" "${TROUTE_TEST_ARGS[4]}" "params/hosts/host[@name='$TROUTE_SHOST']/text()")"
 		
 		# Define the node traceroute log file
 		TROUTE_SHOST_LOG="$TROUTE_TEST_BASE/tmp/$TROUTE_SHOST.log"
