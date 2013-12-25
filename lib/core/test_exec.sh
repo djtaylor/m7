@@ -49,7 +49,7 @@ test_exec() {
 		
 			# Check if any supplementary hosts are defined
 			TEST_EXEC_NET_SHOSTS_ARRAY=( `echo "cat //plan/params/hosts/host/text()" | xmllint --shell "${TEST_EXEC_ARGS[0]}" | grep -e "^[0-9\.]*$"` )
-			if [ ${TEST_EXEC_NET_SHOSTS_ARRAY[@]} -gt 0 ]; then
+			if [ ${#TEST_EXEC_NET_SHOSTS_ARRAY[@]} -gt 0 ]; then
 				for TEST_EXEC_NET_SHOST in "${TEST_EXEC_NET_HOSTS_ARRAY[@]}"
 				do
 					if [ -z "$TEST_EXEC_NET_SHOST_STRING" ]; then

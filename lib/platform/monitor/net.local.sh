@@ -66,8 +66,10 @@ do
 				
 				# If processing a supplementary host
 				if [ ! -z  "$(echo "$TEST_PING_HOST" | grep -e "^[0-9\.]*$")" ]; then
+					TEST_PING_HOST_TYPE="supplemntary"
 					TEST_PING_IP_ADDR="$TEST_PING_HOST"
 				else
+					TEST_PING_HOST_TYPE="cluster"
 					TEST_PING_IP_ADDR="$(sqlite3 ~/db/cluster.db "SELECT IPAddr FROM M7_Nodes WHERE Name='$TEST_PING_HOST';")"
 				fi
 				
@@ -76,6 +78,7 @@ do
 					
 					# Generate the host ping block
 					TEST_SUMMARY_BLOCK+="\t\t<host name='$TEST_PING_HOST'>\n"
+					TEST_SUMMARY_BLOCK+="\t\t\t<type>$TEST_PING_HOST_TYPE</type>\n"
 					TEST_SUMMARY_BLOCK+="\t\t\t<ip>$TEST_PING_IP_ADDR</ip>\n"
 					TEST_SUMMARY_BLOCK+="\t\t\t<exit>$TEST_PING_EXIT_CODE</exit>\n"
 					TEST_SUMMARY_BLOCK+="\t\t</host>\n"
@@ -90,6 +93,7 @@ do
 					
 					# Generate the host ping block
 					TEST_SUMMARY_BLOCK+="\t\t<host name='$TEST_PING_HOST'>\n"
+					TEST_SUMMARY_BLOCK+="\t\t\t<type>$TEST_PING_HOST_TYPE</type>\n"
 					TEST_SUMMARY_BLOCK+="\t\t\t<ip>$TEST_PING_IP_ADDR</ip>\n"
 					TEST_SUMMARY_BLOCK+="\t\t\t<packetLoss unit='%'>$TEST_PING_PKT_LOSS</packetLoss>\n"
 					TEST_SUMMARY_BLOCK+="\t\t\t<minTime unit='ms'>$TEST_PING_MIN_TIME</minTime>\n"
@@ -115,8 +119,10 @@ do
 				
 				# If processing a supplementary host
 				if [ ! -z  "$(echo "$TEST_TROUTE_HOST" | grep -e "^[0-9\.]*$")" ]; then
+					TEST_PING_HOST_TYPE="supplementary"
 					TEST_TROUTE_IP_ADDR="$TEST_TROUTE_HOST"
 				else
+					TEST_PING_HOST_TYPE="cluster"
 					TEST_TROUTE_IP_ADDR="$(sqlite3 ~/db/cluster.db "SELECT IPAddr FROM M7_Nodes WHERE Name='$TEST_PING_HOST';")"
 				fi
 				
@@ -125,6 +131,7 @@ do
 					
 					# Generate the host traceroute block
 					TEST_SUMMARY_BLOCK+="\t\t<host name='$TEST_TROUTE_HOST'>\n"
+					TEST_SUMMARY_BLOCK+="\t\t\t<type>$TEST_PING_HOST_TYPE</type>\n"
 					TEST_SUMMARY_BLOCK+="\t\t\t<ip>$TEST_TROUTE_IP_ADDR</ip>\n"
 					TEST_SUMMARY_BLOCK+="\t\t\t<exit>$TEST_TROUTE_EXIT_CODE</exit>\n"
 					TEST_SUMMARY_BLOCK+="\t\t</host>\n"
@@ -132,6 +139,7 @@ do
 					
 					# Generate the host traceroute block
 					TEST_SUMMARY_BLOCK+="\t\t<host name='$TEST_TROUTE_HOST'>\n"
+					TEST_SUMMARY_BLOCK+="\t\t\t<type>$TEST_PING_HOST_TYPE</type>\n"
 					TEST_SUMMARY_BLOCK+="\t\t\t<ip>$TEST_TROUTE_IP_ADDR</ip>\n"
 					TEST_SUMMARY_BLOCK+="\t\t\t<hops>\n"
 					
