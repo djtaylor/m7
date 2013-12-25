@@ -131,7 +131,7 @@ do
 					
 					# Generate the host traceroute block
 					TEST_SUMMARY_BLOCK+="\t\t<host name='$TEST_TROUTE_HOST'>\n"
-					TEST_SUMMARY_BLOCK+="\t\t\t<type>$TEST_PING_HOST_TYPE</type>\n"
+					TEST_SUMMARY_BLOCK+="\t\t\t<type>$TEST_TROUTE_HOST_TYPE</type>\n"
 					TEST_SUMMARY_BLOCK+="\t\t\t<ip>$TEST_TROUTE_IP_ADDR</ip>\n"
 					TEST_SUMMARY_BLOCK+="\t\t\t<exit>$TEST_TROUTE_EXIT_CODE</exit>\n"
 					TEST_SUMMARY_BLOCK+="\t\t</host>\n"
@@ -139,7 +139,7 @@ do
 					
 					# Generate the host traceroute block
 					TEST_SUMMARY_BLOCK+="\t\t<host name='$TEST_TROUTE_HOST'>\n"
-					TEST_SUMMARY_BLOCK+="\t\t\t<type>$TEST_PING_HOST_TYPE</type>\n"
+					TEST_SUMMARY_BLOCK+="\t\t\t<type>$TEST_TROUTE_HOST_TYPE</type>\n"
 					TEST_SUMMARY_BLOCK+="\t\t\t<ip>$TEST_TROUTE_IP_ADDR</ip>\n"
 					TEST_SUMMARY_BLOCK+="\t\t\t<hops>\n"
 					
@@ -222,7 +222,7 @@ do
 				fi
 				
 				# If the ping has any exit code besides '0'
-				if [ "$TEST_PING_EXIT_CODE" != "0" ]; then
+				if [ "$TEST_MTR_EXIT_CODE" != "0" ]; then
 					
 					# Generate the host MTR block
 					TEST_SUMMARY_BLOCK+="\t\t<host name='$TEST_MTR_HOST'>\n"
@@ -263,7 +263,7 @@ do
 							TEST_SUMMARY_LINE+="\t\t\t\t</hop-$TEST_MTR_HOP_COUNT>\n"
 						fi
 					done < $TEST_MTR_LOG
-					TEST_SUMMARY_BLOCK+="\t\t\t</hops>"
+					TEST_SUMMARY_BLOCK+="\t\t\t</hops>\n"
 					TEST_SUMMARY_BLOCK+="\t\t</host>\n"
 				fi
 			done

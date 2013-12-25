@@ -57,7 +57,7 @@ do
 	# Run the MTR command
 	echo "RUNNING MTR TEST('$MTR_NODE:$MTR_NODE_IP_ADDR')" | tee -a $MTR_TEST_LOG
 	echo "Log: '$MTR_NODE_LOG'" | tee -a $MTR_TEST_LOG
-	sudo /usr/sbin/mtr --report --report-cycles ${MTR_TEST_ARGS[3]} $MTR_NODE_IP_ADDR > $MTR_NODE_LOG && MTR_NODE_EXIT_CODE="$(echo $?)"
+	/usr/bin/sudo /usr/sbin/mtr -n --report --report-cycles ${MTR_TEST_ARGS[3]} $MTR_NODE_IP_ADDR > $MTR_NODE_LOG && MTR_NODE_EXIT_CODE="$(echo $?)"
 	echo "Exit Code: '$MTR_NODE_EXIT_CODE'" | tee -a $MTR_TEST_LOG
 	echo "EXIT:'$MTR_NODE_EXIT_CODE'" >> $MTR_NODE_LOG
 done
@@ -78,7 +78,7 @@ if [ ${#MTR_SHOSTS_ARRAY[@]} -gt 0 ]; then
 		# Run the MTR command
 		echo "RUNNING PING TEST('$MTR_SHOST:$MTR_SHOST_IP_ADDR')" | tee -a $MTR_TEST_LOG
 		echo "Log: '$MTR_SHOST_LOG'" | tee -a $MTR_TEST_LOG
-		sudo /usr/sbin/mtr --report --report-cycles ${MTR_TEST_ARGS[3]} $MTR_SHOST_IP_ADDR > $MTR_SHOST_LOG && MTR_SHOST_EXIT_CODE="$(echo $?)"
+		/usr/bin/sudo /usr/sbin/mtr -n --report --report-cycles ${MTR_TEST_ARGS[3]} $MTR_SHOST_IP_ADDR > $MTR_SHOST_LOG && MTR_SHOST_EXIT_CODE="$(echo $?)"
 		echo "Exit Code: '$MTR_SHOST_EXIT_CODE'" | tee -a $MTR_TEST_LOG
 		echo "EXIT:'$MTR_SHOST_EXIT_CODE'" >> $MTR_SHOST_LOG	
 	done
