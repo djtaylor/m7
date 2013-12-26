@@ -330,7 +330,7 @@ else
 fi
 
 # Clean up the output and lock directories if on a non-director node
-if [ -z "$(sqlite3 ~/db/cluster.db "SELECT * FROM M7_Nodes WHERE Type='worker' AND Name='$(hostname -s)';")" ]; then
+if [ ! -z "$(sqlite3 ~/db/cluster.db "SELECT * FROM M7_Nodes WHERE Type='worker' AND Name='$(hostname -s)';")" ]; then
 	rm -rf ~/output/$NM_TARGET_ID
 	rm -rf ~/lock/$NM_TARGET_ID
 fi

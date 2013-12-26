@@ -12,6 +12,15 @@ test_dist() {
 	# arg1 -> Test plan file
 	TEST_DIST_ARGS=( "$@" )
 	
+	# Get the test plan ID number
+	TEST_DIST_ID="$(xml "parse" "${TEST_DIST_ARGS[0]}" "id/text()")"
+	
+	# Check if a test with the plan ID already exists
+	if [ -d ~/lock/$TEST_DIST_ID ]; then
+		log "error" "A test with the ID '$TEST_DIST_ID' already exists. Please specify a unique ID in the test plan: '${TEST_DIST_ARGS[0]}'"
+		exit 1
+	fi
+	
 	# Only run from a director node
 	if [ ! -z "$(sqlite3 ~/db/cluster.db "SELECT * FROM M7_Nodes WHERE Type='director' AND Name='$(hostname -s)';")" ]; then
 		
@@ -24,9 +33,8 @@ test_dist() {
 				log "error" "Missing required arguments:['1 - Source test plan']..."
 				exit 1
 			else
-			
-				# Get the test plan ID number and generate the worker lock/output directory
-				TEST_DIST_ID="$(xml "parse" "${TEST_DIST_ARGS[0]}" "id/text()")"
+				
+				# Generate the worker lock/output directories
 				mkdir -p ~/lock/$TEST_DIST_ID/worker
 				mkdir -p ~/output/$TEST_DIST_ID/worker
 			

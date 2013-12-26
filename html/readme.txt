@@ -121,3 +121,15 @@ RUNNING TESTS
     director node:
     
     m7 run ~/plans/test-plan.xml
+    
+VIEWING TEST RESULTS
+
+   If you have configured the director node's web server to use the '~/html' directory, when a
+   test is completed you can view the XML result files and plan at the following URL:
+   
+     http://[directory IP or hostname]/results/[test ID]
+     
+   If the web server is not configured you can find the output files in the following directory
+   on the directory node:
+   
+     ~/results/[test ID]

@@ -24,7 +24,7 @@ case "$1" in
 		;;
 	
 	*)
-		log "error" "Invalid argument supplied to M7 test utility..."
+		log "error" "Invalid argument supplied to M7 test utility: '$1'"
 		exit 1
 	
 esac
