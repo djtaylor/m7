@@ -42,10 +42,10 @@ TROUTE_NODES_ARRAY=( `sqlite3 ~/db/cluster.db "SELECT Name FROM M7_Nodes WHERE N
 TROUTE_SHOSTS_ARRAY=( `echo "cat //plan/params/hosts/host/@name" | xmllint --shell "${TROUTE_TEST_ARGS[4]}" | grep "name" | sed "s/^.*name=\"\([^\"]*\)\".*$/\1/g"` )
 
 # Check if we are skipping inter-cluster tests
-TROUTE_SKIP_CLUSTER="$(xml "parse" "${TROUTE_TEST_ARGS[4]}" "params/category/skipcluster()")"
+TROUTE_SKIP_CLUSTER="$(xml "parse" "${TROUTE_TEST_ARGS[4]}" "params/skipcluster/text()")"
 
 # Traceroute to every node in the cluster if not skipping inter-cluster tests
-if [ "$TROUTE_SKIP_CLUSTER" != "yes" ]; then
+if [ "$TROUTE_SKIP_CLUSTER" = "no" ]; then
 	for TROUTE_NODE in "${TROUTE_NODES_ARRAY[@]}"
 	do
 		

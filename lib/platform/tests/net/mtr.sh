@@ -45,10 +45,10 @@ MTR_NODES_ARRAY=( `sqlite3 ~/db/cluster.db "SELECT Name FROM M7_Nodes WHERE Name
 MTR_SHOSTS_ARRAY=( `echo "cat //plan/params/hosts/host/@name" | xmllint --shell "${MTR_TEST_ARGS[5]}" | grep "name" | sed "s/^.*name=\"\([^\"]*\)\".*$/\1/g"` )
 
 # Check if we are skipping inter-cluster tests
-MTR_SKIP_CLUSTER="$(xml "parse" "${MTR_TEST_ARGS[5]}" "params/category/skipcluster()")"
+MTR_SKIP_CLUSTER="$(xml "parse" "${MTR_TEST_ARGS[5]}" "params/skipcluster/text()")"
 
 # MTR to every node in the cluster if not skipping inter-cluster tests
-if [ "$MTR_SKIP_CLUSTER" != "yes" ]; then
+if [ "$MTR_SKIP_CLUSTER" = "no" ]; then
 	for MTR_NODE in "${MTR_NODES_ARRAY[@]}"
 	do
 		

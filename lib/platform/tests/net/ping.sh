@@ -45,10 +45,10 @@ PING_NODES_ARRAY=( `sqlite3 ~/db/cluster.db "SELECT Name FROM M7_Nodes WHERE Nam
 PING_SHOSTS_ARRAY=( `echo "cat //plan/params/hosts/host/@name" | xmllint --shell "${PING_TEST_ARGS[5]}" | grep "name" | sed "s/^.*name=\"\([^\"]*\)\".*$/\1/g"` )
 
 # Check if we are skipping inter-cluster tests
-PING_SKIP_CLUSTER="$(xml "parse" "${PING_TEST_ARGS[5]}" "params/category/skipcluster()")"
+PING_SKIP_CLUSTER="$(xml "parse" "${PING_TEST_ARGS[5]}" "params/skipcluster/text()")"
 
 # Ping every node in the cluster if not skipping inter-cluster tests
-if [ "$PING_SKIP_CLUSTER" != "yes" ]; then
+if [ "$PING_SKIP_CLUSTER" = "no" ]; then
 	for PING_NODE in "${PING_NODES_ARRAY[@]}"
 	do
 		
