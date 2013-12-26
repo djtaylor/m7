@@ -113,23 +113,37 @@ RUNNING TESTS
       
   LAUNCH A TEST PLAN
     To run a test plan, you must copy the XML file to the director node as the M7 user account
-    that owns the installed software:
-    
-    scp test-plan.xml m7@some.host.com:~/plans/.
-    
+    that owns the installed software (you can find the keys to login to the director node on
+    this site - 'keys/m7.key, keys/m7.key.pub'):
+
+    scp -i ~/.ssh/m7.key test-plan.xml m7@ct-shanghai.vpls.net:~/plans/.
+
     Once the test has been copied over, you can run the test as the M7 user account from the
     director node:
-    
+
+    ssh -i ~/.ssh/m7.key m7@ct-shanghai.vpls.net
     m7 run ~/plans/test-plan.xml
-    
+
 VIEWING TEST RESULTS
 
    If you have configured the director node's web server to use the '~/html' directory, when a
    test is completed you can view the XML result files and plan at the following URL:
-   
+
      http://[directory IP or hostname]/results/[test ID]
-     
+
    If the web server is not configured you can find the output files in the following directory
-   on the directory node:
-   
+   on the director node:
+
      ~/results/[test ID]
+
+MODIFYING SOURCE CODE
+
+  I'm currently hosting the code on GitHub: https://github.com/djtaylor/m7.git
+
+  I can add you as a developer if you want to make changes to the scripts or add new features.
+
+  Updating M7 on Cluster Nodes
+    Once I make changes to the code and push it upstream to GitHub, I update each of the nodes
+    seperately by running the following command while logged in as the M7 user account:
+
+    m7 gitsync
