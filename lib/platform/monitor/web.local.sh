@@ -33,6 +33,13 @@ TEST_TARGET_HOST="$(xml "parse" "$TM_SOURCE_PLAN" "params/host/text()")"
 TEST_SUMMARY_BLOCK="<plan>\n"
 TEST_SUMMARY_BLOCK+="\t<category>$TEST_TARGET_CATEGORY</category>\n"
 
+# Create the host block
+TEST_SUMMARY_BLOCK+="\t<host>\n"
+TEST_SUMMARY_BLOCK+="\t\t<name>$(hostname -s)</name>\n"
+TEST_SUMMARY_BLOCK+="\t\t<ip>$(sqlite3 ~/db/cluster.db "SELECT IPAddr FROM M7_Nodes WHERE Name='$(hostname -s)';")</ip>\n"
+TEST_SUMMARY_BLOCK+="\t\t<region>$(sqlite3 ~/db/cluster.db "SELECT Region FROM M7_Nodes WHERE Name='$(hostname -s)';")</region>\n"
+TEST_SUMMARY_BLOCK+="\t</host>\n"
+
 # Aggregate the results of the test runs
 for TEST_RESULT_PATH in $(find ~/output/$TM_TARGET_ID/local -mindepth 1 -maxdepth 1 -type d)
 do
