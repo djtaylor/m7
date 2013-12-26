@@ -7,10 +7,9 @@ source ~/lib/index.sh
 NM_TARGET_ID="$1"
 NM_SOURCE_PLAN="$2"
 
+# Wait until all the local lock files have been cleared
 while :
 do
-	
-	# If all lock files have been cleared
 	if [ -z "$(ls -A ~/lock/$NM_TARGET_ID/local)" ]; then
 		break
 	else
@@ -61,7 +60,7 @@ do
 				# First get the exit code to see if the ping was successful
 				TEST_PING_EXIT_CODE="$(cat $TEST_PING_LOG | grep "EXIT" | sed "s/^EXIT:'\([0-9]*\)'/\1/g")"
 				
-				# Get the target host and IP address
+				# Get the target host
 				TEST_PING_HOST="$(echo $TEST_PING_LOG | sed "s/^.*\/\([^\.]*\)\.log$/\1/g")"
 				
 				# If processing a supplementary host
@@ -70,7 +69,10 @@ do
 					TEST_PING_IP_ADDR="$(xml "parse" "$NM_SOURCE_PLAN" "params/hosts/host[@name='$TEST_PING_HOST']/text()")"
 				else
 					TEST_PING_HOST_TYPE="cluster"
+					
+					# Get the IP address and region
 					TEST_PING_IP_ADDR="$(sqlite3 ~/db/cluster.db "SELECT IPAddr FROM M7_Nodes WHERE Name='$TEST_PING_HOST';")"
+					TEST_PING_REGION="$(sqlite3 ~/db/cluster.db "SELECT Region FROM M7_Nodes WHERE Name='$TEST_PING_HOST';")"
 				fi
 				
 				# If the ping has any exit code besides '0'
@@ -79,6 +81,9 @@ do
 					# Generate the host ping block
 					TEST_SUMMARY_BLOCK+="\t\t<host name='$TEST_PING_HOST'>\n"
 					TEST_SUMMARY_BLOCK+="\t\t\t<type>$TEST_PING_HOST_TYPE</type>\n"
+					if [ "$TEST_PING_HOST_TYPE" = "cluster" ]; then
+						TEST_SUMMARY_BLOCK+="\t\t\t<region>$TEST_PING_REGION</region>\n"
+					fi
 					TEST_SUMMARY_BLOCK+="\t\t\t<ip>$TEST_PING_IP_ADDR</ip>\n"
 					TEST_SUMMARY_BLOCK+="\t\t\t<exit>$TEST_PING_EXIT_CODE</exit>\n"
 					TEST_SUMMARY_BLOCK+="\t\t</host>\n"
@@ -94,6 +99,9 @@ do
 					# Generate the host ping block
 					TEST_SUMMARY_BLOCK+="\t\t<host name='$TEST_PING_HOST'>\n"
 					TEST_SUMMARY_BLOCK+="\t\t\t<type>$TEST_PING_HOST_TYPE</type>\n"
+					if [ "$TEST_PING_HOST_TYPE" = "cluster" ]; then
+						TEST_SUMMARY_BLOCK+="\t\t\t<region>$TEST_PING_REGION</region>\n"
+					fi
 					TEST_SUMMARY_BLOCK+="\t\t\t<ip>$TEST_PING_IP_ADDR</ip>\n"
 					TEST_SUMMARY_BLOCK+="\t\t\t<pktLoss unit='%'>$TEST_PING_PKT_LOSS</pktLoss>\n"
 					TEST_SUMMARY_BLOCK+="\t\t\t<minTime unit='ms'>$TEST_PING_MIN_TIME</minTime>\n"
@@ -114,7 +122,7 @@ do
 				# First get the exit code to see if the traceroute was successful
 				TEST_TROUTE_EXIT_CODE="$(cat $TEST_TROUTE_LOG | grep "EXIT" | sed "s/^EXIT:'\([0-9]*\)'/\1/g")"
 				
-				# Get the target host and IP address
+				# Get the target host
 				TEST_TROUTE_HOST="$(echo $TEST_TROUTE_LOG | sed "s/^.*\/\([^\.]*\)\.log$/\1/g")"
 				
 				# If processing a supplementary host
@@ -123,7 +131,10 @@ do
 					TEST_TROUTE_IP_ADDR="$(xml "parse" "$NM_SOURCE_PLAN" "params/hosts/host[@name='$TEST_TROUTE_HOST']/text()")"
 				else
 					TEST_TROUTE_HOST_TYPE="cluster"
+					
+					# Get the IP address and region
 					TEST_TROUTE_IP_ADDR="$(sqlite3 ~/db/cluster.db "SELECT IPAddr FROM M7_Nodes WHERE Name='$TEST_TROUTE_HOST';")"
+					TEST_TROUTE_REGION="$(sqlite3 ~/db/cluster.db "SELECT Region FROM M7_Nodes WHERE Name='$TEST_TROUTE_HOST';")"
 				fi
 				
 				# If the traceroute has any exit code besides '0'
@@ -132,6 +143,9 @@ do
 					# Generate the host traceroute block
 					TEST_SUMMARY_BLOCK+="\t\t<host name='$TEST_TROUTE_HOST'>\n"
 					TEST_SUMMARY_BLOCK+="\t\t\t<type>$TEST_TROUTE_HOST_TYPE</type>\n"
+					if [ "$TEST_TROUTE_HOST_TYPE" = "cluster" ]; then
+						TEST_SUMMARY_BLOCK+="\t\t\t<region>$TEST_TROUTE_REGION</region>\n"
+					fi
 					TEST_SUMMARY_BLOCK+="\t\t\t<ip>$TEST_TROUTE_IP_ADDR</ip>\n"
 					TEST_SUMMARY_BLOCK+="\t\t\t<exit>$TEST_TROUTE_EXIT_CODE</exit>\n"
 					TEST_SUMMARY_BLOCK+="\t\t</host>\n"
@@ -140,6 +154,9 @@ do
 					# Generate the host traceroute block
 					TEST_SUMMARY_BLOCK+="\t\t<host name='$TEST_TROUTE_HOST'>\n"
 					TEST_SUMMARY_BLOCK+="\t\t\t<type>$TEST_TROUTE_HOST_TYPE</type>\n"
+					if [ "$TEST_TROUTE_HOST_TYPE" = "cluster" ]; then
+						TEST_SUMMARY_BLOCK+="\t\t\t<region>$TEST_TROUTE_REGION</region>\n"
+					fi
 					TEST_SUMMARY_BLOCK+="\t\t\t<ip>$TEST_TROUTE_IP_ADDR</ip>\n"
 					TEST_SUMMARY_BLOCK+="\t\t\t<hops>\n"
 					
@@ -206,16 +223,21 @@ do
 				# First get the exit code to see if the MTR was successful
 				TEST_MTR_EXIT_CODE="$(cat $TEST_MTR_LOG | grep "EXIT" | sed "s/^EXIT:'\([0-9]*\)'/\1/g")"
 				
-				# Get the target host and IP address
+				# Get the target host
 				TEST_MTR_HOST="$(echo $TEST_MTR_LOG | sed "s/^.*\/\([^\.]*\)\.log$/\1/g")"
 				
 				# If processing a supplementary host
 				if [ -z  "$(sqlite3 ~/db/cluster.db "SELECT * FROM M7_Nodes WHERE Name='$TEST_MTR_HOST';")" ]; then
 					TEST_MTR_HOST_TYPE="supplementary"
 					TEST_MTR_IP_ADDR="$(xml "parse" "$NM_SOURCE_PLAN" "params/hosts/host[@name='$TEST_MTR_HOST']/text()")"
+				
+				# If processing a cluster host
 				else
 					TEST_MTR_HOST_TYPE="cluster"
+					
+					# Get the IP address and region
 					TEST_MTR_IP_ADDR="$(sqlite3 ~/db/cluster.db "SELECT IPAddr FROM M7_Nodes WHERE Name='$TEST_MTR_HOST';")"
+					TEST_MTR_REGION="$(sqlite3 ~/db/cluster.db "SELECT Region FROM M7_Nodes WHERE Name='$TEST_MTR_HOST';")"
 				fi
 				
 				# If the ping has any exit code besides '0'
@@ -224,6 +246,9 @@ do
 					# Generate the host MTR block
 					TEST_SUMMARY_BLOCK+="\t\t<host name='$TEST_MTR_HOST'>\n"
 					TEST_SUMMARY_BLOCK+="\t\t\t<type>$TEST_MTR_HOST_TYPE</type>\n"
+					if [ "$TEST_MTR_HOST_TYPE" = "cluster" ]; then
+						TEST_SUMMARY_BLOCK+="\t\t\t<region>$TEST_MTR_REGION</region>\n"
+					fi
 					TEST_SUMMARY_BLOCK+="\t\t\t<ip>$TEST_MTR_IP_ADDR</ip>\n"
 					TEST_SUMMARY_BLOCK+="\t\t\t<exit>$TEST_MTR_EXIT_CODE</exit>\n"
 					TEST_SUMMARY_BLOCK+="\t\t</host>\n"
@@ -232,6 +257,9 @@ do
 					# Open the host MTR block
 					TEST_SUMMARY_BLOCK+="\t\t<host name='$TEST_MTR_HOST'>\n"
 					TEST_SUMMARY_BLOCK+="\t\t\t<type>$TEST_MTR_HOST_TYPE</type>\n"
+					if [ "$TEST_MTR_HOST_TYPE" = "cluster" ]; then
+						TEST_SUMMARY_BLOCK+="\t\t\t<region>$TEST_MTR_REGION</region>\n"
+					fi
 					TEST_SUMMARY_BLOCK+="\t\t\t<ip>$TEST_MTR_IP_ADDR</ip>\n"
 					
 					# Parse the MTR log and convert it to XML

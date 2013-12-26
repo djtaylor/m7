@@ -7,16 +7,14 @@ source ~/lib/index.sh
 TM_TARGET_ID="$1"
 TM_SOURCE_PLAN="$2"
 
+# Wait until all the local lock files have been cleared
 while :
 do
-	
-	# If all lock files have been cleared
 	if [ -z "$(ls -A ~/lock/$TM_TARGET_ID/local)" ]; then
 		break
 	else
 		sleep 2
 	fi
-	
 done
 
 # Create the test aggregation workspace

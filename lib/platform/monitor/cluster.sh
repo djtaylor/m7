@@ -7,10 +7,9 @@ source ~/lib/index.sh
 CM_TARGET_ID="$1"
 CM_SOURCE_PLAN="$2"
 
+# Wait until the local and worker lock files have been cleared
 while :
 do
-	
-	# If all local and worker local files have been cleared
 	if [ -z "$(ls -A ~/lock/$CM_TARGET_ID/local)" ] \
 	&& [ -z "$(ls -A ~/lock/$CM_TARGET_ID/worker)" ]; then
 		break
