@@ -44,23 +44,28 @@ PING_NODES_ARRAY=( `sqlite3 ~/db/cluster.db "SELECT Name FROM M7_Nodes WHERE Nam
 # Build an array of satellite hosts
 PING_SHOSTS_ARRAY=( `echo "cat //plan/params/hosts/host/@name" | xmllint --shell "${PING_TEST_ARGS[5]}" | grep "name" | sed "s/^.*name=\"\([^\"]*\)\".*$/\1/g"` )
 
-# Ping every node in the cluster
-for PING_NODE in "${PING_NODES_ARRAY[@]}"
-do
-	
-	# Get the node IP address
-	PING_NODE_IP_ADDR="$(sqlite3 ~/db/cluster.db "SELECT IPAddr FROM M7_Nodes WHERE Name='$PING_NODE';")"
-	
-	# Define the node ping log file
-	PING_NODE_LOG="$PING_TEST_BASE/tmp/$PING_NODE.log" && touch $PING_NODE_LOG
-	
-	# Run the ping command
-	echo "RUNNING PING TEST('$PING_NODE:$PING_NODE_IP_ADDR')" | tee -a $PING_TEST_LOG
-	echo "Log: '$PING_NODE_LOG'" | tee -a $PING_TEST_LOG
-	ping -c ${PING_TEST_ARGS[3]} $PING_NODE_IP_ADDR > $PING_NODE_LOG && PING_NODE_EXIT_CODE="$(echo $?)"
-	echo "Exit Code: '$PING_NODE_EXIT_CODE'" | tee -a $PING_TEST_LOG
-	echo "EXIT:'$PING_NODE_EXIT_CODE'" >> $PING_NODE_LOG
-done
+# Check if we are skipping inter-cluster tests
+PING_SKIP_CLUSTER="$(xml "parse" "${PING_TEST_ARGS[5]}" "params/category/skipcluster()")"
+
+# Ping every node in the cluster if not skipping inter-cluster tests
+if [ "$PING_SKIP_CLUSTER" != "yes" ]; then
+	for PING_NODE in "${PING_NODES_ARRAY[@]}"
+	do
+		
+		# Get the node IP address
+		PING_NODE_IP_ADDR="$(sqlite3 ~/db/cluster.db "SELECT IPAddr FROM M7_Nodes WHERE Name='$PING_NODE';")"
+		
+		# Define the node ping log file
+		PING_NODE_LOG="$PING_TEST_BASE/tmp/$PING_NODE.log" && touch $PING_NODE_LOG
+		
+		# Run the ping command
+		echo "RUNNING PING TEST('$PING_NODE:$PING_NODE_IP_ADDR')" | tee -a $PING_TEST_LOG
+		echo "Log: '$PING_NODE_LOG'" | tee -a $PING_TEST_LOG
+		ping -c ${PING_TEST_ARGS[3]} $PING_NODE_IP_ADDR > $PING_NODE_LOG && PING_NODE_EXIT_CODE="$(echo $?)"
+		echo "Exit Code: '$PING_NODE_EXIT_CODE'" | tee -a $PING_TEST_LOG
+		echo "EXIT:'$PING_NODE_EXIT_CODE'" >> $PING_NODE_LOG
+	done
+fi
 
 # If any satellite hosts are defined
 if [ ${#PING_SHOSTS_ARRAY[@]} -gt 0 ]; then

@@ -41,23 +41,28 @@ TROUTE_NODES_ARRAY=( `sqlite3 ~/db/cluster.db "SELECT Name FROM M7_Nodes WHERE N
 # Build an array of satellite hosts
 TROUTE_SHOSTS_ARRAY=( `echo "cat //plan/params/hosts/host/@name" | xmllint --shell "${TROUTE_TEST_ARGS[4]}" | grep "name" | sed "s/^.*name=\"\([^\"]*\)\".*$/\1/g"` )
 
-# Traceroute to every node in the cluster
-for TROUTE_NODE in "${TROUTE_NODES_ARRAY[@]}"
-do
-	
-	# Get the node IP address
-	TROUTE_NODE_IP_ADDR="$(sqlite3 ~/db/cluster.db "SELECT IPAddr FROM M7_Nodes WHERE Name='$TROUTE_NODE';")"
-	
-	# Define the node traceroute log file
-	TROUTE_NODE_LOG="$TROUTE_TEST_BASE/tmp/$TROUTE_NODE.log" && touch $TROUTE_NODE_LOG
-	
-	# Run the traceroute command
-	echo "RUNNING TRACEROUTE TEST('$TROUTE_NODE:$TROUTE_NODE_IP_ADDR')" | tee -a $TROUTE_TEST_LOG
-	echo "Log: '$TROUTE_NODE_LOG'" | tee -a $TROUTE_TEST_LOG
-	traceroute -n $TROUTE_NODE_IP_ADDR > $TROUTE_NODE_LOG && TROUTE_NODE_EXIT_CODE="$(echo $?)"
-	echo "Exit Code: '$TROUTE_NODE_EXIT_CODE'" | tee -a $TROUTE_TEST_LOG
-	echo "EXIT:'$TROUTE_NODE_EXIT_CODE'" >> $TROUTE_NODE_LOG
-done
+# Check if we are skipping inter-cluster tests
+TROUTE_SKIP_CLUSTER="$(xml "parse" "${TROUTE_TEST_ARGS[4]}" "params/category/skipcluster()")"
+
+# Traceroute to every node in the cluster if not skipping inter-cluster tests
+if [ "$TROUTE_SKIP_CLUSTER" != "yes" ]; then
+	for TROUTE_NODE in "${TROUTE_NODES_ARRAY[@]}"
+	do
+		
+		# Get the node IP address
+		TROUTE_NODE_IP_ADDR="$(sqlite3 ~/db/cluster.db "SELECT IPAddr FROM M7_Nodes WHERE Name='$TROUTE_NODE';")"
+		
+		# Define the node traceroute log file
+		TROUTE_NODE_LOG="$TROUTE_TEST_BASE/tmp/$TROUTE_NODE.log" && touch $TROUTE_NODE_LOG
+		
+		# Run the traceroute command
+		echo "RUNNING TRACEROUTE TEST('$TROUTE_NODE:$TROUTE_NODE_IP_ADDR')" | tee -a $TROUTE_TEST_LOG
+		echo "Log: '$TROUTE_NODE_LOG'" | tee -a $TROUTE_TEST_LOG
+		traceroute -n $TROUTE_NODE_IP_ADDR > $TROUTE_NODE_LOG && TROUTE_NODE_EXIT_CODE="$(echo $?)"
+		echo "Exit Code: '$TROUTE_NODE_EXIT_CODE'" | tee -a $TROUTE_TEST_LOG
+		echo "EXIT:'$TROUTE_NODE_EXIT_CODE'" >> $TROUTE_NODE_LOG
+	done
+fi
 
 # If any satellite hosts are defined
 if [ ${#TROUTE_SHOSTS_ARRAY[@]} -gt 0 ]; then

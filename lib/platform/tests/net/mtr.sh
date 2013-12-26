@@ -44,23 +44,28 @@ MTR_NODES_ARRAY=( `sqlite3 ~/db/cluster.db "SELECT Name FROM M7_Nodes WHERE Name
 # Build an array of satellite hosts
 MTR_SHOSTS_ARRAY=( `echo "cat //plan/params/hosts/host/@name" | xmllint --shell "${MTR_TEST_ARGS[5]}" | grep "name" | sed "s/^.*name=\"\([^\"]*\)\".*$/\1/g"` )
 
-# Ping every node in the cluster
-for MTR_NODE in "${MTR_NODES_ARRAY[@]}"
-do
-	
-	# Get the node IP address
-	MTR_NODE_IP_ADDR="$(sqlite3 ~/db/cluster.db "SELECT IPAddr FROM M7_Nodes WHERE Name='$MTR_NODE';")"
-	
-	# Define the node MTR log file
-	MTR_NODE_LOG="$MTR_TEST_BASE/tmp/$MTR_NODE.log" && touch $MTR_NODE_LOG
-	
-	# Run the MTR command
-	echo "RUNNING MTR TEST('$MTR_NODE:$MTR_NODE_IP_ADDR')" | tee -a $MTR_TEST_LOG
-	echo "Log: '$MTR_NODE_LOG'" | tee -a $MTR_TEST_LOG
-	/usr/bin/sudo /usr/sbin/mtr -n --report --report-wide --report-cycles ${MTR_TEST_ARGS[3]} $MTR_NODE_IP_ADDR > $MTR_NODE_LOG && MTR_NODE_EXIT_CODE="$(echo $?)"
-	echo "Exit Code: '$MTR_NODE_EXIT_CODE'" | tee -a $MTR_TEST_LOG
-	echo "EXIT:'$MTR_NODE_EXIT_CODE'" >> $MTR_NODE_LOG
-done
+# Check if we are skipping inter-cluster tests
+MTR_SKIP_CLUSTER="$(xml "parse" "${MTR_TEST_ARGS[5]}" "params/category/skipcluster()")"
+
+# MTR to every node in the cluster if not skipping inter-cluster tests
+if [ "$MTR_SKIP_CLUSTER" != "yes" ]; then
+	for MTR_NODE in "${MTR_NODES_ARRAY[@]}"
+	do
+		
+		# Get the node IP address
+		MTR_NODE_IP_ADDR="$(sqlite3 ~/db/cluster.db "SELECT IPAddr FROM M7_Nodes WHERE Name='$MTR_NODE';")"
+		
+		# Define the node MTR log file
+		MTR_NODE_LOG="$MTR_TEST_BASE/tmp/$MTR_NODE.log" && touch $MTR_NODE_LOG
+		
+		# Run the MTR command
+		echo "RUNNING MTR TEST('$MTR_NODE:$MTR_NODE_IP_ADDR')" | tee -a $MTR_TEST_LOG
+		echo "Log: '$MTR_NODE_LOG'" | tee -a $MTR_TEST_LOG
+		/usr/bin/sudo /usr/sbin/mtr -n --report --report-wide --report-cycles ${MTR_TEST_ARGS[3]} $MTR_NODE_IP_ADDR > $MTR_NODE_LOG && MTR_NODE_EXIT_CODE="$(echo $?)"
+		echo "Exit Code: '$MTR_NODE_EXIT_CODE'" | tee -a $MTR_TEST_LOG
+		echo "EXIT:'$MTR_NODE_EXIT_CODE'" >> $MTR_NODE_LOG
+	done
+fi
 
 # If any satellite hosts are defined
 if [ ${#MTR_SHOSTS_ARRAY[@]} -gt 0 ]; then
