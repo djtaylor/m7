@@ -41,7 +41,7 @@ echo "######################################################################" | 
 # Build an array of all cluster nodes except the localhost
 MTR_NODES_ARRAY=( `sqlite3 ~/db/cluster.db "SELECT Name FROM M7_Nodes WHERE Name!='$(hostname -s)';"` )
 
-# Build an array of supplementary hosts
+# Build an array of satellite hosts
 MTR_SHOSTS_ARRAY=( `echo "cat //plan/params/hosts/host/@name" | xmllint --shell "${MTR_TEST_ARGS[5]}" | grep "name" | sed "s/^.*name=\"\([^\"]*\)\".*$/\1/g"` )
 
 # Ping every node in the cluster
@@ -62,10 +62,10 @@ do
 	echo "EXIT:'$MTR_NODE_EXIT_CODE'" >> $MTR_NODE_LOG
 done
 
-# If any supplementary hosts are defined
+# If any satellite hosts are defined
 if [ ${#MTR_SHOSTS_ARRAY[@]} -gt 0 ]; then
 	
-	# Ping to every supplementary node
+	# Ping to every satellite node
 	for MTR_SHOST in "${MTR_SHOSTS_ARRAY[@]}"
 	do
 		

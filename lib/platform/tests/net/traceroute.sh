@@ -38,7 +38,7 @@ echo "######################################################################" | 
 # Build an array of all cluster nodes except the localhost
 TROUTE_NODES_ARRAY=( `sqlite3 ~/db/cluster.db "SELECT Name FROM M7_Nodes WHERE Name!='$(hostname -s)';"` )
 
-# Build an array of supplementary hosts
+# Build an array of satellite hosts
 TROUTE_SHOSTS_ARRAY=( `echo "cat //plan/params/hosts/host/@name" | xmllint --shell "${TROUTE_TEST_ARGS[4]}" | grep "name" | sed "s/^.*name=\"\([^\"]*\)\".*$/\1/g"` )
 
 # Traceroute to every node in the cluster
@@ -59,10 +59,10 @@ do
 	echo "EXIT:'$TROUTE_NODE_EXIT_CODE'" >> $TROUTE_NODE_LOG
 done
 
-# If any supplementary hosts are defined
+# If any satellite hosts are defined
 if [ ${#TROUTE_SHOSTS_ARRAY[@]} -gt 0 ]; then
 	
-	# Traceroute to every supplementary node
+	# Traceroute to every satellite node
 	for TROUTE_SHOST in "${TROUTE_SHOSTS_ARRAY[@]}"
 	do
 		

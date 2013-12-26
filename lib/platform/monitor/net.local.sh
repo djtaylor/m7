@@ -70,9 +70,9 @@ do
 				# Get the target host
 				TEST_PING_HOST="$(echo $TEST_PING_LOG | sed "s/^.*\/\([^\.]*\)\.log$/\1/g")"
 				
-				# If processing a supplementary host
+				# If processing a satellite host
 				if [ -z  "$(sqlite3 ~/db/cluster.db "SELECT * FROM M7_Nodes WHERE Name='$TEST_PING_HOST';")" ]; then
-					TEST_PING_HOST_TYPE="supplementary"
+					TEST_PING_HOST_TYPE="satellite"
 					TEST_PING_IP_ADDR="$(xml "parse" "$NM_SOURCE_PLAN" "params/hosts/host[@name='$TEST_PING_HOST']/text()")"
 				else
 					TEST_PING_HOST_TYPE="cluster"
@@ -132,9 +132,9 @@ do
 				# Get the target host
 				TEST_TROUTE_HOST="$(echo $TEST_TROUTE_LOG | sed "s/^.*\/\([^\.]*\)\.log$/\1/g")"
 				
-				# If processing a supplementary host
+				# If processing a satellite host
 				if [ -z  "$(sqlite3 ~/db/cluster.db "SELECT * FROM M7_Nodes WHERE Name='$TEST_TROUTE_HOST';")" ]; then
-					TEST_TROUTE_HOST_TYPE="supplementary"
+					TEST_TROUTE_HOST_TYPE="satellite"
 					TEST_TROUTE_IP_ADDR="$(xml "parse" "$NM_SOURCE_PLAN" "params/hosts/host[@name='$TEST_TROUTE_HOST']/text()")"
 				else
 					TEST_TROUTE_HOST_TYPE="cluster"
@@ -233,9 +233,9 @@ do
 				# Get the target host
 				TEST_MTR_HOST="$(echo $TEST_MTR_LOG | sed "s/^.*\/\([^\.]*\)\.log$/\1/g")"
 				
-				# If processing a supplementary host
+				# If processing a satellite host
 				if [ -z  "$(sqlite3 ~/db/cluster.db "SELECT * FROM M7_Nodes WHERE Name='$TEST_MTR_HOST';")" ]; then
-					TEST_MTR_HOST_TYPE="supplementary"
+					TEST_MTR_HOST_TYPE="satellite"
 					TEST_MTR_IP_ADDR="$(xml "parse" "$NM_SOURCE_PLAN" "params/hosts/host[@name='$TEST_MTR_HOST']/text()")"
 				
 				# If processing a cluster host
