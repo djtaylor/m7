@@ -64,8 +64,9 @@ do
 			for TEST_PING_LOG in $(find ~/output/$NM_TARGET_ID/local/$TEST_RESULT_DIR/tmp -type f)
 			do
 				
-				# First get the exit code to see if the ping was successful
+				# First get the exit code to see if the ping was successful and the command run time
 				TEST_PING_EXIT_CODE="$(cat $TEST_PING_LOG | grep "EXIT" | sed "s/^EXIT:'\([0-9]*\)'/\1/g")"
+				TEST_PING_RUN_TIME="$(cat $TEST_PING_LOG | grep "RUN" | sed "s/^RUN:'\([^']*\)'/\1/g")"
 				
 				# Get the target host
 				TEST_PING_HOST="$(echo $TEST_PING_LOG | sed "s/^.*\/\([^\.]*\)\.log$/\1/g")"
@@ -88,6 +89,7 @@ do
 					# Generate the host ping block
 					TEST_SUMMARY_BLOCK+="\t\t<host name='$TEST_PING_HOST'>\n"
 					TEST_SUMMARY_BLOCK+="\t\t\t<type>$TEST_PING_HOST_TYPE</type>\n"
+					TEST_SUMMARY_BLOCK+="\t\t\t<runtime>$TEST_PING_RUN_TIME</runtime>\n"
 					if [ "$TEST_PING_HOST_TYPE" = "cluster" ]; then
 						TEST_SUMMARY_BLOCK+="\t\t\t<region>$TEST_PING_REGION</region>\n"
 					fi
@@ -106,6 +108,7 @@ do
 					# Generate the host ping block
 					TEST_SUMMARY_BLOCK+="\t\t<host name='$TEST_PING_HOST'>\n"
 					TEST_SUMMARY_BLOCK+="\t\t\t<type>$TEST_PING_HOST_TYPE</type>\n"
+					TEST_SUMMARY_BLOCK+="\t\t\t<runtime>$TEST_PING_RUN_TIME</runtime>\n"
 					if [ "$TEST_PING_HOST_TYPE" = "cluster" ]; then
 						TEST_SUMMARY_BLOCK+="\t\t\t<region>$TEST_PING_REGION</region>\n"
 					fi
@@ -126,8 +129,9 @@ do
 			for TEST_TROUTE_LOG in $(find ~/output/$NM_TARGET_ID/local/$TEST_RESULT_DIR/tmp -type f)
 			do
 				
-				# First get the exit code to see if the traceroute was successful
+				# First get the exit code to see if the traceroute was successful and the run time
 				TEST_TROUTE_EXIT_CODE="$(cat $TEST_TROUTE_LOG | grep "EXIT" | sed "s/^EXIT:'\([0-9]*\)'/\1/g")"
+				TEST_TROUTE_RUN_TIME="$(cat $TEST_TROUTE_LOG | grep "RUN" | sed "s/^RUN:'\([^']*\)'/\1/g")"
 				
 				# Get the target host
 				TEST_TROUTE_HOST="$(echo $TEST_TROUTE_LOG | sed "s/^.*\/\([^\.]*\)\.log$/\1/g")"
@@ -150,6 +154,7 @@ do
 					# Generate the host traceroute block
 					TEST_SUMMARY_BLOCK+="\t\t<host name='$TEST_TROUTE_HOST'>\n"
 					TEST_SUMMARY_BLOCK+="\t\t\t<type>$TEST_TROUTE_HOST_TYPE</type>\n"
+					TEST_SUMMARY_BLOCK+="\t\t\t<runtime>$TEST_TROUTE_RUN_TIME</runtime>\n"
 					if [ "$TEST_TROUTE_HOST_TYPE" = "cluster" ]; then
 						TEST_SUMMARY_BLOCK+="\t\t\t<region>$TEST_TROUTE_REGION</region>\n"
 					fi
@@ -161,6 +166,7 @@ do
 					# Generate the host traceroute block
 					TEST_SUMMARY_BLOCK+="\t\t<host name='$TEST_TROUTE_HOST'>\n"
 					TEST_SUMMARY_BLOCK+="\t\t\t<type>$TEST_TROUTE_HOST_TYPE</type>\n"
+					TEST_SUMMARY_BLOCK+="\t\t\t<runtime>$TEST_TROUTE_RUN_TIME</runtime>\n"
 					if [ "$TEST_TROUTE_HOST_TYPE" = "cluster" ]; then
 						TEST_SUMMARY_BLOCK+="\t\t\t<region>$TEST_TROUTE_REGION</region>\n"
 					fi
@@ -227,8 +233,9 @@ do
 			for TEST_MTR_LOG in $(find ~/output/$NM_TARGET_ID/local/$TEST_RESULT_DIR/tmp -type f)
 			do
 				
-				# First get the exit code to see if the MTR was successful
+				# First get the exit code to see if the MTR was successful and the run time
 				TEST_MTR_EXIT_CODE="$(cat $TEST_MTR_LOG | grep "EXIT" | sed "s/^EXIT:'\([0-9]*\)'/\1/g")"
+				TEST_MTR_RUN_TIME="$(cat $TEST_MTR_LOG | grep "RUN" | sed "s/^RUN:'\([^']*\)'/\1/g")"
 				
 				# Get the target host
 				TEST_MTR_HOST="$(echo $TEST_MTR_LOG | sed "s/^.*\/\([^\.]*\)\.log$/\1/g")"
@@ -253,6 +260,7 @@ do
 					# Generate the host MTR block
 					TEST_SUMMARY_BLOCK+="\t\t<host name='$TEST_MTR_HOST'>\n"
 					TEST_SUMMARY_BLOCK+="\t\t\t<type>$TEST_MTR_HOST_TYPE</type>\n"
+					TEST_SUMMARY_BLOCK+="\t\t\t<runtime>$TEST_MTR_RUN_TIME</runtime>\n"
 					if [ "$TEST_MTR_HOST_TYPE" = "cluster" ]; then
 						TEST_SUMMARY_BLOCK+="\t\t\t<region>$TEST_MTR_REGION</region>\n"
 					fi
@@ -264,6 +272,7 @@ do
 					# Open the host MTR block
 					TEST_SUMMARY_BLOCK+="\t\t<host name='$TEST_MTR_HOST'>\n"
 					TEST_SUMMARY_BLOCK+="\t\t\t<type>$TEST_MTR_HOST_TYPE</type>\n"
+					TEST_SUMMARY_BLOCK+="\t\t\t<runtime>$TEST_MTR_RUN_TIME</runtime>\n"
 					if [ "$TEST_MTR_HOST_TYPE" = "cluster" ]; then
 						TEST_SUMMARY_BLOCK+="\t\t\t<region>$TEST_MTR_REGION</region>\n"
 					fi

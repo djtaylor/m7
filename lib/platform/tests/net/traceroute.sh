@@ -58,7 +58,8 @@ if [ "$TROUTE_SKIP_CLUSTER" = "no" ]; then
 		# Run the traceroute command
 		echo "RUNNING TRACEROUTE TEST('$TROUTE_NODE:$TROUTE_NODE_IP_ADDR')" | tee -a $TROUTE_TEST_LOG
 		echo "Log: '$TROUTE_NODE_LOG'" | tee -a $TROUTE_TEST_LOG
-		traceroute -n $TROUTE_NODE_IP_ADDR > $TROUTE_NODE_LOG && TROUTE_NODE_EXIT_CODE="$(echo $?)"
+		echo "RUN:'$(date +"%Y-%m-%d %H:%M:%S")'" > $TROUTE_NODE_LOG
+		traceroute -n $TROUTE_NODE_IP_ADDR >> $TROUTE_NODE_LOG && TROUTE_NODE_EXIT_CODE="$(echo $?)"
 		echo "Exit Code: '$TROUTE_NODE_EXIT_CODE'" | tee -a $TROUTE_TEST_LOG
 		echo "EXIT:'$TROUTE_NODE_EXIT_CODE'" >> $TROUTE_NODE_LOG
 	done
@@ -80,7 +81,8 @@ if [ ${#TROUTE_SHOSTS_ARRAY[@]} -gt 0 ]; then
 		# Run the traceroute command
 		echo "RUNNING TRACEROUTE TEST('$TROUTE_SHOST:$TROUTE_SHOST_IP_ADDR')" | tee -a $TROUTE_TEST_LOG
 		echo "Log: '$TROUTE_SHOST_LOG'" | tee -a $TROUTE_TEST_LOG
-		traceroute -n $TROUTE_SHOST_IP_ADDR > $TROUTE_SHOST_LOG && TROUTE_SHOST_EXIT_CODE="$(echo $?)"
+		echo "RUN:'$(date +"%Y-%m-%d %H:%M:%S")'" > $TROUTE_NODE_LOG
+		traceroute -n $TROUTE_SHOST_IP_ADDR >> $TROUTE_SHOST_LOG && TROUTE_SHOST_EXIT_CODE="$(echo $?)"
 		echo "Exit Code: '$TROUTE_SHOST_EXIT_CODE'" | tee -a $TROUTE_TEST_LOG
 		echo "EXIT:'$TROUTE_SHOST_EXIT_CODE'" >> $TROUTE_SHOST_LOG	
 	done
