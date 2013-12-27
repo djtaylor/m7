@@ -84,7 +84,7 @@ if [ ${#MTR_SHOSTS_ARRAY[@]} -gt 0 ]; then
 		# Run the MTR command
 		echo "RUNNING MTR TEST('$MTR_SHOST:$MTR_SHOST_IP_ADDR')" | tee -a $MTR_TEST_LOG
 		echo "Log: '$MTR_SHOST_LOG'" | tee -a $MTR_TEST_LOG
-		echo "RUN:'$(date +"%Y-%m-%d %H:%M:%S")'" > $MTR_NODE_LOG
+		echo "RUN:'$(date +"%Y-%m-%d %H:%M:%S")'" > $MTR_SHOST_LOG
 		/usr/bin/sudo /usr/sbin/mtr -n --report --report-wide --report-cycles ${MTR_TEST_ARGS[3]} $MTR_SHOST_IP_ADDR >> $MTR_SHOST_LOG && MTR_SHOST_EXIT_CODE="$(echo $?)"
 		echo "Exit Code: '$MTR_SHOST_EXIT_CODE'" | tee -a $MTR_TEST_LOG
 		echo "EXIT:'$MTR_SHOST_EXIT_CODE'" >> $MTR_SHOST_LOG	
