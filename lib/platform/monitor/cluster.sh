@@ -29,6 +29,7 @@ cp $CM_SOURCE_PLAN ~/html/results/$CM_TARGET_ID/plan.xml
 case "$CM_TEST_TYPE" in
 	"net")
 		/usr/bin/perl ~/lib/perl/net/xml_to_db.pl $CM_TARGET_ID
+		;;
 	"web")
 		:
 esac

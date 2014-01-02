@@ -21,7 +21,7 @@ use constant {
     DB_HOST => "localhost",
     DB_PORT => "3306",
     DB_USER => "root",
-    DB_PASS => "KTr0xr0x",
+    DB_PASS => "password",
 };
 
 # Create a new database connection
@@ -39,11 +39,28 @@ while (my $m7_xml_file = readdir(DIR)) {
     push (@m7_xml_files, "$m7_xml_dir$m7_xml_file");
 }
 
+# Parse the XML test plan
+my $m7_plan_xpath	= XML::XPath->new(filename => $ENV{"HOME"} . "/plans/" . $ARGV[0] . ".xml");
+my $m7_plan_desc	= $m7_plan_xpath->findnodes('plan/desc');
+my $m7_plan_cat		= $m7_plan_xpath->findnodes('plan/params/category');
+my $m7_plan_runtime	= read_file($ENV{"HOME"} . "/lock/" . $ARGV[0] . "/runtime");
+
+# If the test row doesn't exist create it, if so, update the last runtime
+my $m7_plan_check	= $m7_dbc->selectcol_arrayref("SELECT * FROM tests WHERE test_id='" . $ARGV[0] . "'");
+if (@$m7_plan_check) {
+	my $m7_plan_update = "UPDATE `" . DB_NAME . "`.`tests` SET last_run='" . $m7_plan_runtime . "', run_count=run_count+1 WHERE test_id='" . $ARGV[0] . "'";
+	$m7_dbc->do($m7_plan_update);
+} else {
+	my $m7_plan_create = "INSERT INTO `" . DB_NAME . "`.`tests`(" .
+						 "`test_id`, `type`, `desc`, `first_run`, `last_run`, `run_count`) VALUES(" . 
+						 "'" . $ARGV[0] . "','net','" . $m7_plan_desc . "','" . $m7_plan_runtime . "','" . $m7_plan_runtime . "', 1)";
+	$m7_dbc->do($m7_plan_create);
+}
+
 # Process XML Result Files \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\ #
 foreach (@m7_xml_files) {
     my $m7_xml_tree			= $m7_xml_parser->parse_file($_);
     my $m7_test_xpath		= XML::XPath->new(filename => $_);
-	my $m7_plan_runtime		= read_file($_ENV{"HOME"} . "/lock/" . $_ARGV[0] . "/runtime");
 	
     # Get the node information
     for my $m7_host_node ($m7_xml_tree->findnodes('plan/host/name')) {

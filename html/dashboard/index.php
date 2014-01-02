@@ -145,9 +145,10 @@
 	</head>
 	<body>
         <div class="m7_dashboard_nav">
-	        <form action="index.php" action="post">
+	        <form id="test_params" action="index.php" action="post">
 	        	<div class="m7_dashboard_content">
-	            	<div class="m7_test_submit"><input type="submit" value="Submit"></div>
+	        		<div class="m7_configure">Configure</div>
+	            	<div class="m7_test_submit">Submit</div>
 	                <div class="m7_test_type">
 	                	<div class="m7_test_type_title">Test Type</div>
 	                    <div class="m7_test_type_menu">
