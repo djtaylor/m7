@@ -82,7 +82,7 @@ test_dist() {
 							else
 								log "info" "$SUCCESS"
 								
-								# Create the worker lock file
+								# Create the worker lock files
 								touch ~/lock/$TEST_DIST_ID/worker/$TEST_DIST_WORKER_ID && echo "$(date +"%H:%M:%S")" > ~/lock/$TEST_DIST_ID/worker/$TEST_DIST_WORKER_ID
 								
 								# Generate the worker monitor script

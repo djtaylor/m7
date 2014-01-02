@@ -61,7 +61,6 @@ if [ "$PING_SKIP_CLUSTER" = "no" ]; then
 		# Run the ping command
 		echo "RUNNING PING TEST('$PING_NODE:$PING_NODE_IP_ADDR')" | tee -a $PING_TEST_LOG
 		echo "Log: '$PING_NODE_LOG'" | tee -a $PING_TEST_LOG
-		echo "RUN:'$(date +"%Y-%m-%d %H:%M:%S")'" > $PING_NODE_LOG
 		ping -c ${PING_TEST_ARGS[3]} $PING_NODE_IP_ADDR >> $PING_NODE_LOG && PING_NODE_EXIT_CODE="$(echo $?)"
 		echo "Exit Code: '$PING_NODE_EXIT_CODE'" | tee -a $PING_TEST_LOG
 		echo "EXIT:'$PING_NODE_EXIT_CODE'" >> $PING_NODE_LOG

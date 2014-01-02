@@ -9,6 +9,7 @@ use DBD::mysql;
 use Data::Dumper;
 use Geo::IP;
 use Data::Validate::IP;
+use File::Slurp;
 
 # Create the XML and GeoIP parser
 my $m7_xml_parser = XML::LibXML->new();
@@ -42,7 +43,8 @@ while (my $m7_xml_file = readdir(DIR)) {
 foreach (@m7_xml_files) {
     my $m7_xml_tree			= $m7_xml_parser->parse_file($_);
     my $m7_test_xpath		= XML::XPath->new(filename => $_);
-
+	my $m7_plan_runtime		= read_file($_ENV{"HOME"} . "/lock/" . $_ARGV[0] . "/runtime");
+	
     # Get the node information
     for my $m7_host_node ($m7_xml_tree->findnodes('plan/host/name')) {
     	my $m7_host			= $m7_host_node->textContent();
@@ -149,7 +151,6 @@ foreach (@m7_xml_files) {
                 	# Process the host definitions
                     for my $m7_ping_host_name_tree ($m7_xml_tree->findnodes('plan/test[@id="' . $m7_test_id . '"]/host/@name')) {
                     	my $m7_ping_host		= $m7_ping_host_name_tree->textContent();
-                    	my $m7_ping_runtime		= $m7_test_xpath->findvalue('plan/test[@id="' . $m7_test_id . '"]/host[@name="' . $m7_ping_host . '"]/runtime');
 
                         # Get the ping statistics
                         my $m7_ping_ip			= $m7_test_xpath->findvalue('plan/test[@id="' . $m7_test_id . '"]/host[@name="' . $m7_ping_host . '"]/ip');
@@ -175,7 +176,7 @@ foreach (@m7_xml_files) {
                         	",'" . $m7_ping_region . "'" .
                         	",'" . $m7_ping_lat . "'" .
                         	",'" . $m7_ping_lon . "'" .
-                        	",'" . $m7_ping_runtime . "'" .
+                        	",'" . $m7_plan_runtime . "'" .
                         	",'" . $m7_ping_pkt_loss . "'" .
                         	",'" . $m7_ping_min_time . "'" .
                         	",'" . $m7_ping_avg_time . "'" .
@@ -209,7 +210,6 @@ foreach (@m7_xml_files) {
                 	# Process the host definitions
                     for my $m7_troute_host_name_tree ($m7_xml_tree->findnodes('plan/test[@id="' . $m7_test_id . '"]/host/@name')) {
                     	my $m7_troute_host 			= $m7_troute_host_name_tree->textContent();
-                    	my $m7_troute_runtime		= $m7_test_xpath->findvalue('plan/test[@id="' . $m7_test_id . '"]/host[@name="' . $m7_troute_host . '"]/runtime');
                     	my $m7_troute_dest_ip		= $m7_test_xpath->findvalue('plan/test[@id="' . $m7_test_id . '"]/host[@name="' . $m7_troute_host . '"]/ip');
                     	my $m7_troute_dest_region	= $m7_test_xpath->findvalue('plan/test[@id="' . $m7_test_id . '"]/host[@name="' . $m7_troute_host . '"]/region');
                     	
@@ -250,7 +250,7 @@ foreach (@m7_xml_files) {
 	                        	",'" . $m7_troute_dest_region . "'" .
 	                        	",'" . $m7_troute_dest_lat . "'" .
 	                        	",'" . $m7_troute_dest_lon . "'" .
-	                        	",'" . $m7_troute_runtime . "'" .
+	                        	",'" . $m7_plan_runtime . "'" .
 	                        	",'" . $m7_troute_hop . "'" .
 	                        	",'" . $m7_troute_try . "'" .
 	                        	",'" . $m7_troute_ip . "'" .
@@ -286,7 +286,6 @@ foreach (@m7_xml_files) {
                 	# Process the host definitions
                     for my $m7_mtr_host_name_tree ($m7_xml_tree->findnodes('plan/test[@id="' . $m7_test_id . '"]/host/@name')) {
                     	my $m7_mtr_host				= $m7_mtr_host_name_tree->textContent();
-                    	my $m7_mtr_runtime			= $m7_test_xpath->findvalue('plan/test[@id="' . $m7_test_id . '"]/host[@name="' . $m7_mtr_host . '"]/runtime');
                     	my $m7_mtr_dest_ip			= $m7_test_xpath->findvalue('plan/test[@id="' . $m7_test_id . '"]/host[@name="' . $m7_mtr_host . '"]/ip');
                     	my $m7_mtr_dest_region		= $m7_test_xpath->findvalue('plan/test[@id="' . $m7_test_id . '"]/host[@name="' . $m7_mtr_host . '"]/region');
                     	
@@ -342,7 +341,7 @@ foreach (@m7_xml_files) {
 	                        	",'" . $m7_mtr_dest_region . "'" .
 	                        	",'" . $m7_mtr_dest_lat . "'" .
 	                        	",'" . $m7_mtr_dest_lon . "'" .
-	                        	",'" . $m7_mtr_runtime . "'" .
+	                        	",'" . $m7_plan_runtime . "'" .
 	                        	",'" . $m7_mtr_hop . "'" .
 	                        	",'" . $m7_mtr_ip_list . "'" .
 	                        	",'" . $m7_mtr_ip_geolist . "'" .

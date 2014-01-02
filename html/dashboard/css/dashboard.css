@@ -45,6 +45,39 @@ html,body {
 .arc3 { stroke: yellow; }
 .arc4 { stroke: green; }
 
+.m7_test_details {
+  position: fixed;
+  z-index: 100;
+  width: 100%;
+  height: 100%;
+  top: 0;
+  left: 0;
+  display: none;
+}
+
+.m7_test_details_bg {
+  width: 100%;
+  height: 100%;
+  z-index: 101;
+  position: absolute;
+  top: 0;
+  right: 0;
+  background: #000;
+  opacity: 0.3;
+}
+
+.m7_test_details_content {
+  position: absolute;
+  z-index: 102;
+  width: 800px;
+  height: 600px;
+  margin-left: auto;
+  margin-right: auto;
+  top: 50px;
+  background: #f4f4f4;
+  overflow: auto;
+}
+
 .m7_dashboard_nav {
   position: fixed;
   bottom: 0;
@@ -62,10 +95,18 @@ html,body {
   overflow: auto;
 }
 
-.m7_test_type, .m7_test_id, .m7_test_host, .m7_test_cat, .m7_test_destip {
+.m7_test_type, .m7_test_id, .m7_test_host, .m7_test_cat, .m7_test_destip, .m7_test_details_show {
   overflow: auto;
   margin: 0 0 0 5px;
   float: left;
+}
+
+.m7_test_details_show {
+	line-height: 40px;
+}
+
+.m7_test_details_show:hover {
+	cursor: pointer;
 }
 
 .m7_test_type_title, .m7_test_type_menu,

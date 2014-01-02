@@ -1,8 +1,12 @@
 <!DOCTYPE HTML>
 <?php
 
+	// Load the data render library
+	require_once('lib/render.php');
+	$render = new Render();
+	
 	// Open a new database connection
-    $db = new mysqli('hostname', 'root', 'password', 'm7');
+    $db = new mysqli('localhost', 'root', 'password', 'm7');
 
     // Define network test categories
     $m7_net_test_categories = array(
@@ -113,15 +117,19 @@
     // Get a list of all test IDs for the test type
     $m7_test_ids_res         = $db->query("SELECT * FROM tests WHERE type='" . $m7_test_type . "'");
     $m7_test_ids = array();
+    $m7_test_ids_desc = array();
     while ($m7_test_id_row   = $m7_test_ids_res->fetch_assoc()) {
     	array_push($m7_test_ids, $m7_test_id_row['test_id']);
+    	$m7_test_ids_desc[$m7_test_id_row['test_id']] = $m7_test_id_row['desc'];
     }
      
     // Build an array of all test hosts
     $m7_test_hosts_res       = $db->query("SELECT * FROM hosts");
     $m7_test_hosts = array();
+    $m7_test_hosts_desc = array();
     while ($m7_test_hosts_row = $m7_test_hosts_res->fetch_assoc()) {
     	array_push($m7_test_hosts, $m7_test_hosts_row['name']);
+    	$m7_test_hosts_desc[$m7_test_hosts_row['name']] = $m7_test_hosts_row['desc'];
     }
 
 ?>
@@ -131,6 +139,8 @@
     	<meta charset="utf-8">
     	<script src="js/d3.v3.min.js"></script>
     	<script src="js/topojson.v1.min.js"></script>
+    	<script src="js/jquery-1.10.2.min.js"></script>
+    	<script src="js/dashboard.js"></script>
         <link rel="stylesheet" type="text/css" href="css/dashboard.css">
 	</head>
 	<body>
@@ -152,7 +162,7 @@
 	                    	<select name="test_id">
 	                        <?php
 	                        foreach($m7_test_ids as $m7_test_id) {
-	                        	echo '<option value="' . $m7_test_id . '">' . $m7_test_id . '</option>' . "\n";
+	                        	echo '<option value="' . $m7_test_id . '">' . $m7_test_id . ' - ' . $m7_test_ids_desc[$m7_test_id] . '</option>' . "\n";
 	                        }
 	                        ?>
 	                        </select>
@@ -165,9 +175,9 @@
 	                        <?php
 	                        foreach($m7_test_hosts as $m7_test_host_name) {
 								if($m7_test_host_name == $m7_test_host) {
-									echo '<option selected="selected" value="' . $m7_test_host_name . '">' . $m7_test_host_name . '</option>' . "\n";
+									echo '<option selected="selected" value="' . $m7_test_host_name . '">' . $m7_test_host_name . ' - ' . $m7_test_hosts_desc[$m7_test_host_name] . '</option>' . "\n";
 								} else {
-									echo '<option value="' . $m7_test_host_name . '">' . $m7_test_host_name . '</option>' . "\n";
+									echo '<option value="' . $m7_test_host_name . '">' . $m7_test_host_name . ' - ' . $m7_test_hosts_desc[$m7_test_host_name] . '</option>' . "\n";
 								}
 	                        }
 	                        ?>
@@ -209,6 +219,23 @@
 	                        </select>
 	                    </div>
 	                </div>
+	                <?php 
+	                if($m7_test_render === true) {
+						$m7_test_details_html = $render->testDetails(array(
+							"type" => $m7_test_type,
+							"id"   => $m7_test_id,
+							"host" => $m7_test_host,
+							"cat"  => $m7_test_cat
+						));
+						echo '<div class="m7_test_details_show">Show Test Details</div>';
+						echo '<div class="m7_test_details">';
+						echo '<div class="m7_test_details_bg"></div>';
+						echo '<div class="m7_test_details_content">';
+						echo $m7_test_details_html;
+						echo '</div>';
+						echo '</div>';
+					}
+	                ?>
 	            </div>
 	        </form>
     	</div>
