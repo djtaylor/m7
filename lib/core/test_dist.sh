@@ -15,12 +15,6 @@ test_dist() {
 	# Get the test plan ID number
 	TEST_DIST_ID="$(xml "parse" "${TEST_DIST_ARGS[0]}" "id/text()")"
 	
-	# Check if a test with the plan ID already exists
-	if [ -d ~/lock/$TEST_DIST_ID ]; then
-		log "error" "A test with the ID '$TEST_DIST_ID' already exists. Please specify a unique ID in the test plan: '${TEST_DIST_ARGS[0]}'"
-		exit 1
-	fi
-	
 	# Only run from a director node
 	if [ ! -z "$(sqlite3 ~/db/cluster.db "SELECT * FROM M7_Nodes WHERE Type='director' AND Name='$(hostname -s)';")" ]; then
 		
