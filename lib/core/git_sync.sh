@@ -32,7 +32,12 @@ git_sync() {
 	
 	# Update folder permissions
 	chmod 755 $HOME
-	
+	find $HOME -type d -exec chmod 755 {} \;
+	find $HOME -type f -exec chmod 644 {} \;
+	chmod 700 $HOME/.ssh
+	chmod 600 $HOME/.ssh/m7.key
+	chmod +x $HOME/bin/m7
+	find $HOME/lib/perl -type f -exec chmod +x {} \;
 }
 
 readonly -f git_sync
