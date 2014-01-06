@@ -47,6 +47,71 @@ test_exec() {
 	# Test category processor
 	case "$TEST_EXEC_CAT" in
 		
+		"dns")
+		
+			# Get each test definition by ID number
+			DNS_TEST_IDS=( `echo "cat //plan/params/test/@id" | xmllint --shell "${TEST_EXEC_ARGS[0]}" | grep "id" | sed "s/id=\"\([0-9]*\)\"/\1/g"` )
+		
+			# Set the number of test threads
+			DNS_THREAD_LIMIT="$(xml "parse" "${TEST_EXEC_ARGS[0]}" "params/threads/text()")"
+		
+			# Process each unique test definition
+			for DNS_TEST_ID in "${DNS_TEST_IDS[@]}"
+			do
+				
+				# Get the test type
+				DNS_TEST_TYPE="$(xml "parse" "${TEST_EXEC_ARGS[0]}" "params/test[@id='$DNS_TEST_ID']/type/text()")"
+				case "$DNS_TEST_TYPE" in
+					
+					"nslookup")
+					
+						# Define the test script
+						DNS_NSLOOKUP_SCRIPT="/tmp/$TEST_EXEC_ID.$TEST_EXEC_CAT.test-$DNS_TEST_ID.sh"
+						
+						# Get the number of samples and the target nameserver
+						DNS_NSLOOKUP_SAMPLES="$(xml "parse" "${TEST_EXEC_ARGS[0]}" "params/test[@id='$DNS_TEST_ID']/samples/text()")"
+						DNS_TARGET_NS="$(xml "parse" "${TEST_EXEC_ARGS[0]}" "params/nameserver/text()")"
+						
+						# Create the test script
+						cat ~/lib/platform/tests/$TEST_EXEC_CAT/$DNS_TEST_TYPE.sh > $DNS_NSLOOKUP_SCRIPT; chmod +x $DNS_NSLOOKUP_SCRIPT
+						
+						# Update the arguments in the script
+						sed -i "s/{TEST_PLAN_ID}/$TEST_EXEC_ID/g" $DNS_NSLOOKUP_SCRIPT
+						sed -i "s/{TEST_DEF_ID}/$DNS_TEST_ID/g" $DNS_NSLOOKUP_SCRIPT
+						sed -i "s/{TEST_THREAD_NUM}/$TEST_THREAD_LIMIT/g" $DNS_NSLOOKUP_SCRIPT
+						sed -i "s/{TEST_CAT}/$TEST_EXEC_CAT/g" $DNS_NSLOOKUP_SCRIPT
+						sed -i "s/{TEST_SAMPLES}/$DNS_NSLOOKUP_SAMPLES/g" $DNS_NSLOOKUP_SCRIPT
+						sed -i "s/{TEST_CAT_TYPE}/$TEST_EXEC_NET_TYPE/g" $DNS_NSLOOKUP_SCRIPT
+						sed -i "s/{TEST_TARGET_NS}/$DNS_TARGET_NS/g" $DNS_NSLOOKUP_SCRIPT
+						sed -i "s/{TEST_PLAN}/$(regex_str "${TEST_EXEC_ARGS[0]}")/g" $DNS_NSLOOKUP_SCRIPT
+						
+						# Launch the test
+						nohup sh $DNS_NSLOOKUP_SCRIPT >/dev/null 2>&1 &
+						;;
+						
+					*)
+						log "error" "Invalid test type for category:['$TEST_EXEC_CAT']: '$DNS_TEST_TYPE'"
+					
+				esac
+			done
+			
+			# Generate the test monitor script
+			DNS_TEST_MON="/tmp/$TEST_EXEC_ID.local.monitor.sh"
+			cat ~/lib/platform/monitor/dns.local.sh > $DNS_TEST_MON && chmod +x $DNS_TEST_MON
+			
+			# Launch the test monitor script
+			nohup sh $DNS_TEST_MON "$TEST_EXEC_ID" "${TEST_EXEC_ARGS[0]}" >/dev/null 2>&1 &
+			
+			# If running from a director node
+			if [ ! -z "$(sqlite3 ~/db/cluster.db "SELECT * FROM M7_Nodes WHERE Type='director' AND Name='$(hostname -s)';")" ]; then
+						
+				# Create and launch the cluster monitor script
+				TEST_EXEC_CLUSTER_MON="/tmp/$TEST_EXEC_ID.cluster.monitor.sh"
+				cat ~/lib/platform/monitor/cluster.sh > $TEST_EXEC_CLUSTER_MON && chmod +x $TEST_EXEC_CLUSTER_MON
+				nohup sh $TEST_EXEC_CLUSTER_MON "$TEST_EXEC_ID" "${TEST_EXEC_ARGS[0]}" >/dev/null 2>&1 &
+			fi
+			;;
+		
 		"net")
 		
 			# Get each test definition by ID number

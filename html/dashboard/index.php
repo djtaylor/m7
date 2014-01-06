@@ -1,142 +1,21 @@
+<?php session_start(); ?>
 <!DOCTYPE HTML>
 <?php
 
-	// Load the data render library
+	// Load Class Libraries
+	require_once('lib/core.php');
+	require_once('lib/d3js.php');
 	require_once('lib/render.php');
 	$render = new Render();
-	
-	// Open a new database connection
-    $db = new mysqli('localhost', 'root', 'password', 'm7');
-
-    // Define network test categories
-    $m7_net_test_categories = array(
-    	// "ping"			=> "Ping",
-    	"traceroute"	=> "Traceroute"
-    	// "mtr" 			=> "MTR"
-    );
     
-    // Check the GET variables for a selected test
-    if (isset($_GET['test_type']) && isset($_GET['test_id']) && isset($_GET['test_host']) && isset($_GET['test_cat'])) {
-    	$m7_test_type        = $_GET['test_type'];
-    	$m7_test_id          = $_GET['test_id'];
-    	$m7_test_host        = $_GET['test_host'];
-    	$m7_test_cat         = $_GET['test_cat'];
-    	
-    	// Check if any additional filter values are supplied
-    	if(isset($_GET['test_destip']) && $_GET['test_destip'] != "all") {
-    		$m7_test_destip  = $_GET['test_destip'];	
-    	}
-    }
-    
-    // Make sure the minimum test variables are defined in POST superglobals before trying to render a test
-    $m7_test_render = false;
-    if (isset($m7_test_type) && isset($m7_test_id) && isset($m7_test_host) && isset($m7_test_cat)) {
-    	$m7_test_render      = true;
-    	
-    	// Set the cookies
-    	setcookie('test_type', $m7_test_type);
-    	setcookie('test_id',   $m7_test_id);
-    	setcookie('test_host', $m7_test_host);
-    	setcookie('test_cat',  $m7_test_cat);
-    	
-    	// Check if any additional filter values are supplied
-    	if(isset($m7_test_destip)) {
-    		setcookie('test_destip', $m7_test_destip);
-    	} 
-    } else {
-    	
-    	// Check if the relative cookies are set
-    	if (isset($_COOKIE['test_type']) && isset($_COOKIE['test_id']) && isset($_COOKIE['test_host']) && isset($_COOKIE['test_cat'])) {
-    		$m7_test_type		 = $_COOKIE['test_type'];
-    		$m7_test_id 		 = $_COOKIE['test_id'];
-    		$m7_test_host		 = $_COOKIE['test_host'];
-    		$m7_test_cat		 = $_COOKIE['test_cat'];
-    	}
-    	
-    	// If all the required cookies are set
-    	if (isset($m7_test_type) && isset($m7_test_id) && isset($m7_test_host) && isset($m7_test_cat)) {
-    		$m7_test_render  = true;
-    	} else {
-    		$m7_test_render  = false;
-    	}
-    }
-
-    // If enough properties are set to render a test
-    if ($m7_test_render === true) {
-    	
-    	// Make a DB friendly host name
-    	$m7_host_db_prefix   = preg_replace("/-/", "_", $m7_test_host);
-    	
-    	// Initialize the test parameters array
-    	$m7_test_properties = array( $m7_host_db_prefix => array());
-    	
-    	// If a destination IP is set
-    	if(isset($m7_test_destip) && $m7_test_destip != "all") {
-    		array_push($m7_test_properties[$m7_host_db_prefix], $m7_test_destip);
-    	} else {
-    		
-    		// Build an array of all destination IPs for the specified test ID / host / category
-    		$m7_test_host_res	 = $db->query("SELECT DISTINCT dest_ip FROM " . $m7_host_db_prefix . "_" . $m7_test_type . "_" . $m7_test_cat);
-    		while ($m7_test_host_dip_row = $m7_test_host_res->fetch_assoc()) {
-    			array_push($m7_test_properties[$m7_host_db_prefix], $m7_test_host_dip_row['dest_ip']);
-    		}	
-    	}
-    	
-    	$m7_dest_ip_results = array();
-    	foreach($m7_test_properties[$m7_host_db_prefix] as $m7_test_dest_ip) {
-    		
-    		// Initialize the array for the destination IP
-    		$m7_dest_ip_results[$m7_test_dest_ip] = array();
-    		
-    		// Build an array for the test results for each destination IP address
-    		$m7_dest_ip_query   = $db->query("SELECT * FROM " . $m7_host_db_prefix . "_" . $m7_test_type . "_" . $m7_test_cat . " WHERE dest_ip='" . $m7_test_dest_ip . "' ORDER BY hop ASC");	
-    		while ($m7_dest_ip_row = $m7_dest_ip_query->fetch_assoc()) {
-    				
-    			// Get the hop number
-    			$m7_dest_ip_hop = $m7_dest_ip_row['hop'];
-    	
-    			// If running an MTR test
-    			if ($m7_test_type == 'mtr') {
-    	
-    				// For now get the single set of coordinates
-    				$m7_dest_ip_results[$m7_test_dest_ip][$m7_dest_ip_hop]['lat'] = preg_replace("/(^[^:]*):[^:]*$/", "$1", $m7_dest_ip_row['ips_gps']);
-    				$m7_dest_ip_results[$m7_test_dest_ip][$m7_dest_ip_hop]['lon'] = preg_replace("/^[^:]*:([^:]*$)/", "$1", $m7_dest_ip_row['ips_gps']);
-    			} else {
-    					
-    				// Insert the latitude and longitude
-    				$m7_dest_ip_results[$m7_test_dest_ip][$m7_dest_ip_hop]['lat'] = $m7_dest_ip_row['ip_lat'];
-    				$m7_dest_ip_results[$m7_test_dest_ip][$m7_dest_ip_hop]['lon'] = $m7_dest_ip_row['ip_lon'];
-    			}
-    		}
-    	}
-    }
-    
-    // Right now we are limited to rendering network tests
-    $m7_test_type            = "net";
-     
-    // Get a list of all test IDs for the test type
-    $m7_test_ids_res         = $db->query("SELECT * FROM tests WHERE type='" . $m7_test_type . "'");
-    $m7_test_ids = array();
-    $m7_test_ids_desc = array();
-    while ($m7_test_id_row   = $m7_test_ids_res->fetch_assoc()) {
-    	array_push($m7_test_ids, $m7_test_id_row['test_id']);
-    	$m7_test_ids_desc[$m7_test_id_row['test_id']] = $m7_test_id_row['desc'];
-    }
-     
-    // Build an array of all test hosts
-    $m7_test_hosts_res       = $db->query("SELECT * FROM hosts");
-    $m7_test_hosts = array();
-    $m7_test_hosts_desc = array();
-    while ($m7_test_hosts_row = $m7_test_hosts_res->fetch_assoc()) {
-    	array_push($m7_test_hosts, $m7_test_hosts_row['name']);
-    	$m7_test_hosts_desc[$m7_test_hosts_row['name']] = $m7_test_hosts_row['desc'];
-    }
-
+    // Make sure the required minimum test variables are set before attempting a render
+    $m7_render = $render->m7RenderCheck();
 ?>
 <html>
 	<head>
 		<title>M7 Dashboard</title>
     	<meta charset="utf-8">
+    	<script><?php echo 'var test_details_render = ',($m7_render === true ? 'true' : 'false'); ?></script>
     	<script src="js/d3.v3.min.js"></script>
     	<script src="js/topojson.v1.min.js"></script>
     	<script src="js/jquery-1.10.2.min.js"></script>
@@ -150,9 +29,9 @@
 	        		<div class="m7_configure">Configure</div>
 	            	<div class="m7_test_submit">Submit</div>
 	                <div class="m7_test_type">
-	                	<div class="m7_test_type_title">Test Type</div>
+	                	<div class="m7_test_type_title">Test Category</div>
 	                    <div class="m7_test_type_menu">
-	                    	<select name="test_type">
+	                    	<select name="cat">
 	                        	<option value="net">Network</option>
 	                        </select>
 	                    </div>
@@ -160,10 +39,10 @@
 	                <div class="m7_test_id">
 	                	<div class="m7_test_id_title">Test ID</div>
 	                    <div class="m7_test_id_menu">
-	                    	<select name="test_id">
+	                    	<select name="id">
 	                        <?php
-	                        foreach($m7_test_ids as $m7_test_id) {
-	                        	echo '<option value="' . $m7_test_id . '">' . $m7_test_id . ' - ' . $m7_test_ids_desc[$m7_test_id] . '</option>' . "\n";
+	                        foreach($render->m7_plans as $m7_plan_id => $m7_plan_params) {
+	                        	echo '<option value="' . $m7_plan_id . '">' . $m7_plan_id . ' - ' . $m7_plan_params['desc'] . '</option>' . "\n";
 	                        }
 	                        ?>
 	                        </select>
@@ -172,13 +51,13 @@
 	                <div class="m7_test_host">
 	                	<div class="m7_test_host_title">Test Host</div>
 	                    <div class="m7_test_host_menu">
-	                    	<select name="test_host">
+	                    	<select name="shost">
 	                        <?php
-	                        foreach($m7_test_hosts as $m7_test_host_name) {
-								if($m7_test_host_name == $m7_test_host) {
-									echo '<option selected="selected" value="' . $m7_test_host_name . '">' . $m7_test_host_name . ' - ' . $m7_test_hosts_desc[$m7_test_host_name] . '</option>' . "\n";
+	                        foreach($render->m7_hosts as $m7_host => $m7_host_params) {
+								if(isset($render->m7_active['host']) && $m7_host == $render->m7_active['host']) {
+									echo '<option selected="selected" value="' . $m7_host . '">' . $m7_host . ' - ' . $m7_host_params['desc'] . '</option>' . "\n";
 								} else {
-									echo '<option value="' . $m7_test_host_name . '">' . $m7_test_host_name . ' - ' . $m7_test_hosts_desc[$m7_test_host_name] . '</option>' . "\n";
+									echo '<option value="' . $m7_host . '">' . $m7_host . ' - ' . $m7_host_params['desc'] . '</option>' . "\n";
 								}
 	                        }
 	                        ?>
@@ -186,15 +65,15 @@
 	                    </div>
 	                </div>
 	                <div class="m7_test_cat_type">
-	                	<div class="m7_test_cat_title">Test Category</div>
+	                	<div class="m7_test_cat_title">Test Type</div>
 	                    <div class="m7_test_cat_menu">
-	                    	<select name="test_cat">
+	                    	<select name="type">
 	                    		<?php 
-	                    		foreach($m7_net_test_categories as $m7_net_test_id => $m7_net_test_desc) {
-									if($m7_net_test_id == $m7_test_cat) {
-										echo '<option selected="selected" value="' . $m7_net_test_id . '">' . $m7_net_test_desc . '</option>' . "\n";
+	                    		foreach($render->m7_categories['net']['types'] as $m7_type_val => $m7_type_desc) {
+									if(isset($render->m7_active['type']) && $m7_type_val == $render->m7_active['type']) {
+										echo '<option selected="selected" value="' . $m7_type_val . '">' . $m7_type_desc . '</option>' . "\n";
 									} else {
-										echo '<option value="' . $m7_net_test_id . '">' . $m7_net_test_desc . '</option>' . "\n";
+										echo '<option value="' . $m7_type_val . '">' . $m7_type_desc . '</option>' . "\n";
 									}
 								}
 	                    		?>
@@ -204,15 +83,15 @@
 	                <div class="m7_test_destip_type">
 	                	<div class="m7_test_destip_title">Destination IP</div>
 	                    <div class="m7_test_destip_menu">
-	                    	<select name="test_destip">
+	                    	<select name="destip">
 	                        	<option value="all">--All--</option>
 	                        	<?php
-	                        	if(isset($m7_dest_ip_results)) {
-	                        		foreach($m7_dest_ip_results as $m7_dest_ip_val => $m7_dest_ip_array) {
-										if($m7_dest_ip_val == $m7_test_destip) {
-											echo '<option selected="selected" value="' . $m7_dest_ip_val . '">' . $m7_dest_ip_val . '</option>' . "\n";
+	                        	if(isset($render->m7_destips)) {
+	                        		foreach($render->m7_destips as $m7_destip_val) {
+										if($m7_destip_val == $render->m7_active['destip']) {
+											echo '<option selected="selected" value="' . $m7_destip_val . '">' . $m7_destip_val . '</option>' . "\n";
 										} else {
-											echo '<option value="' . $m7_dest_ip_val . '">' . $m7_dest_ip_val . '</option>' . "\n";
+											echo '<option value="' . $m7_destip_val . '">' . $m7_destip_val . '</option>' . "\n";
 										}
 									}
 	                        	}
@@ -220,26 +99,35 @@
 	                        </select>
 	                    </div>
 	                </div>
-	                <?php 
-	                if($m7_test_render === true) {
-						$m7_test_details_html = $render->testDetails(array(
-							"type" => $m7_test_type,
-							"id"   => $m7_test_id,
-							"host" => $m7_test_host,
-							"cat"  => $m7_test_cat
-						));
-						echo '<div class="m7_test_details_show">Show Test Details</div>';
-						echo '<div class="m7_test_details">';
-						echo '<div class="m7_test_details_bg"></div>';
-						echo '<div class="m7_test_details_content">';
-						echo $m7_test_details_html;
-						echo '</div>';
-						echo '</div>';
-					}
-	                ?>
+	                <div class="m7_test_runtime">
+	                	<div class="m7_test_runtime_title">Test Runtime</div>
+	                    <div class="m7_test_runtime_menu">
+	                    	<select name="runtime">
+	                        	<option value="recent">--Most Recent--</option>
+	                        </select>
+	                    </div>
+	                </div>
+	                <?php if ($m7_render) { echo $render->testDetails(); } ?>
 	            </div>
 	        </form>
     	</div>
+    	<?php 
+	    if ($m7_render) {
+			if(!empty($render->m7_destips)) {
+				echo '<div class="m7_map_key">' . "\n";
+				echo '<div class="m7_map_key_title">Map Key</div>' . "\n";
+				$m7_key_count = 1;
+				foreach($render->m7_destips as $m7_destip_val) {
+					echo '<div class="m7_map_key_entry">' . "\n";
+					echo '<div class="m7_map_key_color key' . $m7_key_count . '"></div>' . "\n";
+					echo '<div class="m7_map_key_txt">Destination - ' . $m7_destip_val . '</div>' . "\n";
+					echo '</div>' . "\n";
+					$m7_key_count++;
+				}
+				echo '</div>' . "\n";
+			}
+		}
+		?>
     	<div id="map_container"></div>
     	<script>
 
@@ -265,28 +153,7 @@ svg.append("path")
     .attr("class", "graticule")
     .attr("d", path);
 
-<?php 
-
-if ($m7_test_render === true) {
-	$m7_stroke_count = 1;
-	foreach($m7_dest_ip_results as $m7_dest_ip_hops) {
-		$m7_dest_ip_hop_coords_string = null;
-		foreach($m7_dest_ip_hops as $m7_dest_ip_hop_coords) {
-			if(!isset($m7_dest_ip_hop_coords_string)) {
-				$m7_dest_ip_hop_coords_string = "[" . $m7_dest_ip_hop_coords['lon'] . "," . $m7_dest_ip_hop_coords['lat'] . "]";
-			} else {
-				$m7_dest_ip_hop_coords_string .= ",[" . $m7_dest_ip_hop_coords['lon'] . "," . $m7_dest_ip_hop_coords['lat'] . "]";
-			}
-		}
-		echo 'svg.append("path")' . "\n";
-		echo '.datum({type: "LineString", coordinates: [' . $m7_dest_ip_hop_coords_string . ']})' . "\n";
-		echo '.attr("class", "arc' . $m7_stroke_count . '")' . "\n";
-		echo '.attr("d", path);' . "\n";
-		$m7_stroke_count++;
-	}
-}	                      
-
-?>
+<?php if ($m7_render) { echo $render->m7MapPaths(); } ?>
 
 d3.json("/dashboard/json/world-50m.json", function(error, world) {
 	svg.insert("path", ".graticule")

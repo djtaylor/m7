@@ -20,8 +20,8 @@ use constant {
 	DB_NAME => "m7",
     DB_HOST => "localhost",
     DB_PORT => "3306",
-    DB_USER => "root",
-    DB_PASS => "password",
+    DB_USER => "m7",
+    DB_PASS => "r3nDer",
 };
 
 # Create a new database connection
@@ -46,13 +46,13 @@ my $m7_plan_cat		= $m7_plan_xpath->findnodes('plan/params/category');
 my $m7_plan_runtime	= read_file($ENV{"HOME"} . "/lock/" . $ARGV[0] . "/runtime");
 
 # If the test row doesn't exist create it, if so, update the last runtime
-my $m7_plan_check	= $m7_dbc->selectcol_arrayref("SELECT * FROM tests WHERE test_id='" . $ARGV[0] . "'");
+my $m7_plan_check	= $m7_dbc->selectcol_arrayref("SELECT * FROM plans WHERE plan_id='" . $ARGV[0] . "'");
 if (@$m7_plan_check) {
-	my $m7_plan_update = "UPDATE `" . DB_NAME . "`.`tests` SET last_run='" . $m7_plan_runtime . "', run_count=run_count+1 WHERE test_id='" . $ARGV[0] . "'";
+	my $m7_plan_update = "UPDATE `" . DB_NAME . "`.`plans` SET last_run='" . $m7_plan_runtime . "', run_count=run_count+1 WHERE plan_id='" . $ARGV[0] . "'";
 	$m7_dbc->do($m7_plan_update);
 } else {
-	my $m7_plan_create = "INSERT INTO `" . DB_NAME . "`.`tests`(" .
-						 "`test_id`, `type`, `desc`, `first_run`, `last_run`, `run_count`) VALUES(" . 
+	my $m7_plan_create = "INSERT INTO `" . DB_NAME . "`.`plans`(" .
+						 "`plan_id`, `type`, `desc`, `first_run`, `last_run`, `run_count`) VALUES(" . 
 						 "'" . $ARGV[0] . "','net','" . $m7_plan_desc . "','" . $m7_plan_runtime . "','" . $m7_plan_runtime . "', 1)";
 	$m7_dbc->do($m7_plan_create);
 }
@@ -78,7 +78,7 @@ foreach (@m7_xml_files) {
         $m7_dbc->do("
         	CREATE TABLE IF NOT EXISTS " . DB_NAME . "." . $m7_host . "_net_ping(
             	id              INT NOT NULL AUTO_INCREMENT,
-            	test_id			INT NOT NULL,
+            	plan_id			INT NOT NULL,
                 source_ip       VARCHAR(15) NOT NULL,
                 source_region   VARCHAR(25) NOT NULL,
                 source_lat		VARCHAR(10),
@@ -102,7 +102,7 @@ foreach (@m7_xml_files) {
         $m7_dbc->do("
         	CREATE TABLE IF NOT EXISTS " . DB_NAME . "." . $m7_host . "_net_traceroute(
             	id              INT NOT NULL AUTO_INCREMENT,
-            	test_id			INT NOT NULL,
+            	plan_id			INT NOT NULL,
             	source_ip       VARCHAR(15) NOT NULL,
             	source_region   VARCHAR(25) NOT NULL,
             	source_lat		VARCHAR(10),
@@ -127,7 +127,7 @@ foreach (@m7_xml_files) {
 		$m7_dbc->do("
 			CREATE TABLE IF NOT EXISTS " . DB_NAME . "." . $m7_host . "_net_mtr(
             	id              INT NOT NULL AUTO_INCREMENT,
-            	test_id			INT NOT NULL,
+            	plan_id			INT NOT NULL,
                 source_ip       VARCHAR(15) NOT NULL,
                 source_region   VARCHAR(25) NOT NULL,
                 source_lat		VARCHAR(10),
@@ -207,7 +207,7 @@ foreach (@m7_xml_files) {
                     # Flatten the ping SQL array and prepare the query string
                     my $m7_ping_sql_values		= join(", ", @m7_ping_sql);
                     my $m7_ping_sql_query		= "INSERT INTO " . DB_NAME . "." . $m7_host . "_net_ping(" . 
-                    				      		  "test_id, source_ip, source_region, source_lat, source_lon, " . 
+                    				      		  "plan_id, source_ip, source_region, source_lat, source_lon, " . 
                     				      		  "dest_ip, dest_region, dest_lat, dest_lon, run_time, pkt_loss, min_time, avg_time, max_time, avg_dev) " .
                     					  		  "VALUES " . $m7_ping_sql_values . ";";
                     
@@ -283,7 +283,7 @@ foreach (@m7_xml_files) {
                     # Flatten the traceroute SQL array and prepare the query string
                     my $m7_troute_sql_values		= join(", ", @m7_troute_sql);
                     my $m7_troute_sql_query			= "INSERT INTO " . DB_NAME . "." . $m7_host . "_net_traceroute(" . 
-                    						   		  "test_id, source_ip, source_region, source_lat, source_lon, " . 
+                    						   		  "plan_id, source_ip, source_region, source_lat, source_lon, " . 
                     						   		  "dest_ip, dest_region, dest_lat, dest_lon, run_time, hop, try, ip, ip_lat, ip_lon, time) " .
                     						   		  "VALUES " . $m7_troute_sql_values . ";";
                     
@@ -362,6 +362,7 @@ foreach (@m7_xml_files) {
 	                        	",'" . $m7_mtr_hop . "'" .
 	                        	",'" . $m7_mtr_ip_list . "'" .
 	                        	",'" . $m7_mtr_ip_geolist . "'" .
+	                        	",'" . $m7_mtr_pkt_loss . "'" .
 	                        	",'" . $m7_mtr_min_time . "'" .
 	                        	",'" . $m7_mtr_avg_time . "'" .
 	                        	",'" . $m7_mtr_max_time . "'" .
@@ -375,8 +376,8 @@ foreach (@m7_xml_files) {
                     # Flatten the mtr SQL array and prepare the query
                     my $m7_mtr_sql_values	= join(", ", @m7_mtr_sql);
                     my $m7_mtr_sql_query	= "INSERT INTO " . DB_NAME . "." . $m7_host . "_net_mtr(" . 
-                    					 	  "test_id, source_ip, source_region, source_lat, source_lon, " . 
-                    					 	  "dest_ip, dest_region, dest_lat, dest_lon, run_time, hop, ips, ips_gps, min_time, avg_time, max_time, avg_dev) " .
+                    					 	  "plan_id, source_ip, source_region, source_lat, source_lon, " . 
+                    					 	  "dest_ip, dest_region, dest_lat, dest_lon, run_time, hop, ips, ips_gps, pkt_loss, min_time, avg_time, max_time, avg_dev) " .
                     					 	  "VALUES " . $m7_mtr_sql_values . ";";
                     
                     # Create the table rows for the mtr test
