@@ -5,7 +5,7 @@ class Core {
 	// Set the database connection parameters
 	private $db_host 	= 'localhost';
 	private $db_name 	= 'm7';
-	private $db_pass 	= 'r3nDer';
+	private $db_pass 	= 'password';
 	private $db_user	= 'm7';
 	
 	// Define the database connector
@@ -36,6 +36,7 @@ class Core {
 	public $m7_plans	= array();
 	public $m7_hosts	= array();
 	public $m7_destips  = array();
+	public $m7_runtimes = array();
 	
 	// Class constructor
 	public function __construct() {
@@ -66,7 +67,7 @@ class Core {
 	 * specific run time.
 	 */
 	
-	public function m7LoadTestSingle($params = array()) {
+	public function loadTestSingle($params = array()) {
 		$plan_id		= $params['id'];
 		$shost			= $params['shost'];
 		$cat		    = $params['cat'];
@@ -80,15 +81,15 @@ class Core {
 			$m7_plan_runtime_query	= $this->m7_db->query("SELECT DISTINCT run_time FROM " . $table . " ORDER BY run_time ASC");
 			while($m7_plan_runtime_result = $m7_plan_runtime_query->fetch_assoc()) {
 				$runtime = $m7_plan_runtime_result['run_time'];
-				$this->m7_active['runtime'] = $m7_plan_runtime_result['run_time'];
+				$this->m7_active['start'] = $m7_plan_runtime_result['run_time'];
 				break;
 			}
 		}
 		$this->m7_plan[$plan_id][$shost][$cat][$destip][$type][$runtime] = array();
-		
+			
 		// Load the results for the specific test runtime
 		$m7_test_query = $this->m7_db->query("SELECT * FROM " . $table . " WHERE plan_id='" . $plan_id . "' AND dest_ip='" . $destip . "' AND run_time='" . $runtime . "'");
-		
+			
 		// Load properties depending on the test type
 		switch ($type) {
 			case 'ping':
@@ -104,13 +105,13 @@ class Core {
 				while($m7_traceroute_result = $m7_test_query->fetch_assoc()) {
 					$m7_traceroute_hop = $m7_traceroute_result['hop'];
 					$this->m7_plan[$plan_id][$shost][$cat][$destip][$type][$runtime][$m7_traceroute_hop] = array(
-						'try'	=> $m7_traceroute_result['try'],
-						'ip'	=> array(
-							'value'	=> $m7_traceroute_result['ip'],
-							'lat'	=> $m7_traceroute_result['ip_lat'],
-							'lon'	=> $m7_traceroute_result['ip_lon']
-						),
-						'time'	=> $m7_traceroute_result['time']
+							'try'	=> $m7_traceroute_result['try'],
+							'ip'	=> array(
+									'value'	=> $m7_traceroute_result['ip'],
+									'lat'	=> $m7_traceroute_result['ip_lat'],
+									'lon'	=> $m7_traceroute_result['ip_lon']
+							),
+							'time'	=> $m7_traceroute_result['time']
 					);
 				}
 				break;
@@ -124,19 +125,19 @@ class Core {
 					$m7_mtr_hop_gps_array = explode(',', $m7_mtr_result['ips_gps']);
 					foreach($m7_mtr_hop_ips_array as $m7_mtr_hop_ip_key => $m7_mtr_hop_ip_val) {
 						$m7_mtr_hop_ip_nested[$m7_mtr_hop_ip_val] = array(
-							'lat' => preg_replace("/(^[^:]*):[^:]*$/", "$1", $m7_mtr_hop_gps_array[$m7_mtr_hop_ip_key]),
-							'lon' => preg_replace("/^[^:]*:([^:]*$)/", "$1", $m7_mtr_hop_gps_array[$m7_mtr_hop_ip_key])
+								'lat' => preg_replace("/(^[^:]*):[^:]*$/", "$1", $m7_mtr_hop_gps_array[$m7_mtr_hop_ip_key]),
+								'lon' => preg_replace("/^[^:]*:([^:]*$)/", "$1", $m7_mtr_hop_gps_array[$m7_mtr_hop_ip_key])
 						);
 					}
 						
 					// Define the hop entry
 					$this->m7_plan[$plan_id][$shost][$cat][$destip][$type][$runtime][$m7_mtr_hop] = array(
-						'ips'		=> $m7_mtr_hop_ip_nested,
-						'pkt_loss'	=> $m7_mtr_result['pkt_loss'],
-						'min_time'  => $m7_mtr_result['min_time'],
-						'avg_time'	=> $m7_mtr_result['avg_time'],
-						'max_time'	=> $m7_mtr_result['max_time'],
-						'avg_dev'	=> $m7_mtr_result['avg_dev']
+							'ips'		=> $m7_mtr_hop_ip_nested,
+							'pkt_loss'	=> $m7_mtr_result['pkt_loss'],
+							'min_time'  => $m7_mtr_result['min_time'],
+							'avg_time'	=> $m7_mtr_result['avg_time'],
+							'max_time'	=> $m7_mtr_result['max_time'],
+							'avg_dev'	=> $m7_mtr_result['avg_dev']
 					);
 				}
 				break;
@@ -147,13 +148,14 @@ class Core {
 	 * Load Destination IP Instance
 	 */
 	
-	public function m7LoadDestinationIP($params = array()) {
+	public function loadDestinationIP($params = array()) {
 		$plan_id		= $params['id'];
 		$shost			= $params['shost'];
 		$cat			= $params['cat'];
 		$destip			= $params['destip'];
 		$type			= $params['type'];
-		$runtime		= $params['runtime'];
+		$start			= $params['start'];
+		$stop			= $params['stop'];
 		
 		// Initialize the destination IP array entry
 		$this->m7_plan[$plan_id][$shost][$cat][$destip] = array();
@@ -172,30 +174,51 @@ class Core {
 			$this->m7_active['type'] = $type;
 				
 			// If loading a single test runtime
-			if(isset($runtime)) {
-				$this->m7LoadTestSingle(array(
+			if(isset($start) && isset($stop) && $stop == 'start') {
+				$this->m7_active['stop'] = 'start';
+				$this->loadTestSingle(array(
 					'id'		=> $plan_id,
 					'shost'		=> $shost,
 					'cat'		=> $cat,
 					'destip'	=> $destip,
 					'type'		=> $type,
-					'runtime' 	=> $runtime
+					'runtime' 	=> $start
 				));
-			} else {
-					
-				// TODO: For now I'm only coding support for rendering a single test runtime
-				return false;
+			}
+			
+			// If loading a range of test times
+			if(isset($start) && isset($stop) && $stop != 'start') {
+				$m7_runtimes = array();
+				$this->m7_active['stop'] = $stop;
+				
+				// Query all run times between the start and stop time
+				$m7_runtimes_query	= $this->m7_db->query("SELECT DISTINCT run_time FROM " . $this->m7_active['db_prefix'] . "_" . $cat . "_" . $type . " WHERE dest_ip='" . $destip . "' AND run_time BETWEEN '" . $start . "' AND '" . $stop . "' ORDER BY run_time ASC");
+				$m7_runtimes_result	= $m7_runtimes_query->fetch_assoc();
+				while ($m7_runtimes_row = $m7_runtimes_query->fetch_assoc()) {
+					array_push($m7_runtimes, $m7_runtimes_row['run_time']);
+				}
+				
+				// Construct the arrays for each runtime
+				foreach ($m7_runtimes as $m7_runtime) {
+					$this->loadTestSingle(array(
+							'id'		=> $plan_id,
+							'shost'		=> $shost,
+							'cat'		=> $cat,
+							'destip'	=> $destip,
+							'type'		=> $type,
+							'runtime'	=> $m7_runtime
+						)
+					);	
+				}
 			}
 		} else {
-				
-			// TODO: Right now I'm only going to support rendering a single test type at a time
-			return false;
+			throw new Exception('Test type required (ping/traceroute/mtr)...');
 		}
 		
 	}
 	
 	// Initialize the M7 plan properties and results array
-	public function m7PlanInit() {
+	public function planInit() {
 		
 		// If a plan ID is defined
 		if(isset($_GET['id'])) {
@@ -234,6 +257,12 @@ class Core {
 					$this->m7_plan[$this->m7_active['plan']][$this->m7_active['host']][$_GET['cat']] = array();
 					$this->m7_active['cat'] = $_GET['cat'];
 					
+					// Build an array of all runtimes
+					$m7_runtimes_query = $this->m7_db->query("SELECT DISTINCT run_time FROM " . $this->m7_active['db_prefix'] . "_" . $this->m7_active['cat'] . "_" . $_GET['type'] . " ORDER BY run_time DESC");
+					while ($m7_runtimes_row = $m7_runtimes_query->fetch_assoc()) {
+						array_push($this->m7_runtimes, $m7_runtimes_row['run_time']);
+					}
+					
 					// If loading all destination IPs
 					if($_GET['destip'] == 'all') {
 						
@@ -243,25 +272,27 @@ class Core {
 						// Build the destination IP array for each entry
 						while($m7_dest_ips_result = $m7_dest_ips_query->fetch_assoc()) {
 							array_push($this->m7_destips, $m7_dest_ips_result['dest_ip']);
-							$this->m7LoadDestinationIP(array(
+							$this->loadDestinationIP(array(
 								'id'		=> $this->m7_active['plan'],
 								'shost'		=> $this->m7_active['host'],
 								'cat'		=> $this->m7_active['cat'],
 								'destip'	=> $m7_dest_ips_result['dest_ip'],
 								'type'		=> $_GET['type'],
-								'runtime'	=> $_GET['runtime']
+								'start'		=> $_GET['start'],
+								'stop'		=> $_GET['stop']
 							));
 						}
 						$this->m7_active['destip'] = 'all';
 					} elseif (isset($_GET['destip'])) {
 						array_push($this->m7_destips, $_GET['destip']);
-						$this->m7LoadDestinationIP(array(
+						$this->loadDestinationIP(array(
 							'id'		=> $this->m7_active['plan'],
 							'shost'		=> $this->m7_active['host'],
 							'cat'		=> $this->m7_active['cat'],
 							'destip'	=> $_GET['destip'],
 							'type'		=> $_GET['type'],
-							'runtime'	=> $_GET['runtime']
+							'start'		=> $_GET['start'],
+							'stop'		=> $_GET['stop']
 						));
 					} else {
 						
@@ -270,10 +301,7 @@ class Core {
 						return false;	
 					}
 				} else {
-					
-					// TODO: Might add support for simultaneous web/network test comparisons in the future,
-					// but for now I'm restricting it to a single test category
-					return false;
+					throw new Exception('Test category required (web/net)...');
 				}
 			} else { 
 				

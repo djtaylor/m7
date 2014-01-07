@@ -1,0 +1,50 @@
+#!/usr/bin/perl
+use strict;
+
+# Load the M7 server module
+use lib $ENV{HOME} . '/lib/perl/m7d';
+use M7D;
+
+# Create the M7 server object
+my $m7d = M7D->new();
+
+# Initialize the logger
+$m7d->logInit(
+	'conf' => $ENV{HOME} . '/lib/perl/m7d/log.conf',
+	'file' => $ENV{HOME} . '/log/m7d.log'
+);
+
+# Initialize the database connection
+$m7d->dbInit(
+	'name' => 'm7',
+	'host' => 'localhost',
+	'port' => '3306',
+	'user' => 'm7',
+	'pass' => 'password'
+);
+
+# Load the plan configurations and process each plan
+my @m7d_plans = $m7d->planConfig();
+
+# Set the plan run interval in seconds
+my $interval = '600';
+
+# Start the server process
+do {
+	$m7d->log->info('Starting next test run interval');
+	
+	# Process each test plan in the configuration table
+	foreach($m7d->plans) {
+		my @m7d_plan_arr	= @{$_};
+		my %m7d_plan_obj	= %{shift @m7d_plan_arr};
+		my $m7d_plan_id 	= $m7d_plan_obj{'plan_id'};
+		my $m7d_plan_file	= $m7d_plan_obj{'plan_file'};
+	
+		# Run the test plan from the director node
+		my $m7d_cmd_str = '`m7 run ' . $m7d_plan_file . '`';
+		$m7d->log->info('Preparing to run test ID[' . $m7d_plan_id . '] with plan: ' . $m7d_plan_file);
+		$m7d->shellRun($m7d_cmd_str);
+		$m7d->log->info('Test plan execution complete - next run in ' . $interval . ' seconds');
+	}
+	sleep($interval);
+} while(1);

@@ -6,11 +6,11 @@ class D3JS extends Core {
 		parent::__construct();
 	}
 	
-	public function buildLineChart($params = array()) {
+	public function buildLineChart($params = array(), $test_range) {
 		$post = $params['post'];
 		
 		// Construct the X-axis data source
-		$x_data_source	= implode(',', $params['x']['data']['values']);
+		$x_data_source	= '"' . implode('","', $params['x']['data']['values']) . '"';
 		
 		// Construct the Y-axis data source
 		$y_data_source	= null;
@@ -39,9 +39,21 @@ class D3JS extends Core {
 		$chart_js .= 'width' . $post . ' = 800 - margin' . $post . '.left - margin' . $post . '.right,';
 		$chart_js .= 'height' . $post . ' = 300 - margin' . $post . '.top - margin' . $post . '.bottom;' . "\n";
 		
+		// Get the minimum and maximum dates if rendering a date range
+		if($test_range) {
+			$chart_js .= 'function getDate(d) { return new Date(d); }';
+			$chart_js .= 'var minDate = getDate(dataX' . $post . '[0]),';
+			$chart_js .= 'maxDate = getDate(dataX' . $post . '[dataX' . $post . '.length-1]);';	
+		}
+		
 		// Set the X and Y axis scales
-		$chart_js .= 'var x' . $post . ' = d3.scale.linear()';
-		$chart_js .= '.domain([1, ' . $params['x']['max'] . '])';
+		if($test_range) {
+			$chart_js .= 'var x' . $post . ' = d3.time.scale()';
+			$chart_js .= '.domain([minDate, maxDate])';
+		} else {
+			$chart_js .= 'var x' . $post . ' = d3.scale.linear()';
+			$chart_js .= '.domain([1, ' . $params['x']['max'] . '])';
+		}
 		$chart_js .= '.range([0, width' . $post . ']);' . "\n";
 		$chart_js .= 'var y' . $post . ' = d3.scale.linear()';
 		$chart_js .= '.domain([' . $params['y']['max'] . ', 0])';
@@ -60,7 +72,11 @@ class D3JS extends Core {
 		
 		// Define the graph line
 		$chart_js .= 'var line' . $post . ' = d3.svg.line()';
-		$chart_js .= '.x(function(d, i) { return x' . $post . '(dataX' . $post . '[i]); })';
+		if($test_range) {
+			$chart_js .= '.x(function(d, i) { return x' . $post . '(getDate(dataX' . $post . '[i])); })';
+		} else {
+			$chart_js .= '.x(function(d, i) { return x' . $post . '(dataX' . $post . '[i]); })';
+		}
 		$chart_js .= '.y(y' . $post . ');' . "\n";
 		
 		// Define the graph SVG

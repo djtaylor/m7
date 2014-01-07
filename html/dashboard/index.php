@@ -28,17 +28,17 @@
 	        	<div class="m7_dashboard_content">
 	        		<div class="m7_configure">Configure</div>
 	            	<div class="m7_test_submit">Submit</div>
-	                <div class="m7_test_type">
-	                	<div class="m7_test_type_title">Test Category</div>
-	                    <div class="m7_test_type_menu">
+	                <div class="m7_test_cat">
+	                	<div class="m7_test_cat_title">Category</div>
+	                    <div class="m7_test_cat_menu">
 	                    	<select name="cat">
 	                        	<option value="net">Network</option>
 	                        </select>
 	                    </div>
 	                </div>
-	                <div class="m7_test_id">
-	                	<div class="m7_test_id_title">Test ID</div>
-	                    <div class="m7_test_id_menu">
+	                <div class="m7_plan_id">
+	                	<div class="m7_plan_id_title">ID</div>
+	                    <div class="m7_plan_id_menu">
 	                    	<select name="id">
 	                        <?php
 	                        foreach($render->m7_plans as $m7_plan_id => $m7_plan_params) {
@@ -49,8 +49,8 @@
 	                    </div>
 	                </div>
 	                <div class="m7_test_host">
-	                	<div class="m7_test_host_title">Test Host</div>
-	                    <div class="m7_test_host_menu">
+	                	<div class="m7_test_shost_title">Host</div>
+	                    <div class="m7_test_shost_menu">
 	                    	<select name="shost">
 	                        <?php
 	                        foreach($render->m7_hosts as $m7_host => $m7_host_params) {
@@ -64,9 +64,9 @@
 	                        </select>
 	                    </div>
 	                </div>
-	                <div class="m7_test_cat_type">
-	                	<div class="m7_test_cat_title">Test Type</div>
-	                    <div class="m7_test_cat_menu">
+	                <div class="m7_test_type">
+	                	<div class="m7_test_type_title">Type</div>
+	                    <div class="m7_test_type_menu">
 	                    	<select name="type">
 	                    		<?php 
 	                    		foreach($render->m7_categories['net']['types'] as $m7_type_val => $m7_type_desc) {
@@ -99,11 +99,41 @@
 	                        </select>
 	                    </div>
 	                </div>
-	                <div class="m7_test_runtime">
-	                	<div class="m7_test_runtime_title">Test Runtime</div>
-	                    <div class="m7_test_runtime_menu">
-	                    	<select name="runtime">
+	                <div class="m7_test_start">
+	                	<div class="m7_test_start_title">Start Time</div>
+	                    <div class="m7_test_start_menu">
+	                    	<select name="start">
 	                        	<option value="recent">--Most Recent--</option>
+	                        	<?php 
+	                        	if(isset($render->m7_runtimes)) {
+									foreach($render->m7_runtimes as $m7_start_val) {
+										if(isset($render->m7_active['start']) && $m7_start_val == $render->m7_active['start']) {
+											echo '<option selected="selected" value="' . $m7_start_val . '">' . $m7_start_val . '</option>';
+										} else {
+											echo '<option value="' . $m7_start_val . '">' . $m7_start_val . '</option>';
+										}
+									}
+								}
+	                        	?>
+	                        </select>
+	                    </div>
+	                </div>
+	                <div class="m7_test_stop">
+	                	<div class="m7_test_stop_title">Stop Time</div>
+	                    <div class="m7_test_stop_menu">
+	                    	<select name="stop">
+	                        	<option value="start">--Start--</option>
+	                        	<?php 
+	                        	if(isset($render->m7_runtimes)) {
+									foreach($render->m7_runtimes as $m7_stop_val) {
+										if(isset($render->m7_active['stop']) && $m7_stop_val == $render->m7_active['stop']) {
+											echo '<option selected="selected" value="' . $m7_stop_val . '">' . $m7_stop_val . '</option>';
+										} else {
+											echo '<option value="' . $m7_stop_val . '">' . $m7_stop_val . '</option>';
+										}
+									}
+								}
+	                        	?>
 	                        </select>
 	                    </div>
 	                </div>
@@ -169,5 +199,11 @@ d3.json("/dashboard/json/world-50m.json", function(error, world) {
 
 d3.select(self.frameElement).style("height", height + "px");
     	</script>
+    	<?php 
+    	echo '<pre style="display:none;">';
+    	print_r($render->m7_runtimes);
+    	print_r($render->m7_plan);
+    	echo '</pre>';
+    	?>
 	</body>
 </html>

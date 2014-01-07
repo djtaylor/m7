@@ -113,7 +113,26 @@ html,body {
 	overflow: auto;
 }
 
-.m7_test_type, .m7_test_id, .m7_test_host, .m7_test_cat, .m7_test_destip, .m7_test_runtime, .m7_test_details_show {
+.m7_test_cat_title, .m7_test_cat_menu,
+.m7_plan_id_title, .m7_plan_id_menu,
+.m7_test_shost_title, .m7_test_shost_menu,
+.m7_test_type_title, .m7_test_type_menu,
+.m7_test_start_title, .m7_test_start_menu, 
+.m7_test_stop_title, .m7_test_stop_menu, 
+.m7_test_destip_title, .m7_test_destip_menu {
+	line-height: 40px;
+	float: left;
+	margin: 0 5px 0 0;
+}
+
+.m7_test_cat, 
+.m7_plan_id, 
+.m7_test_shost, 
+.m7_test_type, 
+.m7_test_destip, 
+.m7_test_start, 
+.m7_test_stop, 
+.m7_test_details_show {
 	overflow: auto;
 	margin: 0 0 0 5px;
 	float: left;
@@ -125,17 +144,6 @@ html,body {
 
 .m7_test_details_show:hover {
 	cursor: pointer;
-}
-
-.m7_test_type_title, .m7_test_type_menu,
-.m7_test_id_title, .m7_test_id_menu,
-.m7_test_host_title, .m7_test_host_menu,
-.m7_test_cat_title, .m7_test_cat_menu,
-.m7_test_runtime_title, .m7_test_runtime_menu, 
-.m7_test_destip_title, .m7_test_destip_menu {
-	line-height: 40px;
-	float: left;
-	margin: 0 5px 0 0;
 }
 
 .m7_test_submit input {
