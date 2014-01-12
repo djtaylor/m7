@@ -35,7 +35,7 @@ given ($ARGV[0]) {
 		$m7->testInit(
 			'plan' => $ARGV[1]
 		);
-		#$m7->testDist();
+		$m7->testDist();
 		$m7->testExec();
 		$m7->monitor();
 	}

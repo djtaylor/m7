@@ -28,7 +28,7 @@ git_sync() {
 	rm -f ~/db/.gitignore
 	rm -f ~/log/.gitignore
 	rm -f ~/plans/.gitignore
-	rm -f ~/lock/.gitignore
+	rm -f ~/lock/subsys/.gitignore
 	
 	# Update folder permissions
 	chmod 755 $HOME
@@ -36,8 +36,7 @@ git_sync() {
 	find $HOME -type f -exec chmod 644 {} \;
 	chmod 700 $HOME/.ssh
 	chmod 600 $HOME/.ssh/m7.key
-	chmod +x $HOME/bin/m7
-	chmod +x $HOME/bin/m7d
+	chmod +x $HOME/bin/*
 	chmod +x $HOME/lib/init.d/m7d
 	find $HOME/lib/perl -type f -exec chmod +x {} \;
 }
