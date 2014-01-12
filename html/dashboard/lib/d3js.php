@@ -1,28 +1,25 @@
-<?php 
-
+<?php
 class D3JS extends Core {
-	
 	public function __construct() {
-		parent::__construct();
+		parent::__construct ();
 	}
-	
 	public function buildLineChart($params = array(), $test_range) {
-		$post = $params['post'];
+		$post = $params ['post'];
 		
 		// Construct the X-axis data source
-		$x_data_source	= '"' . implode('","', $params['x']['data']['values']) . '"';
+		$x_data_source = '"' . implode ( '","', $params ['x'] ['data'] ['values'] ) . '"';
 		
 		// Construct the Y-axis data source
-		$y_data_source	= null;
-		$y_data_keys	= array();
-		$y_data_labels	= array();
-		$y_line_count	= 0;
-		foreach ($params['y']['data'] as $data_key => $data_set) {
-			$y_line_count++;
-			array_push($y_data_keys, $data_key);
-			array_push($y_data_labels, $data_set['label']);
-			$y_data_values = implode(',', $data_set['values']);
-			if (!isset($y_data_source)) {
+		$y_data_source = null;
+		$y_data_keys = array ();
+		$y_data_labels = array ();
+		$y_line_count = 0;
+		foreach ( $params ['y'] ['data'] as $data_key => $data_set ) {
+			$y_line_count ++;
+			array_push ( $y_data_keys, $data_key );
+			array_push ( $y_data_labels, $data_set ['label'] );
+			$y_data_values = implode ( ',', $data_set ['values'] );
+			if (! isset ( $y_data_source )) {
 				$y_data_source = '[' . $y_data_values . ']';
 			} else {
 				$y_data_source .= ',[' . $y_data_values . ']';
@@ -40,23 +37,23 @@ class D3JS extends Core {
 		$chart_js .= 'height' . $post . ' = 300 - margin' . $post . '.top - margin' . $post . '.bottom;' . "\n";
 		
 		// Get the minimum and maximum dates if rendering a date range
-		if($test_range) {
+		if ($test_range) {
 			$chart_js .= 'function getDate(d) { return new Date(d); }';
 			$chart_js .= 'var minDate = getDate(dataX' . $post . '[0]),';
-			$chart_js .= 'maxDate = getDate(dataX' . $post . '[dataX' . $post . '.length-1]);';	
+			$chart_js .= 'maxDate = getDate(dataX' . $post . '[dataX' . $post . '.length-1]);';
 		}
 		
 		// Set the X and Y axis scales
-		if($test_range) {
+		if ($test_range) {
 			$chart_js .= 'var x' . $post . ' = d3.time.scale()';
 			$chart_js .= '.domain([minDate, maxDate])';
 		} else {
 			$chart_js .= 'var x' . $post . ' = d3.scale.linear()';
-			$chart_js .= '.domain([1, ' . $params['x']['max'] . '])';
+			$chart_js .= '.domain([1, ' . $params ['x'] ['max'] . '])';
 		}
 		$chart_js .= '.range([0, width' . $post . ']);' . "\n";
 		$chart_js .= 'var y' . $post . ' = d3.scale.linear()';
-		$chart_js .= '.domain([' . $params['y']['max'] . ', 0])';
+		$chart_js .= '.domain([' . $params ['y'] ['max'] . ', 0])';
 		$chart_js .= '.range([0, height' . $post . ']);' . "\n";
 		
 		// Set the color scale
@@ -72,7 +69,7 @@ class D3JS extends Core {
 		
 		// Define the graph line
 		$chart_js .= 'var line' . $post . ' = d3.svg.line()';
-		if($test_range) {
+		if ($test_range) {
 			$chart_js .= '.x(function(d, i) { return x' . $post . '(getDate(dataX' . $post . '[i])); })';
 		} else {
 			$chart_js .= '.x(function(d, i) { return x' . $post . '(dataX' . $post . '[i]); })';
@@ -96,7 +93,7 @@ class D3JS extends Core {
 		$chart_js .= '.attr("x", 358)';
 		$chart_js .= '.attr("dy", ".71em")';
 		$chart_js .= '.style("text-anchar", "middle")';
-		$chart_js .= '.text("' . $params['x']['label'] . '");';
+		$chart_js .= '.text("' . $params ['x'] ['label'] . '");';
 		$chart_js .= 'svg' . $post . '.append("g")';
 		$chart_js .= '.attr("class", "y axis")';
 		$chart_js .= '.call(yAxis' . $post . ')';
@@ -105,7 +102,7 @@ class D3JS extends Core {
 		$chart_js .= '.attr("y", 6)';
 		$chart_js .= '.attr("dy", ".71em")';
 		$chart_js .= '.style("text-anchor", "end")';
-		$chart_js .= '.text("' . $params['y']['label'] . '");';
+		$chart_js .= '.text("' . $params ['y'] ['label'] . '");';
 		
 		// Create the line group
 		$chart_js .= 'svg' . $post . '.selectAll(".line").data(dataY' . $post . ')';

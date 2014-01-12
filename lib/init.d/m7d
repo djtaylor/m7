@@ -1,0 +1,153 @@
+#!/usr/bin/perl
+use strict;
+use Log::Log4perl;
+use File::Find;
+use File::Slurp;
+use Term::ANSIColor;
+use feature 'switch';
+
+# \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\ #
+# Init Info \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\ #
+#
+# Provides:          m7d
+# Default-Start:     3 4 5
+# Short-Description: M7 Test Scheduler
+# Description:       Server process to run M7 scheduler based on user-defined
+#					 configurations in the M7 database.
+
+# \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\ #
+# Chkconfig Info \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\ #
+#
+# libvirtd:          Intengine listener daemon
+# chkconfig:         345 97 03
+# description:       Server process to run M7 scheduler based on user-defined
+#					 configurations in the M7 database.
+# processname:       m7d
+# pidfile:           /var/run/m7d.pid
+
+# Set the home variable and return value
+my $home = '/opt/vpls/m7';
+my $retval = undef;
+
+# Set the service variables
+my %service = (
+	'name'	=> 'm7d',
+	'pid'	=> $home . '/run/m7d.pid',
+	'lock'	=> $home . '/lock/subsys/m7d',
+	'log'	=> $home . '/log/server.log'
+);
+
+# Set the log file and read the configuration into memory
+my $log_conf	= $home . '/lib/perl/log/m7d.conf';
+   $log_conf	= read_file($log_conf);
+   $log_conf	=~ s/__LOGFILE__/$service{log}/;
+   
+ # Initialize the logger
+Log::Log4perl::init(\$log_conf);
+my $log			= Log::Log4perl->get_logger;
+
+sub success {
+	print color 'green';
+	print "SUCCESS\n";
+	print color 'reset';
+}
+sub failed {
+	my ($log_msg) = @_;
+	print color 'red';
+	print "FAILED\n";
+	print color 'reset';
+	$log->logdie($log_msg);
+}
+
+sub status {
+	my $pid_run = undef;
+	my $pid_num = undef;
+
+	# Check if the PID file exists
+	my $pid_status = (-f $service{pid} ? 1 : undef);
+	
+	# If it exists get the PID number and status
+	if ($pid_status) {
+		$pid_num = read_file($service{pid});
+		$pid_run = kill('0', $pid_num);
+	}
+	
+	# If the process is running
+	if ($pid_run) {
+		print $service{name} . " (pid " . $pid_num . ") is running...\n"; 
+		$retval = 0;
+	} else {
+		print $service{name} . " is stopped\n"; 
+		$retval = 1;
+	}
+}
+
+sub start {
+	
+	# If the process is already running, show the status
+	if (-f $service{pid}) {
+		&status;
+		exit $retval;
+	}
+	print "Starting the " . $service{name} . " daemon: ";
+	$log->info('Initializing ' . $service{name} . ' server process');
+	
+	# Start the M7 server process
+	system('source ~/.bash_profile; nohup ~/bin/' . $service{name} . ' >/dev/null 2>&1 &') == 0
+		or &failed('Failed to start ' . $service{name} . ' process');
+	
+	# Create the lockfile
+	open(LOCKFILE, '>' . $service{lock})
+		or &failed('Failed to create lock file');
+		
+	# Process started
+	&success;
+}
+
+sub stop {
+	
+	# If the lock file doesn't exist, print the status and exit
+	unless (-e $service{lock}) {
+		&status;
+		exit $retval;
+	}
+	
+	# Get the PID
+	my $pid_num = read_file($service{pid});
+	
+	# Stop the process
+	print "Stopping the " . $service{name} . " daemon: ";
+	$log->info('Sending SIGTERM to ' . $service{name} . ' process - PID ' . $pid_num);
+	kill('15', $pid_num)
+		or &failed('Failed to terminate ' . $service{name} . 'process - PID ' . $pid_num);
+	
+	# Delete the PID and lock files
+	unlink($service{pid})
+		or &failed('Failed to remove PID file');
+	unlink($service{lock})
+		or &failed('Failed to remove lock file');
+		
+	# Process stopped
+	&success;
+	$log->info('Terminated ' . $service{name} . ' process');
+}
+
+sub restart {
+	&stop;
+	&start;
+}
+
+sub usage {
+	print "Usage: service " . $service{name} . " {start|stop|restart|status}\n";
+	exit 1;
+}
+
+given ($ARGV[0]) {
+	when('status')	{ &status;	 }
+	when('start')	{ &start;	 }
+	when('stop')	{ &stop;	 }
+	when('restart') { &restart; }
+	default 		{ &usage;	 }	
+}
+
+exit $retval;

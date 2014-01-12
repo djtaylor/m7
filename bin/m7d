@@ -2,7 +2,7 @@
 use strict;
 
 # Load the M7 server module
-use lib $ENV{HOME} . '/lib/perl/m7d';
+use lib $ENV{HOME} . '/lib/perl/modules';
 use M7D;
 
 # Create the M7 server object
@@ -10,8 +10,13 @@ my $m7d = M7D->new();
 
 # Initialize the logger
 $m7d->logInit(
-	'conf' => $ENV{HOME} . '/lib/perl/m7d/log.conf',
-	'file' => $ENV{HOME} . '/log/m7d.log'
+	'conf' => $ENV{HOME} . '/lib/perl/log/m7d.conf',
+	'file' => $ENV{HOME} . '/log/server.log'
+);
+
+# Set the PID file
+$m7d->setPID(
+	'file' => $ENV{HOME} . '/run/m7d.pid'
 );
 
 # Initialize the database connection
@@ -20,31 +25,61 @@ $m7d->dbInit(
 	'host' => 'localhost',
 	'port' => '3306',
 	'user' => 'm7',
-	'pass' => 'password'
+	'pass' => 'r3nDer'
 );
 
 # Load the plan configurations and process each plan
-my @m7d_plans = $m7d->planConfig();
+$m7d->planConfig();
 
-# Set the plan run interval in seconds
-my $interval = '600';
-
-# Start the server process
-do {
-	$m7d->log->info('Starting next test run interval');
+# Process each test plan in the configuration table
+foreach(@{$m7d->{_plans}}) {
+	my %m7d_plan_obj	= %{$_};
+	my $m7d_plan_enbl	= $m7d_plan_obj{'enabled'};
+	my $m7d_plan_id 	= $m7d_plan_obj{'plan_id'};
+	my $m7d_plan_file	= $m7d_plan_obj{'plan_file'};
+	my $m7d_plan_int	= $m7d_plan_obj{'interval'};
 	
-	# Process each test plan in the configuration table
-	foreach($m7d->plans) {
-		my @m7d_plan_arr	= @{$_};
-		my %m7d_plan_obj	= %{shift @m7d_plan_arr};
-		my $m7d_plan_id 	= $m7d_plan_obj{'plan_id'};
-		my $m7d_plan_file	= $m7d_plan_obj{'plan_file'};
+	# Skip the plan if disabled
+	if ($m7d_plan_enbl == '0') {
+		$m7d->log->info('Test plan ' . $m7d_plan_id . ' disabled - skipping');
+	} else {
+		$m7d->log->info('Test plan ' . $m7d_plan_id . ' enabled - forking');
+		my $m7d_pid = fork();
 	
-		# Run the test plan from the director node
-		my $m7d_cmd_str = '`m7 run ' . $m7d_plan_file . '`';
-		$m7d->log->info('Preparing to run test ID[' . $m7d_plan_id . '] with plan: ' . $m7d_plan_file);
-		$m7d->shellRun($m7d_cmd_str);
-		$m7d->log->info('Test plan execution complete - next run in ' . $interval . ' seconds');
+		# Parent process
+		if ($m7d_pid) {
+			$m7d->log->info('Fork PID(' . $m7d_pid . ') for test ID ' . $m7d_plan_id);
+			push(@{$m7d->{_forks}}, $m7d_pid);
+	
+		# Child process
+		} elsif ($m7d_pid == 0) {
+			$m7d->log->info('Launching fork process - run interval = ' . $m7d_plan_int . 's');
+			$m7d->forkTest($m7d_plan_id, $m7d_plan_int, $m7d_plan_file);
+		
+		# Fork error
+		} else {
+			$m7d->log->logdie('Error forking test process: ' . $!);
+		}	
 	}
-	sleep($interval);
-} while(1);
+}
+
+# Kepp the server running until all forks are shutdown or until terminated
+while (1) {
+	
+	# No forks present, shutdown
+	if (scalar(@{$m7d->forks}) == 0) {
+		$m7d->log->info('No fork processes running, terminating server: ' . $$);
+		exit 0;
+	}
+	
+	# Catch termination signal
+	$SIG{TERM} = sub {
+		$m7d->log->info('Received SIGTERM signal');
+		foreach(@{$m7d->forks}) {
+			$m7d->log->info('Terminating forked process: ' . $_);
+			kill('15', $_);
+		}
+		$m7d->log->info('Terminating server process: ' . $$);
+		exit 0;
+	}
+}

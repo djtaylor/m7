@@ -7,7 +7,5 @@ if [ -f ~/.bashrc ]; then
 fi
 
 # User specific environment and startup programs
-
-PATH=$PATH:$HOME/bin:/opt/vpls/m7/bin
-
-export PATH
+export HOME=~
+export PATH=$PATH:$HOME/bin:/opt/vpls/m7/bin

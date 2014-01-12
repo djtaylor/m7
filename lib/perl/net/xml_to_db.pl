@@ -21,7 +21,7 @@ use constant {
     DB_HOST => "localhost",
     DB_PORT => "3306",
     DB_USER => "m7",
-    DB_PASS => "password",
+    DB_PASS => "r3nDer",
 };
 
 # Create a new database connection

@@ -37,6 +37,8 @@ git_sync() {
 	chmod 700 $HOME/.ssh
 	chmod 600 $HOME/.ssh/m7.key
 	chmod +x $HOME/bin/m7
+	chmod +x $HOME/bin/m7d
+	chmod +x $HOME/lib/init.d/m7d
 	find $HOME/lib/perl -type f -exec chmod +x {} \;
 }
 
