@@ -671,6 +671,9 @@ sub mergeLocal {
 		$m7_ssh->scp_put($m7->xml_file, "results/" . $m7->plan_id . "/" . $m7->local->{name} . ".xml")
 			or $m7->log->logdie('Failed to copy results to: ' . $m7->dir->{name} . ':' . $m7->dir->{user} . '@' . $m7->dir->{ipaddr});
 		$m7->log->info('Copied results ' . $m7_xml_file . ' to: ' . $m7->dir->{name} . ':' . $m7->dir->{user} . '@' . $m7->dir->{ipaddr});
+		
+		# Delete the output directory
+		unlink($m7->out_dir);
 	}
 }
 
