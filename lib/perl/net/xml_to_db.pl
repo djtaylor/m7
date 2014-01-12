@@ -18,10 +18,10 @@ my $m7_geo_parser = Geo::IP->open('/usr/local/share/GeoIP/GeoLiteCity.dat', GEOI
 # Database connection values
 use constant {
 	DB_NAME => "m7",
-    DB_HOST => "localhost",
+    DB_HOST => "hostname",
     DB_PORT => "3306",
     DB_USER => "m7",
-    DB_PASS => "r3nDer",
+    DB_PASS => "password",
 };
 
 # Create a new database connection

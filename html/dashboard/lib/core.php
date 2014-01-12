@@ -4,7 +4,7 @@ class Core {
 	// Set the database connection parameters
 	private $db_host = 'localhost';
 	private $db_name = 'm7';
-	private $db_pass = 'r3nDer';
+	private $db_pass = 'password';
 	private $db_user = 'm7';
 	
 	// Define the database connector

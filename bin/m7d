@@ -22,10 +22,10 @@ $m7d->setPID(
 # Initialize the database connection
 $m7d->dbInit(
 	'name' => 'm7',
-	'host' => 'localhost',
+	'host' => 'hostname',
 	'port' => '3306',
 	'user' => 'm7',
-	'pass' => 'r3nDer'
+	'pass' => 'password'
 );
 
 # Load the plan configurations and process each plan
