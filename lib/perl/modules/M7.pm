@@ -24,7 +24,6 @@ BEGIN {
 	use List::Util qw(sum);
 	use lib $ENV{HOME} . '/lib/perl/modules';
 	use M7Parse;
-	use Data::Dumper;
 }
 
 # \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\ #
@@ -67,7 +66,7 @@ sub new {
 # Subroutine Shortcuts \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\ #
 sub log			 { return shift->{_log};		  }
 sub db			 { return shift->{_db}; 		  }
-sub dir			 { return shift->{_dir}; 		  }
+sub dir			 { return shift->{_dir}[0]; 	  }
 sub is_dir	     { return shift->{_is_dir};       }
 sub workers      { return shift->{_workers};      }
 sub local		 { return shift->{_local}[0];	  }
@@ -140,7 +139,9 @@ sub checkDirector {
 	# Execute the director node query
 	$m7_dir_qh->execute()
 		or $m7->log->logdie("Failed to execute MySQL statement: '" . DBI->errstr . "'");
-	$m7->{_dir} = $m7_dir_qh->fetchrow_hashref();
+	while ($m7_dir_row = $m7_dir_qh->fetchrow_hashref()) {
+		push(@{m7->{_dir}}, $m7_dir_row);
+	}
 	
 	# Prepare the worker nodes query
 	$m7->log->info('Constructing worker nodes object');
@@ -430,7 +431,7 @@ sub testDist {
 				$m7->log->info('Copied test plan ' . $m7->plan_file . ' to: ' . $m7_host{name});
 				
 				# Run the test plan on the worker nodes
-				$m7_ssh->pipe_out("bash -c -l '`m7.pl run ~/plans/" . $m7->plan_id . ".xml'`")
+				$m7_ssh->pipe_out("bash -c -l 'm7.pl run ~/plans/" . $m7->plan_id . ".xml'")
 					or $m7->log->logdie('Failed to execute command on worker node: ' . $m7_host{name});
 					
 				# Create a fork to monitor each worker node from the director
@@ -654,10 +655,10 @@ sub mergeLocal {
 	if (not defined $m7->is_dir) {
 		$m7->log->info('Submitting test results to director - ' . $m7->dir->{name} . ':' . $m7->dir->{user} . '@' . $m7->dir->{ipaddr});
 		my $m7_ssh  = Net::OpenSSH->new(
-			$m7->dir{ipaddr},
+			$m7->dir->{ipaddr},
 			%m7_opts = (
-				'user'	=> $m7->dir{user},
-				'port'	=> $m7->dir{sshport},
+				'user'	=> $m7->dir->{user},
+				'port'	=> $m7->dir->{sshport},
 				'master_opts' => [ 
 					-o => 'StrictHostKeyChecking=no', 
 					-i => $ENV{HOME} . '/.ssh/m7.key'
@@ -667,7 +668,7 @@ sub mergeLocal {
 		$m7->log->info('Successfully established SSH connection with director - ' . $m7->dir->{name} . ':' . $m7->dir->{user} . '@' . $m7->dir->{ipaddr});
 		
 		# Copy the results to the director node
-		$m7_ssh->scp_put($m7->xml_file, "results/" . $m7->plan_id . "/" . $m7->local->{name}".xml")
+		$m7_ssh->scp_put($m7->xml_file, "results/" . $m7->plan_id . "/" . $m7->local->{name} . ".xml")
 			or $m7->log->logdie('Failed to copy results to: ' . $m7->dir->{name} . ':' . $m7->dir->{user} . '@' . $m7->dir->{ipaddr});
 		$m7->log->info('Copied results ' . $m7_xml_file . ' to: ' . $m7->dir->{name} . ':' . $m7->dir->{user} . '@' . $m7->dir->{ipaddr});
 	}
