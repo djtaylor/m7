@@ -24,6 +24,7 @@ BEGIN {
 	use List::Util qw(sum);
 	use lib $ENV{HOME} . '/lib/perl/modules';
 	use M7Parse;
+	use Data::Dumper;
 }
 
 # \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\ #
@@ -66,7 +67,7 @@ sub new {
 # Subroutine Shortcuts \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\ #
 sub log			 { return shift->{_log};		  }
 sub db			 { return shift->{_db}; 		  }
-sub dir			 { return shift->{_dir}[0]; 	  }
+sub dir			 { return shift->{_dir};	 	  }
 sub is_dir	     { return shift->{_is_dir};       }
 sub workers      { return shift->{_workers};      }
 sub local		 { return shift->{_local}[0];	  }
@@ -139,9 +140,7 @@ sub checkDirector {
 	# Execute the director node query
 	$m7_dir_qh->execute()
 		or $m7->log->logdie("Failed to execute MySQL statement: '" . DBI->errstr . "'");
-	while ($m7_dir_row = $m7_dir_qh->fetchrow_hashref()) {
-		push(@{m7->{_dir}}, $m7_dir_row);
-	}
+	$m7->{_dir} = $m7_dir_qh->fetchrow_hashref();
 	
 	# Prepare the worker nodes query
 	$m7->log->info('Constructing worker nodes object');

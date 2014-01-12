@@ -18,7 +18,7 @@ $m7->logInit(
 # Initialize the database connection
 $m7->dbInit(
 	'name' => 'm7',
-	'host' => 'localhost',
+	'host' => '103.21.143.231',
 	'port' => '3306',
 	'user' => 'm7',
 	'pass' => 'r3nDer'
