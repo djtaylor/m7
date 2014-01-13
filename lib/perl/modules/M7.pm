@@ -22,8 +22,6 @@ BEGIN {
 	use File::Fetch;
 	use Time::HiRes;
 	use List::Util qw(sum);
-	use lib $ENV{HOME} . '/lib/perl/modules';
-	use M7Parse;
 	use Data::Dumper;
 }
 
@@ -1058,6 +1056,11 @@ sub monitor {
 	
 	# Wait for worker results if a director node
 	if ($m7->is_dir) {
+		
+		# Load the M7Parse module
+		use lib $ENV{HOME} . '/lib/perl/modules';
+		use M7Parse;
+		my $m7p = M7Parse->new();
 		
 		# Wait for worker result files
 		if ($m7->wm_forks) {
