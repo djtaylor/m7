@@ -246,6 +246,80 @@ sub dnsLookup {
 sub netPing {
 	my $m7 = shift;
 	my $m7_ping_count = $m7->getXMLText('plan/params/test[@id="' . $m7->test_id . '"]/count');
+	
+	# Set the log details, test base, and output log
+	my $m7_log_details = 'category=' . $m7->plan_cat . ', id=' . $m7->test_id . ', type=' . $m7->test_type . ', count=' . $m7_mtr_count;
+	my $m7_test_base = $m7->out_dir . '/test-' . $m7->test_id;
+	mkpath($m7_test_base, 0, 0755);
+	
+	# Initialize the results hash
+	my $m7_results = {
+		'category' => $m7->plan_cat,
+		'test' => {
+			'id'	=> $m7->test_id,
+			'type'	=> $m7->test_type,
+			'host'	=> []
+		}
+	};
+	
+	# Process all the network test hosts
+	my $m7_ping_host_count = 0;
+	foreach my $m7_net_host (keys %{$m7->{_test_hosts}}) {
+		my $m7_net_ipaddr = $m7->test_hosts->{$m7_net_host};
+		my $m7_test_log  = $m7_test_base . '/' . $m7_net_host . '.output.log';
+		
+		# Run the MTR test
+		system('ping -c ' . $m7_ping_count . ' ' . $m7_net_ipaddr . ' >> ' . $m7_test_log);
+		
+		# Parse the log file
+		open(PING_LOG, $m7_test_log);
+		while(<PING_LOG>) {
+			my ($pkt_loss, $min_time, $avg_time, $max_time, $avg_dev);
+			if(/(\d+%)/) { ($pkt_loss) = ($1); }
+        	if(/(\d+\.\d+)\/(\d+\.\d+)\/(\d+\.\d+)\/(\d+\.\d+)/) {
+                ($min_time, $avg_time, $max_time, $avg_dev) = ($1, $2, $3, $4);
+        	}
+		}
+		close(PING_LOG);
+		
+		# Set the region and type
+		if (defined $m7->nodeExists($m7_net_host)) {
+			$m7_ping_region = $m7->getNode($m7_net_host, 'region');
+			$m7_ping_type   = 'cluster';
+		} else {
+			$m7_ping_region = undef;
+			$m7_ping_type   = 'satellite';
+		}
+		
+		# Define the results hash
+		my $m7_ping_results = {
+			'name'	 => $m7_net_host,
+			'ip'	 => $m7_net_ipaddr,
+			'region' => $m7_troute_region,
+			'type'   => $m7_troute_type,
+			'pktLoss'	=> [$pkt_loss],
+			'minTime'	=> [$min_time],
+			'avgTime'	=> [$avg_time],
+			'maxTime'	=> [$max_time],
+			'avgDev'	=> [$avg_dev]
+		};
+		
+		$m7_results->{test}{host}[$m7_ping_host_count] = $m7_ping_results;
+		$m7_ping_host_count ++;
+	}
+	
+	# Dump the results hash to an XML file
+	my $m7_xml_file    = $m7_test_base . '/results.xml';
+	$m7->log->info($$ . ': Dumping results to XML file - ' . $m7_xml_file);
+	
+	# Convert the results hash to XML data and print to file
+	my $m7_results_xml = XMLout($m7_results, RootName => 'plan');
+	open(my $m7_xml_fh, '>', $m7_xml_file);
+	print $m7_xml_fh $m7_results_xml;
+	close($m7_xml_fh);
+	
+	# Test thread complete
+	$m7->log->info($$ . ': Test run complete - ' . $m7_log_details);
 	exit 0;
 }
 sub netTraceroute {
