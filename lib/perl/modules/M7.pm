@@ -22,7 +22,6 @@ BEGIN {
 	use File::Fetch;
 	use Time::HiRes;
 	use List::Util qw(sum);
-	use Data::Dumper;
 }
 
 # \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\ #
@@ -1056,10 +1055,6 @@ sub monitor {
 	
 	# Wait for worker results if a director node
 	if ($m7->is_dir) {
-		
-		# Load the M7Parse module
-		use lib $ENV{HOME} . '/lib/perl/modules';
-		use M7Parse;
 		my $m7p = M7Parse->new();
 		
 		# Wait for worker result files
@@ -1075,7 +1070,7 @@ sub monitor {
 		}
 		
 		# Parse the XML results into the database
-		#$m7p->xml2DB($m7->plan_id);
+		#system('/usr/bin/perl ' . $ENV{HOME} . '/lib/perl/script/xml2DB.pl "' . $m7->plan_id . '"");
 	}
 }
 
