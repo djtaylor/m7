@@ -272,7 +272,7 @@ sub netPing {
 		open(PING_LOG, $m7_test_log);
 		my ($pkt_loss, $min_time, $avg_time, $max_time, $avg_dev);
 		while(<PING_LOG>) {
-			if(/(\d+%)/) { ($pkt_loss) = ($1); }
+			if(/(\d+)%/) { ($pkt_loss) = ($1); }
         	if(/(\d+\.\d+)\/(\d+\.\d+)\/(\d+\.\d+)\/(\d+\.\d+)/) {
                 ($min_time, $avg_time, $max_time, $avg_dev) = ($1, $2, $3, $4);
         	}
@@ -1069,6 +1069,7 @@ sub monitor {
 		}
 		
 		# Parse the XML results into the database
+		$m7->log->info('Parsing XML results into M7 database with: ~/lib/perl/script/xml2DB.pl');
 		system('/usr/bin/perl ' . $ENV{HOME} . '/lib/perl/script/xml2DB.pl "' . $m7->plan_id . '"');
 	}
 }

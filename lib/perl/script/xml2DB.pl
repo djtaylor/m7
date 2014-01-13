@@ -16,7 +16,7 @@ my $m7p_plan_id = $ARGV[0];
 
 # Create a new database connection
 my $m7p_dsn = "dbi:mysql:" . %m7_db->{name} . ":" . %m7_db->{host} . ":" . %m7_db->{port};
-$m7p_db = DBI->connect($m7p_dsn, %m7_db->{user}, %m7_db->{pass});
+my $m7p_db = DBI->connect($m7p_dsn, %m7_db->{user}, %m7_db->{pass});
 
 # Create a LibXML instance
 my $m7p_lib_xml = XML::LibXML->new();
