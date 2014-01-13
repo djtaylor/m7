@@ -83,10 +83,10 @@ sub xml2DB {
 	    my $m7p_test_xpath		= XML::XPath->new(filename => $_);
 		
 	    # Get the node information
-	    for my $m7p_host_node ($m7p_xml_tree->findnodes('plan/host/name')) {
+	    for my $m7p_host_node ($m7p_xml_tree->findnodes('plan/host/@name')) {
 	    	my $m7p_host			= $m7p_host_node->textContent();
-	    	my $m7p_host_ipaddr	= $m7p_test_xpath->findvalue('plan/host/ip');
-	    	my $m7p_host_region  = $m7p_test_xpath->findvalue('plan/host/region');
+	    	my $m7p_host_ipaddr	= $m7p_test_xpath->findvalue('plan/host/@ip');
+	    	my $m7p_host_region  = $m7p_test_xpath->findvalue('plan/host/@region');
 	        $m7p_host 			=~ s/-/_/g;
 	
 			# Get the host's geolocation
@@ -173,7 +173,7 @@ sub xml2DB {
 			# Process the test results
 	        for my $m7p_test_id_tree ($m7p_xml_tree->findnodes('plan/test/@id')) {
 	        	my $m7p_test_id = $m7p_test_id_tree->textContent();
-	            my $m7p_test_type = $m7p_test_xpath->findvalue('plan/test[@id="' . $m7p_test_id . '"]/type');
+	            my $m7p_test_type = $m7p_test_xpath->findvalue('plan/test[@id="' . $m7p_test_id . '"]/@type');
 	            for my $m7p_test_tree ($m7p_xml_tree->findnodes('plan/test[@id="' . $m7p_test_id . '"]')) {
 	
 					# Ping Test Results \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\ #
@@ -190,8 +190,8 @@ sub xml2DB {
 	                    	my $m7p_ping_host		= $m7p_ping_host_name_tree->textContent();
 	
 	                        # Get the ping statistics
-	                        my $m7p_ping_ip			= $m7p_test_xpath->findvalue('plan/test[@id="' . $m7p_test_id . '"]/host[@name="' . $m7p_ping_host . '"]/ip');
-	                        my $m7p_ping_region		= $m7p_test_xpath->findvalue('plan/test[@id="' . $m7p_test_id . '"]/host[@name="' . $m7p_ping_host . '"]/region');
+	                        my $m7p_ping_ip			= $m7p_test_xpath->findvalue('plan/test[@id="' . $m7p_test_id . '"]/host[@name="' . $m7p_ping_host . '"]/@ip');
+	                        my $m7p_ping_region		= $m7p_test_xpath->findvalue('plan/test[@id="' . $m7p_test_id . '"]/host[@name="' . $m7p_ping_host . '"]/@region');
 	                        my $m7p_ping_pkt_loss 	= $m7p_test_xpath->findvalue('plan/test[@id="' . $m7p_test_id . '"]/host[@name="' . $m7p_ping_host . '"]/pktLoss');
 	                        my $m7p_ping_min_time 	= $m7p_test_xpath->findvalue('plan/test[@id="' . $m7p_test_id . '"]/host[@name="' . $m7p_ping_host . '"]/minTime');
 	                        my $m7p_ping_avg_time 	= $m7p_test_xpath->findvalue('plan/test[@id="' . $m7p_test_id . '"]/host[@name="' . $m7p_ping_host . '"]/avgTime');
@@ -247,8 +247,8 @@ sub xml2DB {
 	                	# Process the host definitions
 	                    for my $m7p_troute_host_name_tree ($m7p_xml_tree->findnodes('plan/test[@id="' . $m7p_test_id . '"]/host/@name')) {
 	                    	my $m7p_troute_host 			= $m7p_troute_host_name_tree->textContent();
-	                    	my $m7p_troute_dest_ip		= $m7p_test_xpath->findvalue('plan/test[@id="' . $m7p_test_id . '"]/host[@name="' . $m7p_troute_host . '"]/ip');
-	                    	my $m7p_troute_dest_region	= $m7p_test_xpath->findvalue('plan/test[@id="' . $m7p_test_id . '"]/host[@name="' . $m7p_troute_host . '"]/region');
+	                    	my $m7p_troute_dest_ip		= $m7p_test_xpath->findvalue('plan/test[@id="' . $m7p_test_id . '"]/host[@name="' . $m7p_troute_host . '"]/@ip');
+	                    	my $m7p_troute_dest_region	= $m7p_test_xpath->findvalue('plan/test[@id="' . $m7p_test_id . '"]/host[@name="' . $m7p_troute_host . '"]/@region');
 	                    	
 	                    	# Get the target node geolocation
 	                        my $m7p_troute_dest_geo		= $m7p->geoip->record_by_addr($m7p_troute_dest_ip);
@@ -323,8 +323,8 @@ sub xml2DB {
 	                	# Process the host definitions
 	                    for my $m7p_mtr_host_name_tree ($m7p_xml_tree->findnodes('plan/test[@id="' . $m7p_test_id . '"]/host/@name')) {
 	                    	my $m7p_mtr_host				= $m7p_mtr_host_name_tree->textContent();
-	                    	my $m7p_mtr_dest_ip			= $m7p_test_xpath->findvalue('plan/test[@id="' . $m7p_test_id . '"]/host[@name="' . $m7p_mtr_host . '"]/ip');
-	                    	my $m7p_mtr_dest_region		= $m7p_test_xpath->findvalue('plan/test[@id="' . $m7p_test_id . '"]/host[@name="' . $m7p_mtr_host . '"]/region');
+	                    	my $m7p_mtr_dest_ip			= $m7p_test_xpath->findvalue('plan/test[@id="' . $m7p_test_id . '"]/host[@name="' . $m7p_mtr_host . '"]/@ip');
+	                    	my $m7p_mtr_dest_region		= $m7p_test_xpath->findvalue('plan/test[@id="' . $m7p_test_id . '"]/host[@name="' . $m7p_mtr_host . '"]/@region');
 	                    	
 	                    	# Get the target node geolocation
 	                        my $m7p_mtr_dest_geo			= $m7p->geoip->record_by_addr($m7p_mtr_dest_ip);
