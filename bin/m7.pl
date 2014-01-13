@@ -4,6 +4,7 @@ use feature 'switch';
 
 # Load the M7 client module
 use lib $ENV{HOME} . '/lib/perl/modules';
+use M7Config;
 use M7;
 
 # Create the M7 server object
@@ -17,11 +18,11 @@ $m7->logInit(
 
 # Initialize the database connection
 $m7->dbInit(
-	'name' => 'm7',
-	'host' => 'hostname',
-	'port' => '3306',
-	'user' => 'm7',
-	'pass' => 'password'
+	'name' => %m7_db->{name},
+	'host' => %m7_db->{host},
+	'port' => %m7_db->{port},
+	'user' => %m7_db->{user},
+	'pass' => %m7_db->{pass}
 );
 
 # Check if the node is a director

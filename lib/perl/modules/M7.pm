@@ -6,10 +6,10 @@ package M7;
 # Module Dependencies \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\ #
 BEGIN {
 	use strict;
-	use warnings;
 	use Log::Log4perl;
 	use File::Slurp;
 	use File::Path;
+	use File::Copy;
 	use DBI;
 	use DBD::mysql;
 	use Sys::Hostname;
@@ -38,6 +38,7 @@ sub new {
 		_dir			=> undef,
 		_is_dir			=> undef,
 		_workers		=> undef,
+		_nodes			=> undef,
 		_local			=> undef,
 		_wm_forks		=> undef,
 		_tm_forks		=> undef,
@@ -70,6 +71,7 @@ sub db			 { return shift->{_db}; 		  }
 sub dir			 { return shift->{_dir};	 	  }
 sub is_dir	     { return shift->{_is_dir};       }
 sub workers      { return shift->{_workers};      }
+sub nodes		 { return shift->{_nodes};        }
 sub local		 { return shift->{_local}[0];	  }
 sub wm_forks	 { return shift->{_wm_forks}; 	  }
 sub tm_forks     { return shift->{_tm_forks};     }
@@ -88,6 +90,7 @@ sub test_thread  { return shift->{_test_thread};  }
 sub test_samples { return shift->{_test_samples}; }
 sub test_proto   { return shift->{_test_proto};   }
 sub test_host    { return shift->{_test_host};    }
+sub test_hosts   { return shift->{_test_hosts};   }
 sub test_type	 { return shift->{_test_type};    }
 sub test_results { return shift->{_test_results}; }
 sub lock_dir	 { return shift->{_lock_dir};     }
@@ -124,6 +127,29 @@ sub dbInit {
 	}) or $m7->log->logdie("Failed to connect to database: '" . DBI->errstr . "'");
 	$m7->{_db} = $m7_dbh;
 	return $m7->{_db};
+}
+
+# Get Node Properties \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\ #
+sub getNode {
+	my $m7 = shift;
+	my ($m7_node_name, $m7_node_property) = @_;
+	for(@{$m7->nodes}) {
+		my %m7_host	= %{$_};
+		if ($m7_host{name} = $m7_node_name) {
+			return $m7_host{$m7_node_property};
+		}
+	}
+}
+sub nodeExists {
+	my $m7 = shift;
+	my ($m7_node_name) = @_;
+	for(@{$m7->nodes}) {
+		my %m7_host	= %{$_};
+		if ($m7_host{name} = $m7_node_name) {
+			return 1;
+		}
+	}
+	return undef;
 }
 
 # Director Check \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\ #
@@ -168,6 +194,19 @@ sub checkDirector {
 		push(@{$m7->{_local}}, $m7_loc_row);
 	}
 	
+	# Prepare the all nodes query
+	$m7->log->info('Constructing all nodes object');
+	my $m7_nodes_query = "SELECT * FROM hosts";
+	my $m7_nodes_qh	   = $m7->db->prepare($m7_nodes_query)
+		or $m7->log->logdie("Failed to prepare MySQL statement: '" . DBI->errstr . "'");
+		
+	# Execute the all nodes query
+	$m7_nodes_qh->execute()
+		or $m7->log->logdie("failed to execute MySQL statement: '" . DBI->errstr . "'");
+	while ($m7_nodes_row = $m7_nodes_qh->fetchrow_hashref()) {
+		push(@{$m7->{_nodes}}, $m7_nodes_row);
+	}
+	
 	# Set the global director object value
 	if($m7->dir->{name} eq $m7_host) {
 		$m7->log->info('Current node ' . $m7_host . ' is the director node');
@@ -192,9 +231,9 @@ sub workerLock {
 	my $m7 = shift;
 	my ($m7_worker) = @_;
 	my $m7_worker_results = $ENV{HOME} . '/results/' . $m7->plan_id . '/' . $m7_worker . '.xml';
-	while (not -e $m7_worker_results) {
-		$m7->log->info($$  . ': Worker results file received: ' . $m7_worker_results . ' - closing monitor');
-	}
+	sleep 1 while not -e $m7_worker_results;
+	$m7->log->info($$  . ': Worker results file received: ' . $m7_worker_results . ' - closing monitor');
+	exit 0;
 }
 
 # DNS Tests \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\ #
@@ -206,16 +245,243 @@ sub dnsLookup {
 # Network Tests \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\ #
 sub netPing {
 	my $m7 = shift;
-	my (%m7_net_args) = @_;
+	my $m7_ping_count = $m7->getXMLText('plan/params/test[@id="' . $m7->test_id . '"]/count');
 	exit 0;
 }
 sub netTraceroute {
 	my $m7 = shift;
-	exit 0;	
+	my $m7_mtr_count = $m7->getXMLText('plan/params/test[@id="' . $m7->test_id . '"]/count');
+	
+	# Set the log details, test base, and output log
+	my $m7_log_details = 'category=' . $m7->plan_cat . ', id=' . $m7->test_id . ', type=' . $m7->test_type . ', count=' . $m7_mtr_count;
+	my $m7_test_base = $m7->out_dir . '/test-' . $m7->test_id;
+	mkpath($m7_test_base, 0, 0755);
+	
+	# Initialize the results hash
+	my $m7_results = {
+		'category' => $m7->plan_cat,
+		'test' => {
+			'id'	=> $m7->test_id,
+			'type'	=> $m7->test_type,
+			'host'	=> []
+		}
+	};
+	
+	# Process all the network test hosts
+	my $m7_troute_host_count = 0;
+	foreach my $m7_net_host (keys %{$m7->{_test_hosts}}) {
+		my $m7_net_ipaddr = $m7->test_hosts->{$m7_net_host};
+		my $m7_test_log  = $m7_test_base . '/' . $m7_net_host . '.output.log';
+		
+		# Run the MTR test
+		system('traceroute -n ' . $m7_net_ipaddr . ' >> ' . $m7_test_log);
+		
+		# Parse the log file
+		my $m7_lasthop = 0;
+		my @m7_troute_hops;
+		open(TROUTE_LOG, $m7_test_log);
+		while(<TROUTE_LOG>) {
+			my $hop;
+			my $try;
+			my $ip;
+			my $time;
+			if(/(\d+)\s+(\d+\.\d+\.\d+\.\d+)\s+(\d+\.\d+)\sms/) {
+                ($hop, $ip, $time) = ($1, $2, $3);
+                $try = 1;
+        	}
+        	if(/\d+\s+\*\s+(\d+\.\d+\.\d+\.\d+)\s+(\d+\.\d+)\sms/) {
+                ($hop, $ip, $time) = ($1, $2, $3);
+                $try = 2;
+        	}
+        	if(/\d+\s+\*\s+\*\s+(\d+\.\d+\.\d+\.\d+)\s+(\d+\.\d+)\sms/) {
+                ($hop, $ip, $time) = ($1, $2, $3);
+                $try = 3;
+        	}
+        	if(/(\d+)\s+\*\s\*\s\*\s/) {
+                ($hop) = ($1);
+                $try = 0;
+                $ip = '0.0.0.0';
+                $time = 0;
+        	}
+        	if ($hop) {
+        		my %m7_troute = (
+					'hop' => $hop,
+					'try' => $try,
+					'ip' => $ip,
+					'time' => $time
+				);
+				push(@m7_troute_hops, \%m7_troute);
+				$m7_lasthop = $hop;	
+        	}
+		}
+		close(TROUTE_LOG);
+		
+		# Set the region and type
+		if (defined $m7->nodeExists($m7_net_host)) {
+			$m7_troute_region = $m7->getNode($m7_net_host, 'region');
+			$m7_troute_type   = 'cluster';
+		} else {
+			$m7_troute_region = undef;
+			$m7_troute_type   = 'satellite';
+		}
+		
+		# Define the results hash
+		my $m7_troute_results = {
+			'name'	 => $m7_net_host,
+			'ip'	 => $m7_net_ipaddr,
+			'region' => $m7_troute_region,
+			'type'   => $m7_troute_type,
+			'hops'	 => {
+				'hop'	=> []
+			}
+		};
+		
+		# Generate the hop hash
+		my $m7_troute_key_count = 0;
+		foreach my $hop (@m7_troute_hops) {
+			my $m7_troute_hop_hash = {
+				'number' => $hop->{hop},
+				'try'	 => [$hop->{try}],
+				'time'	 => [$hop->{time}],
+				'ip'	 => [$hop->{ip}]
+			};
+			$m7_troute_results->{hops}{hop}[$m7_troute_key_count] = $m7_troute_hop_hash;
+			$m7_troute_key_count ++;
+		}
+		
+		$m7_results->{test}{host}[$m7_troute_host_count] = $m7_troute_results;
+		$m7_troute_host_count ++;
+	}
+	
+	# Dump the results hash to an XML file
+	my $m7_xml_file    = $m7_test_base . '/results.xml';
+	$m7->log->info($$ . ': Dumping results to XML file - ' . $m7_xml_file);
+	
+	# Convert the results hash to XML data and print to file
+	my $m7_results_xml = XMLout($m7_results, RootName => 'plan');
+	open(my $m7_xml_fh, '>', $m7_xml_file);
+	print $m7_xml_fh $m7_results_xml;
+	close($m7_xml_fh);
+	
+	# Test thread complete
+	$m7->log->info($$ . ': Test run complete - ' . $m7_log_details);
+	exit 0;
 }
 sub netMTR {
 	my $m7 = shift;
-	my (%m7_net_args) = @_;
+	my $m7_mtr_count = $m7->getXMLText('plan/params/test[@id="' . $m7->test_id . '"]/count');
+	
+	# Set the log details, test base, and output log
+	my $m7_log_details = 'category=' . $m7->plan_cat . ', id=' . $m7->test_id . ', type=' . $m7->test_type . ', count=' . $m7_mtr_count;
+	my $m7_test_base = $m7->out_dir . '/test-' . $m7->test_id;
+	mkpath($m7_test_base, 0, 0755);
+	
+	# Initialize the results hash
+	my $m7_results = {
+		'category' => $m7->plan_cat,
+		'test' => {
+			'id'	=> $m7->test_id,
+			'type'	=> $m7->test_type,
+			'host'	=> []
+		}
+	};
+	
+	# Process all the network test hosts
+	my $m7_mtr_host_count = 0;
+	foreach my $m7_net_host (keys %{$m7->{_test_hosts}}) {
+		my $m7_net_ipaddr = $m7->test_hosts->{$m7_net_host};
+		my $m7_test_log  = $m7_test_base . '/' . $m7_net_host . '.output.log';
+		
+		# Run the MTR test
+		system('/usr/bin/sudo /usr/sbin/mtr -n --report --report-wide --report-cycles ' . $m7_mtr_count . ' ' . $m7_net_ipaddr . ' >> ' . $m7_test_log);
+		
+		# Parse the log file
+		my $m7_lasthop = 0;
+		my @m7_mtr_hops;
+		open(MTR_LOG, $m7_test_log);
+		while(<MTR_LOG>){
+			if(/(\d+)\.\|\-\-\s+(\d+\.\d+\.\d+\.\d+)\s+([\d\.]+)%\s+(\d+)\s+([\d\.]+)\s+([\d\.]+)\s+([\d\.]+)\s+([\d\.]+)\s+([\d\.]+)/) {
+				my ($hop, $ip, $loss, $sent, $last, $avg, $best, $wrst, $stdev) = ($1, $2, $3, $4, $5, $6, $7, $8, $9);
+				my %m7_mtr = (
+					'hop' => $hop,
+					'ip' => [$ip],
+					'loss' => $loss,
+					'sent' => $sent,
+					'last' => $last,
+					'avg' => $avg,
+					'best' => $best,
+					'wrst' => $wrst,
+					'stdev' => $stdev,
+				);
+				push(@m7_mtr_hops, \%m7_mtr);
+				$m7_lasthop = $hop;
+			}
+			if(/\|\s+`?\|--\s+(\d+\.\d+\.\d+\.\d+)/) {
+				push(@{$m7_mtr_hops[-1]->{ip}}, $1);
+		    }
+		    if(/(\d+)\.\|--\s\?\?\?/){
+				my $hop = $1;
+				my %m7_mtr = ('hop' => $hop, 'ip' => ['0.0.0.0'], 'loss' => 100, 'avg' => 0, 'best' => 0, 'wrst' => 0, 'stdev' => 0);
+				push(@m7_mtr_hops, \%m7_mtr);
+				$m7_lasthop = $hop;
+		    }
+		}
+		close(MTR_LOG);
+		
+		# Set the region and type
+		if (defined $m7->nodeExists($m7_net_host)) {
+			$m7_mtr_region = $m7->getNode($m7_net_host, 'region');
+			$m7_mtr_type   = 'cluster';
+		} else {
+			$m7_mtr_region = undef;
+			$m7_mtr_type   = 'satellite';
+		}
+		
+		# Define the results hash
+		my $m7_mtr_results = {
+			'name'	 => $m7_net_host,
+			'ip'	 => $m7_net_ipaddr,
+			'region' => $m7_mtr_region,
+			'type'   => $m7_mtr_type,
+			'hops'	 => {
+				'hop'	=> []
+			}
+		};
+		
+		# Generate the hop hash
+		my $m7_mtr_key_count = 0;
+		foreach my $hop (@m7_mtr_hops) {
+			my $m7_mtr_hop_hash = {
+				'number'	=> $hop->{hop},
+				'minTime'	=> [$hop->{best}],
+				'avgTime'	=> [$hop->{avg}],
+				'maxTime'	=> [$hop->{wrst}],
+				'pktLoss'	=> [$hop->{loss}],
+				'avgDev'	=> [$hop->{stdev}],
+				'ips'		=> {
+					'ip'	=> [@{$hop->{ip}}]
+				}
+			};
+			$m7_mtr_results->{hops}{hop}[$m7_mtr_key_count] = $m7_mtr_hop_hash;
+			$m7_mtr_key_count ++;
+		}
+		
+		$m7_results->{test}{host}[$m7_mtr_host_count] = $m7_mtr_results;
+		$m7_mtr_host_count ++;
+	}
+	
+	# Dump the results hash to an XML file
+	my $m7_xml_file    = $m7_test_base . '/results.xml';
+	$m7->log->info($$ . ': Dumping results to XML file - ' . $m7_xml_file);
+	
+	# Convert the results hash to XML data and print to file
+	my $m7_results_xml = XMLout($m7_results, RootName => 'plan');
+	open(my $m7_xml_fh, '>', $m7_xml_file);
+	print $m7_xml_fh $m7_results_xml;
+	close($m7_xml_fh);
+	
+	# Test thread complete
+	$m7->log->info($$ . ': Test run complete - ' . $m7_log_details);
 	exit 0;
 }
 
@@ -335,7 +601,7 @@ sub webDownload {
 	my $m7_xml_file    = $m7_test_base . '/results.xml';
 	$m7->log->info($$ . ': Dumping results to XML file - ' . $m7_xml_file);
 	
-	# Conver the results hash to XML data and print to file
+	# Convert the results hash to XML data and print to file
 	my $m7_results_xml = XMLout($m7_results, RootName => 'plan');
 	open(my $m7_xml_fh, '>', $m7_xml_file);
 	print $m7_xml_fh $m7_results_xml;
@@ -430,7 +696,7 @@ sub testDist {
 				$m7->log->info('Copied test plan ' . $m7->plan_file . ' to: ' . $m7_host{name});
 				
 				# Run the test plan on the worker nodes
-				$m7_ssh->pipe_out("bash -c -l 'm7.pl run ~/plans/" . $m7->plan_id . ".xml'")
+				$m7_ssh->pipe_out("bash -c -l 'm7.pl run ~/plans/" . $m7->plan_id . ".xml' > /dev/null 2>&1 &")
 					or $m7->log->logdie('Failed to execute command on worker node: ' . $m7_host{name});
 					
 				# Create a fork to monitor each worker node from the director
@@ -444,7 +710,7 @@ sub testDist {
 				# Child process
 				} elsif ($m7_wm_pid == 0) {
 					$m7->log->info('Launching fork process for worker lock ' . $m7_host{name});
-					$m7->workerLock();
+					$m7->workerLock($m7_host{name});
 		
 				# Fork error
 				} else {
@@ -476,6 +742,7 @@ sub testExec {
 		when ('dns') {
 			$m7->{_test_threads} = $m7->getXMLText('plan/params/threads');
 			foreach(@{$m7->test_ids}) {
+				my $m7_test_id		  = $_;
 				my $m7_test_type	  = $m7->getXMLText('plan/params/test[@id="' . $_ . '"]/type');
 				my $m7_samples		  = $m7->getXMLText('plan/params/test[@id="' . $_ . '"]/type[@="' . $m7_test_type . '"]/samples');
 				my $m7_thread_count   = 0;
@@ -491,10 +758,11 @@ sub testExec {
 					# Parent process
 					if ($m7_tm_pid) {
 						$m7->log->info('Fork PID(' . $m7_tm_pid . ') for test - ' . $m7_thread_details);
+						push(@{$m7->{_test_results}}, $m7->out_dir . '/test-' . $m7_test_id . '/thread-' . $m7_thread_count . '/results.xml');
 						push(@{$m7->{_tm_forks}}, $m7_tm_pid);
 		
 					# Child process
-					} elsif ($m7_wm_pid == 0) {
+					} elsif ($m7_tm_pid == 0) {
 						$m7->log->info($$ . ': Launching fork process for test - ' . $m7_thread_details);
 						given ($m7_test_type) {
 							when ('nslookup') {
@@ -513,7 +781,32 @@ sub testExec {
 		
 		# Network testing
 		when ('net') {
+			
+			# Build a hash of all target hosts and IPs
+			for my $m7_net_host ($m7->plan_xtree->findnodes('plan/params/hosts/host/@name')) {
+				$m7_host_name = $m7_net_host->textContent();
+				$m7_host_ip = $m7->getXMLText('plan/params/hosts/host[@name="' . $m7_host_name . '"]');
+				$m7->{_test_hosts}->{$m7_host_name} = $m7_host_ip;
+			}
+			
+			# Check if targeting cluster nodes
+			my $m7_net_cluster = $m7->getXMLText('plan/params/skipcluster');
+			if ($m7_net_cluster eq 'no') {
+				$m7->log->info('Test parameter: "skip_cluster" = "' . $m7_net_cluster . '" - including cluster nodes in network tests');
+				for(@{$m7->nodes}) {
+					my %m7_host	= %{$_};
+					
+					# Exclude the local node in tests
+					if ($m7_host{name} ne $m7->local->{name}) {
+						$m7->{_test_hosts}->{$m7_host{name}} =  $m7_host{ipaddr};
+					}
+				}
+			} else {
+				$m7->log->info('Test parameter: "skip_cluster" = "' . $m7_net_cluster . '" - ignoring cluster nodes in network tests');
+			}
+			
 			foreach(@{$m7->test_ids}) {
+				my $m7_test_id		  = $_;
 				my $m7_test_type 	  = $m7->getXMLText('plan/params/test[@id="' . $_ . '"]/type');
 				my $m7_test_details   = 'category=' . $m7->plan_cat . ', id=' . $_ . ', type=' . $m7_test_type;
 				
@@ -523,30 +816,23 @@ sub testExec {
 				# Parent process
 				if ($m7_tm_pid) {
 					$m7->log->info('Fork PID(' . $m7_tm_pid . ') for test - ' . $m7_test_details);
+					push(@{$m7->{_test_results}}, $m7->out_dir . '/test-' . $m7_test_id . '/results.xml');
 					push(@{$m7->{_tm_forks}}, $m7_tm_pid);
 	
 				# Child process
 				} elsif ($m7_wm_pid == 0) {
+					$m7->{_test_id}		 = $m7_test_id;
+					$m7->{_test_type}	 = $m7_test_type;	
 					$m7->log->info($$ . ': Launching fork process for test - ' . $m7_test_details);
 					given ($m7_test_type) {
 						when ('ping') {
-							my $m7_ping_count = $m7->getXMLText('plan/params/test[@id="' . $_ . '"]/count');
-							$m7->netPing(
-								'id'	  => $_,
-								'count'   => $m7_ping_count
-							);
+							$m7->netPing();
 						}
 						when ('traceroute') {
-							$m7->netTraceroute(
-								'id'	  => $_
-							);
+							$m7->netTraceroute();
 						}
 						when ('mtr') {
-							my $m7_mtr_count = $m7->getXMLText('plan/params/test[@id="' . $_ . '"]/count');
-							$m7->netMTR(
-								'id'	=> $_,
-								'count'	=> $m7_mtr_count
-							);
+							$m7->netMTR();
 						}
 						default {
 							$m7->log->logdie($$ . ': Invalid type for test ID ' . $_ . ': ' . $m7_test_type);
@@ -667,12 +953,17 @@ sub mergeLocal {
 		$m7->log->info('Successfully established SSH connection with director - ' . $m7->dir->{name} . ':' . $m7->dir->{user} . '@' . $m7->dir->{ipaddr});
 		
 		# Copy the results to the director node
-		$m7_ssh->scp_put($m7->xml_file, "results/" . $m7->plan_id . "/" . $m7->local->{name} . ".xml")
+		$m7_ssh->scp_put($m7_xml_file, "results/" . $m7->plan_id . "/" . $m7->local->{name} . ".xml")
 			or $m7->log->logdie('Failed to copy results to: ' . $m7->dir->{name} . ':' . $m7->dir->{user} . '@' . $m7->dir->{ipaddr});
 		$m7->log->info('Copied results ' . $m7_xml_file . ' to: ' . $m7->dir->{name} . ':' . $m7->dir->{user} . '@' . $m7->dir->{ipaddr});
 		
 		# Delete the output directory
-		unlink($m7->out_dir);
+		rmtree($m7->out_dir);
+	} else {
+		
+		# Copy the results file to the final directory and delete the output path
+		copy($m7_xml_file, $ENV{HOME} . "/results/" . $m7->plan_id . "/" . $m7->local->{name} . ".xml");
+		rmtree($m7->out_dir);
 	}
 }
 
