@@ -295,8 +295,8 @@ sub netPing {
 		my $m7_ping_results = {
 			'name'	 => $m7_net_host,
 			'ip'	 => $m7_net_ipaddr,
-			'region' => $m7_troute_region,
-			'type'   => $m7_troute_type,
+			'region' => $m7_ping_region,
+			'type'   => $m7_ping_type,
 			'pktLoss'	=> [$pkt_loss],
 			'minTime'	=> [$min_time],
 			'avgTime'	=> [$avg_time],
