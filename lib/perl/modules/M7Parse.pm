@@ -26,7 +26,6 @@ sub new {
 	my $m7p = {
 		_lib_xml		=> XML::LibXML->new(),
 		_xml_tree		=> undef,
-		_geoip			= Geo::IP->open('/usr/local/share/GeoIP/GeoLiteCity.dat', GEOIP_STANDARD),
 		_db				= undef
 	};
 	bless $m7p, M7Parse;
@@ -47,6 +46,9 @@ sub xml2DB {
 	# Create a new database connection
 	my $m7p_dsn = "dbi:mysql:" . %m7_db->{name} . ":" . %m7_db->{host} . ":" . %m7_db->{port};
 	$m7->{_db} = DBI->connect($m7p_dsn, %m7_db->{user}, %m7_db->{pass});
+	
+	# Define the geo IP parser
+	my $m7p_geoip = Geo::IP->open('/usr/local/share/GeoIP/GeoLiteCity.dat', GEOIP_STANDARD);
 	
 	# Define the results directory based on test ID
 	my $m7p_xml_dir = $ENV{"HOME"} . "/results/" . $m7p_plan_id . "/";
@@ -90,7 +92,7 @@ sub xml2DB {
 	        $m7p_host 			=~ s/-/_/g;
 	
 			# Get the host's geolocation
-			my $m7p_host_geo		= $m7p->geoip->record_by_addr($m7p_host_ipaddr);
+			my $m7p_host_geo		= $m7p_geoip->record_by_addr($m7p_host_ipaddr);
 			my $m7p_host_lat		= $m7p_host_geo->latitude;
 			my $m7p_host_lon		= $m7p_host_geo->longitude;
 	
@@ -199,7 +201,7 @@ sub xml2DB {
 	                        my $m7p_ping_avg_dev  	= $m7p_test_xpath->findvalue('plan/test[@id="' . $m7p_test_id . '"]/host[@name="' . $m7p_ping_host . '"]/avgDev');
 	                        
 	                        # Get the target node geolocation
-	                        my $m7p_ping_geo			= $m7p->geoip->record_by_addr($m7p_ping_ip);
+	                        my $m7p_ping_geo			= $m7p_geoip->record_by_addr($m7p_ping_ip);
 	                        my $m7p_ping_lat			= $m7p_ping_geo->latitude;
 	                        my $m7p_ping_lon			= $m7p_ping_geo->longitude;
 	                        
@@ -251,7 +253,7 @@ sub xml2DB {
 	                    	my $m7p_troute_dest_region	= $m7p_test_xpath->findvalue('plan/test[@id="' . $m7p_test_id . '"]/host[@name="' . $m7p_troute_host . '"]/@region');
 	                    	
 	                    	# Get the target node geolocation
-	                        my $m7p_troute_dest_geo		= $m7p->geoip->record_by_addr($m7p_troute_dest_ip);
+	                        my $m7p_troute_dest_geo		= $m7p_geoip->record_by_addr($m7p_troute_dest_ip);
 	                        my $m7p_troute_dest_lat		= $m7p_troute_dest_geo->latitude;
 	                       	my $m7p_troute_dest_lon		= $m7p_troute_dest_geo->longitude;
 	                    	
@@ -269,7 +271,7 @@ sub xml2DB {
 	                        	$m7p_troute_ip = $m7p_troute_ip . "";
 	                        	# Get the hop IP geolocation and make sure the IP address is valid
 	                        	if (is_ipv4($m7p_troute_ip) && !is_unroutable_ipv4($m7p_troute_ip) && !is_private_ipv4($m7p_troute_ip)) {
-	                        		my $m7p_troute_ip_geo	= $m7p->geoip->record_by_addr($m7p_troute_ip);
+	                        		my $m7p_troute_ip_geo	= $m7p_geoip->record_by_addr($m7p_troute_ip);
 	                        		$m7p_troute_ip_lat		= $m7p_troute_ip_geo->latitude;
 	                       			$m7p_troute_ip_lon		= $m7p_troute_ip_geo->longitude;
 	                        	} else {
@@ -327,7 +329,7 @@ sub xml2DB {
 	                    	my $m7p_mtr_dest_region		= $m7p_test_xpath->findvalue('plan/test[@id="' . $m7p_test_id . '"]/host[@name="' . $m7p_mtr_host . '"]/@region');
 	                    	
 	                    	# Get the target node geolocation
-	                        my $m7p_mtr_dest_geo			= $m7p->geoip->record_by_addr($m7p_mtr_dest_ip);
+	                        my $m7p_mtr_dest_geo			= $m7p_geoip->record_by_addr($m7p_mtr_dest_ip);
 	                        my $m7p_mtr_dest_lat			= $m7p_mtr_dest_geo->latitude;
 	                       	my $m7p_mtr_dest_lon			= $m7p_mtr_dest_geo->longitude;
 	                    	
@@ -345,7 +347,7 @@ sub xml2DB {
 	                            	
 	                            	# Get the hop IP geolocation
 		                        	if (is_ipv4($m7p_mtr_hop_ip) && !is_unroutable_ipv4($m7p_mtr_hop_ip) && !is_private_ipv4($m7p_mtr_hop_ip)) {
-		                        		my $m7p_mtr_ip_geo	= $m7p->geoip->record_by_addr($m7p_mtr_hop_ip);
+		                        		my $m7p_mtr_ip_geo	= $m7p_geoip->record_by_addr($m7p_mtr_hop_ip);
 		                        		$m7p_mtr_ip_lat	    = $m7p_mtr_ip_geo->latitude;
 		                       			$m7p_mtr_ip_lon	    = $m7p_mtr_ip_geo->longitude;
 		                        	} else {
