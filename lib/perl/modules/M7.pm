@@ -1070,6 +1070,9 @@ sub monitor {
 		} else {
 			$m7->log->info('No worker monitor PIDs found - skipping');
 		}
+		
+		# Parse the XML results into the database
+		$m7p->xml2DB($m7->plan_id);
 	}
 }
 
