@@ -1055,7 +1055,6 @@ sub monitor {
 	
 	# Wait for worker results if a director node
 	if ($m7->is_dir) {
-		my $m7p = M7Parse->new();
 		
 		# Wait for worker result files
 		if ($m7->wm_forks) {
@@ -1070,7 +1069,7 @@ sub monitor {
 		}
 		
 		# Parse the XML results into the database
-		#system('/usr/bin/perl ' . $ENV{HOME} . '/lib/perl/script/xml2DB.pl "' . $m7->plan_id . '"");
+		system('/usr/bin/perl ' . $ENV{HOME} . '/lib/perl/script/xml2DB.pl "' . $m7->plan_id . '"');
 	}
 }
 
