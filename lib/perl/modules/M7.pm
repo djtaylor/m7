@@ -236,6 +236,7 @@ sub workerLock {
 # DNS Tests \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\ #
 sub dnsLookup {
 	my $m7 = shift;
+	system('{ time nslookup ' . $m7_target_host . ' ' . $m7_dns_server . '; } &>> ' . $m7_test_log);
 	exit 0;
 }
 
@@ -1070,7 +1071,7 @@ sub monitor {
 		
 		# Parse the XML results into the database
 		$m7->log->info('Parsing XML results into M7 database with: ~/lib/perl/script/xml2DB.pl');
-		system('/usr/bin/perl ' . $ENV{HOME} . '/lib/perl/script/xml2DB.pl "' . $m7->plan_id . '"');
+		system('/usr/bin/perl ' . $ENV{HOME} . '/lib/perl/script/xml2DB.pl "' . $m7->plan_id . '" "' . $m7->plan_runtime . '"');
 	}
 }
 

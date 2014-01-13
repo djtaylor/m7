@@ -39,7 +39,7 @@ while (my $m7p_xml_file = readdir(DIR)) {
 my $m7p_plan_xpath	= XML::XPath->new(filename => $ENV{"HOME"} . "/plans/" . $m7p_plan_id . ".xml");
 my $m7p_plan_desc	= $m7p_plan_xpath->findnodes('plan/desc');
 my $m7p_plan_cat		= $m7p_plan_xpath->findnodes('plan/params/category');
-my $m7p_plan_runtime	= read_file($ENV{"HOME"} . "/lock/" . $m7p_plan_id . "/runtime");
+my $m7p_plan_runtime	= $ARGV[1];
 
 # If the test row doesn't exist create it, if so, update the last runtime
 my $m7p_plan_check	= $m7p_db->selectcol_arrayref("SELECT * FROM plans WHERE plan_id='" . $m7p_plan_id . "'");
