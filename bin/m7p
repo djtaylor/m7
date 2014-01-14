@@ -32,3 +32,4 @@ foreach (@{$m7p->xml_files}) {
 		$m7p->loadXMLResults($_, $m7p_test_type);
 	}
 }   
+$m7p->flushXMLResults();

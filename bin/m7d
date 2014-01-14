@@ -42,6 +42,7 @@ foreach(@{$m7d->{_plans}}) {
 
 # Kepp the server running until all forks are shutdown or until terminated
 while (1) {
+	sleep 1;
 	
 	# No forks present, shutdown
 	if (scalar(@{$m7d->forks}) == 0) {

@@ -6,6 +6,7 @@ BEGIN {
 	use strict;
 	use Log::Log4perl;
 	use File::Slurp;
+	use File::Copy;
 	use XML::LibXML;
 	use XML::XPath;
 	use DBI;
@@ -333,6 +334,12 @@ sub setTestHost {
 	my $m7p_host_geo		= $m7p->geoip->record_by_addr($m7p->test_host->{ip});
 	$m7p->test_host->{lat}  = $m7p_host_geo->latitude;
 	$m7p->test_host->{lon}  = $m7p_host_geo->longitude;
+}
+
+# Flush Results Directory \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\ #
+sub flushXMLResults {
+	my $m7p = shift;
+	rmtree($m7p->xml_dir);
 }
 
 # Load XML Results \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\ #
