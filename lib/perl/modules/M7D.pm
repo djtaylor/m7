@@ -107,7 +107,7 @@ sub forkTest {
 	$m7d->log->info($$ . ': Fork parameters -> id=' . $m7d_id . ', interval=' . $m7d_int . 's, plan=' . $m7d_plan);
 
 	# Define the command string
-	my $m7d_cmd_string = '`~/bin/m7 run ' . $m7d_plan . '`';
+	my $m7d_cmd_string = "bash -c -l 'm7 run " . $m7d_plan . "' > /dev/null 2>&1 &";
 
 	# If command is being run once
 	if ($m7d_int == '0') {
