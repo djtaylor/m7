@@ -4,6 +4,7 @@ package M7Parse;
 # Module Dependencies \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\ #
 BEGIN {
 	use strict;
+	use Log::Log4perl;
 	use File::Slurp;
 	use XML::LibXML;
 	use XML::XPath;
@@ -35,8 +36,10 @@ sub new {
 		_db_port		=> $m7_db{port},
 		_db_user		=> $m7_db{user},
 		_db_pass		=> $m7_db{pass},
-		_db				=> undef
+		_db				=> undef,
+		_log			=> undef
 	};
+	&logInit();
 	&dbInit();
 	&geoIPInit();
 	bless $m7p, M7Parse;
@@ -60,25 +63,45 @@ sub db_port    { return shift->{_db_port};    }
 sub db_user    { return shift->{_db_user};    }
 sub db_pass    { return shift->{_db_pass};    }
 sub db 	       { return shift->{_db};         }
+sub log		   { return shift->{_log};		  }
+
+# Initialize Logger \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\ #
+sub logInit {
+	my $m7p = shift;
+	
+	# Read the log configuration into memory
+	my $m7p_log_conf = read_file($m7p_log{conf});
+	$m7p_log_conf =~ s/__LOGFILE__/$m7p_log{file}/;
+	
+	# Initialize the logger
+	Log::Log4perl::init(\$m7p_log_conf)
+		or die 'Failed to initialize logger!';
+	
+	# Build the logger object
+	$m7p->{_log} = Log::Log4perl->get_logger;
+	return $m7p->{_log};
+}
 
 # Initialize Database Connection \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\ #
 sub dbInit {
 	my $m7p = shift;
 	my (%m7_myslq_db_args) = @_;
 	my $m7p_db_dsn = "dbi:mysql:" . $m7p->db_name . ":" . $m7p->db_host . ":" . $m7p->db_port;
-	$m7p->{db} = shift;
+	$m7p->{_db} = shift;
 	my $m7p_dbh = DBI->connect($m7p_db_dsn, $m7p->db_user, $m7p->db_pass, {
 		PrintError => 0,
 		RaiseError => 1
-	}) or die "Failed to connect to database: '" . DBI->errstr . "'";
-	$m7p->{db} = $m7p_dbh;
-	return $m7p->{db};
+	}) or $m7p->log->logdie("Failed to connect to database: '" . DBI->errstr . "'");
+	$m7p->{_db} = $m7p_dbh;
+	return $m7p->{_db};
 }
 
 # Initialize GeoIP Object \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\ #
 sub geoIPInit {
 	my $m7p = shift;
-	$m7p->{_geoip} = Geo::IP->open('/usr/local/share/GeoIP/GeoLiteCity.dat', GEOIP_STANDARD);
+	$m7p->log->info('Initializing GeoIP object');
+	$m7p->{_geoip} = Geo::IP->open($m7_geo{db}, GEOIP_STANDARD)
+		or $m7p->log->logdie('Failed to initialize GeoIP object. Missing GeoIP database? : "' . $m7_geo{db} . '"');
 	return $m7->{_geoip};
 }
 
@@ -86,12 +109,20 @@ sub geoIPInit {
 sub setPlan {
 	my $m7p = shift;
 	my ($m7p_plan_id, $m7p_plan_runtime) = @_;
+	
+	# Make sure all arguments are defined
+	if (not defined $m7p_plan_id || not defined $m7p_plan_runtime) {
+		$m7p->log->logdie('Must specify both plan ID and runtime to parse XML results');
+	}
+	
+	# Begin setting module variables
 	$m7p->{_plan_id}	= $m7p_plan_id;
 	$m7p->{_plan_file}	= $ENV{"HOME"} . "/plans/" . $m7p_plan_id . ".xml"
 	$m7p->{_xml_dir}    = $ENV{"HOME"} . "/results/" . $m7p_plan_id . "/";
 	
 	# Load all the result files into an array
-	opendir(XML_DIR, $m7p->xml_dir);
+	opendir(XML_DIR, $m7p->xml_dir)
+		or $m7p->log->logdie('Could not open XML results directory: '. $m7p->xml_dir);
 	while (my $m7p_xml_file = readdir(XML_DIR)) {
 		next if (substr($m7p_xml_file,0,1) eq ".");
     	push (@{$m7p->{_xml_files}}, $m7p->xml_dir . $m7p_xml_file);
@@ -109,13 +140,17 @@ sub setPlan {
 sub initPlanDB {
 	my $m7p_plan_check	= $m7p->db->selectcol_arrayref("SELECT * FROM plans WHERE plan_id='" . $m7p->plan_id . "'");
 	if (@$m7p_plan_check) {
+		$m7p->log->info('Updating database entry for test plan: ID=' . $m7p->plan_id . ', Runtime=' . $m7p->runtime);
 		my $m7p_plan_update = "UPDATE `" . $m7p->db_name . "`.`plans` SET last_run='" . $m7p->runtime . "', run_count=run_count+1 WHERE plan_id='" . $m7p->plan_id . "'";
-		$m7p->db->do($m7_plan_update);
+		$m7p->db->do($m7_plan_update)
+			or $m7p->log->logdie('Failed to update database entry');
 	} else {
+		$m7p->log->info('Creating database entry for test plan: ID=' . $m7p->plan_id . ', Runtime=' . $m7p->runtime);
 		my $m7p_plan_create = "INSERT INTO `" . $m7p->db_name . "`.`plans`(" .
 							 "`plan_id`, `type`, `desc`, `first_run`, `last_run`, `run_count`) VALUES(" . 
 						     "'" . $m7p->plan_id . "','net','" . $m7p->plan_desc . "','" . $m7p->runtime . "','" . $m7p->runtime . "', 1)";
-		$m7p->db->do($m7p_plan_create);
+		$m7p->db->do($m7p_plan_create)
+			or $m7p->log->logdie('Failed to create database entry');
 	}
 }
 
@@ -124,6 +159,7 @@ sub createHostTable {
 	use feature 'switch';
 	my $m7p = shift;
 	my ($m7p_table_type, $m7p_table_host) = @_;
+	$m7p->log->info('Creating host test results table: "' . $m7p_table_host . '_' . $m7p_table_type . '"');
 	given ($m7p_table_type) {
 		when ('net_ping') {
 			$m7p->db->do("
