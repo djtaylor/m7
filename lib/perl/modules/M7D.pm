@@ -38,8 +38,8 @@ sub forks	{ return shift->{_forks}; }
 sub logInit {
 	my $m7d = shift;
 	my (%m7d_log_args) = @_;
-	my $m7d_log_conf = read_file($m7d_log_args{conf});
-	$m7d_log_conf =~ s/__LOGFILE__/$m7d_log_args{file}/;
+	my $m7d_log_conf = read_file($m7d_log{conf});
+	$m7d_log_conf =~ s/__LOGFILE__/$m7d_log{file}/;
 	Log::Log4perl::init(\$m7d_log_conf);
 	$m7d->{_log} = Log::Log4perl->get_logger;
 	return $m7d->{_log};

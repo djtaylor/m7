@@ -1,11 +1,11 @@
 #!/usr/bin/perl
 use strict;
+use feature 'switch';
 use XML::LibXML;
 use XML::XPath;
 use Geo::IP;
 use Data::Validate::IP;
 use File::Slurp;
-use feature 'switch';
 use lib $ENV{HOME} . '/lib/perl/modules';
 use M7Config;
 use M7Parse;
@@ -26,9 +26,9 @@ foreach (@{$m7p->xml_files}) {
 	
     # Get the node information
     for my $m7p_host_node ($m7p_xml_tree->findnodes('plan/host/@name')) {
-    	my $m7p_host			= $m7p_host_node->textContent();
+    	my $m7p_host		= $m7p_host_node->textContent();
     	my $m7p_host_ipaddr	= $m7p_test_xpath->findvalue('plan/host/@ip');
-    	my $m7p_host_region  = $m7p_test_xpath->findvalue('plan/host/@region');
+    	my $m7p_host_region = $m7p_test_xpath->findvalue('plan/host/@region');
         $m7p_host 			=~ s/-/_/g;
 
 		# Get the host's geolocation

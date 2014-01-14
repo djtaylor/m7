@@ -10,10 +10,7 @@ use M7D;
 my $m7d = M7D->new();
 
 # Initialize the logger
-$m7d->logInit(
-	'conf' => $ENV{HOME} . '/lib/perl/log/m7d.conf',
-	'file' => $ENV{HOME} . '/log/server.log'
-);
+$m7d->logInit();
 
 # Set the PID file
 $m7d->setPID(

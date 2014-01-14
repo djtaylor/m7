@@ -97,11 +97,10 @@ sub out_dir		 { return shift->{_out_dir};      }
 # Initialize Logger \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\ #
 sub logInit {
 	my $m7 = shift;
-	my (%m7_log_args) = @_;
 	
 	# Read the log configuration into memory
-	my $m7_log_conf = read_file($m7_log_args{conf});
-	$m7_log_conf =~ s/__LOGFILE__/$m7_log_args{file}/;
+	my $m7_log_conf = read_file($m7_log{conf});
+	$m7_log_conf =~ s/__LOGFILE__/$m7_log{file}/;
 	
 	# Initialize the logger
 	Log::Log4perl::init(\$m7_log_conf)

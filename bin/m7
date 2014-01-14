@@ -17,10 +17,7 @@ use M7;
 my $m7 = M7->new();
 
 # Initialize the logger
-$m7->logInit(
-	'conf' => $ENV{HOME} . '/lib/perl/log/m7.conf',
-	'file' => $ENV{HOME} . '/log/client.log'
-);
+$m7->logInit();
 
 # Initialize the database connection
 $m7->dbInit(
