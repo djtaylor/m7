@@ -213,7 +213,6 @@ sub initPlanDB {
 			$m7p->addDestIP($m7p_host_ip, $m7p_host_alias);
 		}
 	}
-	exit 0;
 }
 
 # Create Host Results Table \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\ #

@@ -41,10 +41,10 @@ $m7_render = $render->m7RenderCheck ();
 					<div class="m7_plan_id_menu">
 						<select name="id">
 	                        <?php
-																									foreach ( $render->m7_plans as $m7_plan_id => $m7_plan_params ) {
-																										echo '<option value="' . $m7_plan_id . '">' . $m7_plan_id . ' - ' . $m7_plan_params ['desc'] . '</option>' . "\n";
-																									}
-																									?>
+							foreach ( $render->m7_plans as $m7_plan_id => $m7_plan_params ) {
+								echo '<option value="' . $m7_plan_id . '">' . $m7_plan_id . ' - ' . $m7_plan_params['desc'] . '</option>' . "\n";
+							}
+							?>
 	                        </select>
 					</div>
 				</div>
@@ -53,14 +53,14 @@ $m7_render = $render->m7RenderCheck ();
 					<div class="m7_test_shost_menu">
 						<select name="shost">
 	                        <?php
-																									foreach ( $render->m7_hosts as $m7_host => $m7_host_params ) {
-																										if (isset ( $render->m7_active ['host'] ) && $m7_host == $render->m7_active ['host']) {
-																											echo '<option selected="selected" value="' . $m7_host . '">' . $m7_host . ' - ' . $m7_host_params ['desc'] . '</option>' . "\n";
-																										} else {
-																											echo '<option value="' . $m7_host . '">' . $m7_host . ' - ' . $m7_host_params ['desc'] . '</option>' . "\n";
-																										}
-																									}
-																									?>
+							foreach ( $render->m7_hosts as $m7_host => $m7_host_params ) {
+								if (isset ( $render->m7_active['host'] ) && $m7_host == $render->m7_active['host']) {
+									echo '<option selected="selected" value="' . $m7_host . '">' . $m7_host . ' - ' . $m7_host_params ['desc'] . '</option>' . "\n";
+								} else {
+									echo '<option value="' . $m7_host . '">' . $m7_host . ' - ' . $m7_host_params ['desc'] . '</option>' . "\n";
+								}
+							}
+							?>
 	                        </select>
 					</div>
 				</div>
@@ -69,14 +69,14 @@ $m7_render = $render->m7RenderCheck ();
 					<div class="m7_test_type_menu">
 						<select name="type">
 	                    		<?php
-																							foreach ( $render->m7_categories ['net'] ['types'] as $m7_type_val => $m7_type_desc ) {
-																								if (isset ( $render->m7_active ['type'] ) && $m7_type_val == $render->m7_active ['type']) {
-																									echo '<option selected="selected" value="' . $m7_type_val . '">' . $m7_type_desc . '</option>' . "\n";
-																								} else {
-																									echo '<option value="' . $m7_type_val . '">' . $m7_type_desc . '</option>' . "\n";
-																								}
-																							}
-																							?>
+								foreach ( $render->m7_categories['net']['types'] as $m7_type_val => $m7_type_desc ) {
+									if (isset ( $render->m7_active['type'] ) && $m7_type_val == $render->m7_active ['type']) {
+										echo '<option selected="selected" value="' . $m7_type_val . '">' . $m7_type_desc . '</option>' . "\n";
+									} else {
+										echo '<option value="' . $m7_type_val . '">' . $m7_type_desc . '</option>' . "\n";
+									}
+								}
+								?>
 	                        </select>
 					</div>
 				</div>
@@ -86,16 +86,16 @@ $m7_render = $render->m7RenderCheck ();
 						<select name="destip">
 							<option value="all">--All--</option>
 	                        	<?php
-																										if (isset ( $render->m7_destips )) {
-																											foreach ( $render->m7_destips as $m7_destip_val ) {
-																												if ($m7_destip_val == $render->m7_active ['destip']) {
-																													echo '<option selected="selected" value="' . $m7_destip_val . '">' . $m7_destip_val . '</option>' . "\n";
-																												} else {
-																													echo '<option value="' . $m7_destip_val . '">' . $m7_destip_val . '</option>' . "\n";
-																												}
-																											}
-																										}
-																										?>
+								if (isset ( $render->m7_destips )) {
+									foreach ( $render->m7_destips as $m7_destip_alias => $m7_destip_val ) {
+										if ($m7_destip_val == $render->m7_active['destip']) {
+											echo '<option selected="selected" value="' . $m7_destip_val . '">' . $m7_destip_val . ' - ' . $m7_destip_alias . '</option>' . "\n";
+										} else {
+											echo '<option value="' . $m7_destip_val . '">' . $m7_destip_val . ' - ' . $m7_destip_alias . '</option>' . "\n";
+										}
+									}
+								}
+								?>
 	                        </select>
 					</div>
 				</div>
@@ -105,16 +105,16 @@ $m7_render = $render->m7RenderCheck ();
 						<select name="start">
 							<option value="recent">--Most Recent--</option>
 	                        	<?php
-																										if (isset ( $render->m7_runtimes )) {
-																											foreach ( $render->m7_runtimes as $m7_start_val ) {
-																												if (isset ( $render->m7_active ['start'] ) && $m7_start_val == $render->m7_active ['start']) {
-																													echo '<option selected="selected" value="' . $m7_start_val . '">' . $m7_start_val . '</option>';
-																												} else {
-																													echo '<option value="' . $m7_start_val . '">' . $m7_start_val . '</option>';
-																												}
-																											}
-																										}
-																										?>
+								if (isset ( $render->m7_runtimes )) {
+									foreach ( $render->m7_runtimes as $m7_start_val ) {
+										if (isset ( $render->m7_active['start'] ) && $m7_start_val == $render->m7_active['start']) {
+											echo '<option selected="selected" value="' . $m7_start_val . '">' . $m7_start_val . '</option>';
+										} else {
+											echo '<option value="' . $m7_start_val . '">' . $m7_start_val . '</option>';
+										}
+									}
+								}
+								?>
 	                        </select>
 					</div>
 				</div>
@@ -124,16 +124,16 @@ $m7_render = $render->m7RenderCheck ();
 						<select name="stop">
 							<option value="start">--Start--</option>
 	                        	<?php
-																										if (isset ( $render->m7_runtimes )) {
-																											foreach ( $render->m7_runtimes as $m7_stop_val ) {
-																												if (isset ( $render->m7_active ['stop'] ) && $m7_stop_val == $render->m7_active ['stop']) {
-																													echo '<option selected="selected" value="' . $m7_stop_val . '">' . $m7_stop_val . '</option>';
-																												} else {
-																													echo '<option value="' . $m7_stop_val . '">' . $m7_stop_val . '</option>';
-																												}
-																											}
-																										}
-																										?>
+								if (isset ( $render->m7_runtimes )) {
+									foreach ( $render->m7_runtimes as $m7_stop_val ) {
+										if (isset ( $render->m7_active ['stop'] ) && $m7_stop_val == $render->m7_active ['stop']) {
+											echo '<option selected="selected" value="' . $m7_stop_val . '">' . $m7_stop_val . '</option>';
+										} else {
+											echo '<option value="' . $m7_stop_val . '">' . $m7_stop_val . '</option>';
+										}
+									}
+								}
+								?>
 	                        </select>
 					</div>
 				</div>
@@ -142,22 +142,22 @@ $m7_render = $render->m7RenderCheck ();
 		</form>
 	</div>
     	<?php
-					if ($m7_render) {
-						if (! empty ( $render->m7_destips )) {
-							echo '<div class="m7_map_key">' . "\n";
-							echo '<div class="m7_map_key_title">Map Key</div>' . "\n";
-							$m7_key_count = 1;
-							foreach ( $render->m7_destips as $m7_destip_val ) {
-								echo '<div class="m7_map_key_entry">' . "\n";
-								echo '<div class="m7_map_key_color key' . $m7_key_count . '"></div>' . "\n";
-								echo '<div class="m7_map_key_txt">Destination - ' . $m7_destip_val . '</div>' . "\n";
-								echo '</div>' . "\n";
-								$m7_key_count ++;
-							}
-							echo '</div>' . "\n";
-						}
-					}
-					?>
+		if ($m7_render) {
+			if (! empty ( $render->m7_destips )) {
+				echo '<div class="m7_map_key">' . "\n";
+				echo '<div class="m7_map_key_title">Map Key</div>' . "\n";
+				$m7_key_count = 1;
+				foreach ( $render->m7_destips as $m7_destip_val ) {
+					echo '<div class="m7_map_key_entry">' . "\n";
+					echo '<div class="m7_map_key_color key' . $m7_key_count . '"></div>' . "\n";
+					echo '<div class="m7_map_key_txt">Destination - ' . $m7_destip_val . '</div>' . "\n";
+					echo '</div>' . "\n";
+					$m7_key_count ++;
+				}
+				echo '</div>' . "\n";
+			}
+		}
+		?>
     	<div id="map_container"></div>
 	<script>
 

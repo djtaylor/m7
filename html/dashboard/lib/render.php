@@ -515,9 +515,9 @@ class Render extends D3JS {
 			$test_details_html .= '<div class="m7_test_destination_ip_title">Destination IP: </div>' . "\n";
 			$test_details_html .= '<div class="m7_test_destination_ip_menu">' . "\n";
 			$test_details_html .= '<select id="dest_ip">' . "\n";
-			foreach ( $this->m7_destips as $m7_test_destip ) {
-				$m7_test_destip_tag = preg_replace ( "/\./", "_", $m7_test_destip );
-				$test_details_html .= '<option value="' . $m7_test_destip_tag . '">' . $m7_test_destip . '</option>' . "\n";
+			foreach ( $this->m7_destips as $m7_test_destip_alias => $m7_test_destip_val ) {
+				$m7_test_destip_tag = preg_replace ( "/\./", "_", $m7_test_destip_val );
+				$test_details_html .= '<option value="' . $m7_test_destip_tag . '">' . $m7_test_destip_val . ' - ' . $m7_test_destip_alias . '</option>' . "\n";
 			}
 			$test_details_html .= '</select></div></div>' . "\n";
 			
