@@ -23,7 +23,7 @@ BEGIN {
 	use File::Fetch;
 	use Time::HiRes;
 	use List::Util qw(sum);
-	use lib $ENV{M7_ROOT} . '/lib/perl/modules';
+	use lib $ENV{HOME} . '/lib/perl/modules';
 	use M7Config;
 }
 
@@ -230,7 +230,7 @@ sub checkDirector {
 
 # Git Synchronization \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\ #
 sub gitSync {
-	system('sh ' . $ENV{M7_ROOT} . '/lib/bash/gitsync.sh');
+	system('sh ' . $ENV{HOME} . '/lib/bash/gitsync.sh');
 }
 
 # Build Xpath Object \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\ #
@@ -245,7 +245,7 @@ sub buildXpath {
 sub workerLock {
 	my $m7 = shift;
 	my ($m7_worker) = @_;
-	my $m7_worker_results = $ENV{M7_ROOT} . '/results/' . $m7->plan_id . '/' . $m7_worker . '.xml';
+	my $m7_worker_results = $ENV{HOME} . '/results/' . $m7->plan_id . '/' . $m7_worker . '.xml';
 	sleep 1 while not -e $m7_worker_results;
 	$m7->log->info($$  . ': Worker results file received: ' . $m7_worker_results . ' - closing monitor');
 	exit 0;
@@ -751,10 +751,10 @@ sub testInit {
 	$m7->{_plan_id}		= $m7->getXMLText('plan/id');
 	$m7->{_plan_desc}	= $m7->getXMLText('plan/desc');
 	$m7->{_plan_cat}	= $m7->getXMLText('plan/params/category');
-	$m7->{_out_dir}  = $ENV{M7_ROOT} . '/output/' . $m7->plan_id;
+	$m7->{_out_dir}  = $ENV{HOME} . '/output/' . $m7->plan_id;
 	
 	# Switch log files
-	$m7_client_log = $ENV{M7_ROOT} . '/log/client.' . $m7->plan_id . '.log';
+	$m7_client_log = $ENV{HOME} . '/log/client.' . $m7->plan_id . '.log';
 	$m7->log->info('Plan ID found - switching log files: ' . $m7_client_log);
 	$m7->logInit($m7_client_log);
 	$m7->log->info('Initializing test run for plan ID: ' . $m7->plan_id);
@@ -763,7 +763,7 @@ sub testInit {
 	if($m7->is_dir) {
 		
 		# If the test is already running
-		$m7->{_lock_dir} = $ENV{M7_ROOT} . '/lock/' . $m7->plan_id;
+		$m7->{_lock_dir} = $ENV{HOME} . '/lock/' . $m7->plan_id;
 		if (-d $m7->lock_dir) {
 			$m7->log->logdie('Plan ID lock directory exists: ' . $m7->lock_dir .  ' - plan already running?');
 		}
@@ -793,7 +793,7 @@ sub testDist {
 						'port'	=> $m7_host{sshport},
 						'master_opts' => [ 
 							-o => 'StrictHostKeyChecking=no', 
-							-i => $ENV{M7_ROOT} . '/.ssh/m7.key'
+							-i => $ENV{HOME} . '/.ssh/m7.key'
 						],
 					)
 				) or $m7->log->logdie('Failed to establish SSH connection with worker - ' . $m7_host{name} . ':' . $m7_host{user} . '@' . $m7_host{ipaddr});
@@ -835,7 +835,7 @@ sub testExec {
 	my $m7 = shift;
 	use feature 'switch';
 	if($m7->is_dir) {
-		mkpath($ENV{M7_ROOT} . '/results/' . $m7->plan_id, 0, 0755);
+		mkpath($ENV{HOME} . '/results/' . $m7->plan_id, 0, 0755);
 	}
 	
 	# Get all the test IDs
@@ -1068,7 +1068,7 @@ sub mergeLocal {
 				'port'	=> $m7->dir->{sshport},
 				'master_opts' => [ 
 					-o => 'StrictHostKeyChecking=no', 
-					-i => $ENV{M7_ROOT} . '/.ssh/m7.key'
+					-i => $ENV{HOME} . '/.ssh/m7.key'
 				],
 			)
 		) or $m7->log->logdie('Failed to establish SSH connection with director - ' . $m7->dir->{name} . ':' . $m7->dir->{user} . '@' . $m7->dir->{ipaddr});
@@ -1084,7 +1084,7 @@ sub mergeLocal {
 	} else {
 		
 		# Copy the results file to the final directory and delete the output path
-		copy($m7_xml_file, $ENV{M7_ROOT} . "/results/" . $m7->plan_id . "/" . $m7->local->{name} . ".xml");
+		copy($m7_xml_file, $ENV{HOME} . "/results/" . $m7->plan_id . "/" . $m7->local->{name} . ".xml");
 		rmtree($m7->out_dir);
 	}
 }

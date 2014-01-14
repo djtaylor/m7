@@ -9,7 +9,7 @@ use strict;
 use feature 'switch';
 
 # Load the M7 client module
-use lib $ENV{M7_ROOT} . '/lib/perl/modules';
+use lib $ENV{HOME} . '/lib/perl/modules';
 use M7;
 
 # Create the M7 configuration and server object

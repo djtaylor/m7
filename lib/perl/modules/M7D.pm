@@ -11,7 +11,7 @@ BEGIN {
 	use File::Slurp;
 	use DBI;
 	use DBD::mysql;
-	use lib $ENV{M7_ROOT} . '/lib/perl/modules';
+	use lib $ENV{HOME} . '/lib/perl/modules';
 	use M7Config;
 }
 
@@ -47,8 +47,8 @@ sub logInit {
 	my $m7d = shift;
 	
 	# Read the log file into memory
-	my $m7d_log_file = $m7p->config->get('log_file_m7d');
-	my $m7d_log_conf = read_file($m7->config->get('log_conf_m7d'));
+	my $m7d_log_file = $m7d->config->get('log_file_m7d');
+	my $m7d_log_conf = read_file($m7d->config->get('log_conf_m7d'));
 	$m7d_log_conf =~ s/__LOGFILE__/$m7d_log_file/;
 	
 	# Initialize the logger
@@ -63,7 +63,7 @@ sub logInit {
 # Set PID File \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\ #
 sub setPID {
 	my $m7d = shift;
-	open(PIDFILE, '>' . $m7->config->get('pidfile'));
+	open(PIDFILE, '>' . $m7d->config->get('pidfile'));
 	print PIDFILE $$;
 	close(PIDFILE);
 }
@@ -72,9 +72,9 @@ sub setPID {
 sub dbInit {
 	my $m7d = shift;
 	my (%m7d_db_args) = @_;
-	my $m7d_db_dsn = "dbi:mysql:" . $m7->config->get('db_name') . ":" . $m7->config->get('db_host') . ":" . $m7->config->get('db_port');
+	my $m7d_db_dsn = "dbi:mysql:" . $m7d->config->get('db_name') . ":" . $m7d->config->get('db_host') . ":" . $m7d->config->get('db_port');
 	$m7d->{_db} = shift;
-	my $m7d_dbh = DBI->connect($m7d_db_dsn, $m7->config->get('db_user'), $m7->config->get('db_pass'), {
+	my $m7d_dbh = DBI->connect($m7d_db_dsn, $m7d->config->get('db_user'), $m7d->config->get('db_pass'), {
 		PrintError => 0,
 		RaiseError => 1
 	}) or $m7d->log->logdie("Failed to connect to database: '" . DBI->errstr . "'");

@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 use strict;
-use lib $ENV{M7_ROOT} . '/lib/perl/modules';
+use lib $ENV{HOME} . '/lib/perl/modules';
 use M7Parse;
 
 # Initialize the data parsing and configuration modules

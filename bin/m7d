@@ -2,7 +2,7 @@
 use strict;
 
 # Load the M7 server module
-use lib $ENV{M7_ROOT} . '/lib/perl/modules';
+use lib $ENV{HOME} . '/lib/perl/modules';
 use M7D;
 
 # Create the M7 server object

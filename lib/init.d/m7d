@@ -7,7 +7,7 @@ use Term::ANSIColor;
 use feature 'switch';
 
 # Load the M7 configuration
-use lib $ENV{M7_ROOT} . '/lib/perl/modules';
+use lib '/opt/vpls/m7/lib/perl/modules';
 use M7Config;
 
 # \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\ #
