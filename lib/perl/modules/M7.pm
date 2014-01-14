@@ -107,10 +107,11 @@ sub logInit {
 	my ($m7_alt_log) = @_;
 	
 	# Read the log configuration into memory
+	my $m7_log_file;
 	if ($m7_alt_log) {
-		my $m7_log_file = $m7_alt_log;
+		$m7_log_file = $m7_alt_log;
 	} else {
-		my $m7_log_file = $m7->config->get('log_file_m7');	
+		$m7_log_file = $m7->config->get('log_file_m7');	
 	}
 	my $m7_log_conf = read_file($m7->config->get('log_conf_m7'));
 	$m7_log_conf =~ s/__LOGFILE__/$m7_log_file/;

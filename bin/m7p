@@ -1,18 +1,10 @@
 #!/usr/bin/perl
 use strict;
-use feature 'switch';
-use XML::LibXML;
-use XML::XPath;
-use Geo::IP;
-use Data::Validate::IP;
-use File::Slurp;
 use lib $ENV{HOME} . '/lib/perl/modules';
-use M7Config;
 use M7Parse;
 
 # Initialize the data parsing and configuration modules
 my $m7p = M7Parse->new();
-my $m7c = M7Config->new();
 
 # Set the plan variables
 $m7p->setPlan($ARGV[0], $ARGV[1]);
@@ -22,273 +14,21 @@ $m7p->initPlanDB();
 
 # Process XML Result Files \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\ #
 foreach (@{$m7p->xml_files}) {
-    my $m7p_xml_tree	= $m7p->libxml->parse_file($_);
-    my $m7p_test_xpath	= XML::XPath->new(filename => $_);
 	
-    # Get the node information
-    for my $m7p_host_node ($m7p_xml_tree->findnodes('plan/host/@name')) {
-    	my $m7p_host		= $m7p_host_node->textContent();
-    	my $m7p_host_ipaddr	= $m7p_test_xpath->findvalue('plan/host/@ip');
-    	my $m7p_host_region = $m7p_test_xpath->findvalue('plan/host/@region');
-        $m7p_host 			=~ s/-/_/g;
-
-		# Get the host's geolocation
-		my $m7p_host_geo		= $m7p->geoip->record_by_addr($m7p_host_ipaddr);
-		my $m7p_host_lat		= $m7p_host_geo->latitude;
-		my $m7p_host_lon		= $m7p_host_geo->longitude;
-
-		given ($m7p->plan_cat) {
-			when ('dns') {
-				#$m7p->createHostTable('dns_nslookup', $m7p_host);
-			}
-			when ('net') {
-				$m7p->createHostTable('net_ping', $m7p_host);
-				$m7p->createHostTable('net_traceroute', $m7p_host);
-				$m7p->createHostTable('net_mtr', $m7p_host);
-			}
-			when ('web') {
-				#$m7p->createHostTable('web_download', $m7p_host);
-			}
-		}
-                
-		# Process the test results
-        for my $m7p_test_id_tree ($m7p_xml_tree->findnodes('plan/test/@id')) {
-        	my $m7p_test_id = $m7p_test_id_tree->textContent();
-            my $m7p_test_type = $m7p_test_xpath->findvalue('plan/test[@id="' . $m7p_test_id . '"]/@type');
-            for my $m7p_test_tree ($m7p_xml_tree->findnodes('plan/test[@id="' . $m7p_test_id . '"]')) {
-
-				# Ping Test Results \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\ #
-				#
-				# Convert the test results for ping from XML to database format
-				# and create entries in the database for the host.
-                if ($m7p_test_type eq "ping") {
-
-					# Initialize the MySQL insert array
-					my @m7_ping_sql;
-
-                	# Process the host definitions
-                    for my $m7p_ping_host_name_tree ($m7p_xml_tree->findnodes('plan/test[@id="' . $m7p_test_id . '"]/host/@name')) {
-                    	my $m7p_ping_host		= $m7p_ping_host_name_tree->textContent();
-
-                        # Get the ping statistics
-                        my $m7p_ping_ip			= $m7p_test_xpath->findvalue('plan/test[@id="' . $m7p_test_id . '"]/host[@name="' . $m7p_ping_host . '"]/@ip');
-                        my $m7p_ping_region		= $m7p_test_xpath->findvalue('plan/test[@id="' . $m7p_test_id . '"]/host[@name="' . $m7p_ping_host . '"]/@region');
-                        my $m7p_ping_pkt_loss 	= $m7p_test_xpath->findvalue('plan/test[@id="' . $m7p_test_id . '"]/host[@name="' . $m7p_ping_host . '"]/pktLoss');
-                        my $m7p_ping_min_time 	= $m7p_test_xpath->findvalue('plan/test[@id="' . $m7p_test_id . '"]/host[@name="' . $m7p_ping_host . '"]/minTime');
-                        my $m7p_ping_avg_time 	= $m7p_test_xpath->findvalue('plan/test[@id="' . $m7p_test_id . '"]/host[@name="' . $m7p_ping_host . '"]/avgTime');
-                        my $m7p_ping_max_time 	= $m7p_test_xpath->findvalue('plan/test[@id="' . $m7p_test_id . '"]/host[@name="' . $m7p_ping_host . '"]/maxTime');
-                        my $m7p_ping_avg_dev  	= $m7p_test_xpath->findvalue('plan/test[@id="' . $m7p_test_id . '"]/host[@name="' . $m7p_ping_host . '"]/avgDev');
-                        
-                        # Get the target node geolocation
-                        my $m7p_ping_geo			= $m7p->geoip->record_by_addr($m7p_ping_ip);
-                        my $m7p_ping_lat			= $m7p_ping_geo->latitude;
-                        my $m7p_ping_lon			= $m7p_ping_geo->longitude;
-                        
-                        # Define the SQL insert string
-                        my $m7p_ping_sql_string = "('" . $m7p->plan_id . "'" .
-                        	",'" . $m7p_host_ipaddr . "'" .
-                        	",'" . $m7p_host_region . "'" .
-                        	",'" . $m7p_host_lat . "'" .
-                        	",'" . $m7p_host_lon . "'" .
-                        	",'" . $m7p_ping_ip . "'" .
-                        	",'" . $m7p_ping_region . "'" .
-                        	",'" . $m7p_ping_lat . "'" .
-                        	",'" . $m7p_ping_lon . "'" .
-                        	",'" . $m7p->runtime . "'" .
-                        	",'" . $m7p_ping_pkt_loss . "'" .
-                        	",'" . $m7p_ping_min_time . "'" .
-                        	",'" . $m7p_ping_avg_time . "'" .
-                        	",'" . $m7p_ping_max_time . "'" .
-                        	",'" . $m7p_ping_avg_dev . "')";
-                        
-                        # Append the string to the array
-                        push (@m7_ping_sql, $m7p_ping_sql_string);      
-                    }
-                    
-                    # Flatten the ping SQL array and prepare the query string
-                    my $m7p_ping_sql_values		= join(", ", @m7_ping_sql);
-                    my $m7p_ping_sql_query		= "INSERT INTO " . $m7c->config->get('db_name') . "." . $m7p_host . "_net_ping(" . 
-                    				      		  "plan_id, source_ip, source_region, source_lat, source_lon, " . 
-                    				      		  "dest_ip, dest_region, dest_lat, dest_lon, run_time, pkt_loss, min_time, avg_time, max_time, avg_dev) " .
-                    					  		  "VALUES " . $m7p_ping_sql_values . ";";
-                    
-                    # Create the table rows for the ping test
-                    $m7p->db->do($m7p_ping_sql_query);
-                 
-				# Traceroute Test Results \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\ # 
-				#
-				# Convert the test results for traceroute from XML to database
-				# format and create entries in the database for the host for
-				# each hop.
-                } elsif ($m7p_test_type eq "traceroute") {
-
-					# Initialize the MySQL insert array
-					my @m7_troute_sql;
-
-                	# Process the host definitions
-                    for my $m7p_troute_host_name_tree ($m7p_xml_tree->findnodes('plan/test[@id="' . $m7p_test_id . '"]/host/@name')) {
-                    	my $m7p_troute_host 			= $m7p_troute_host_name_tree->textContent();
-                    	my $m7p_troute_dest_ip		= $m7p_test_xpath->findvalue('plan/test[@id="' . $m7p_test_id . '"]/host[@name="' . $m7p_troute_host . '"]/@ip');
-                    	my $m7p_troute_dest_region	= $m7p_test_xpath->findvalue('plan/test[@id="' . $m7p_test_id . '"]/host[@name="' . $m7p_troute_host . '"]/@region');
-                    	
-                    	# Get the target node geolocation
-                        my $m7p_troute_dest_geo		= $m7p->geoip->record_by_addr($m7p_troute_dest_ip);
-                        my $m7p_troute_dest_lat		= $m7p_troute_dest_geo->latitude;
-                       	my $m7p_troute_dest_lon		= $m7p_troute_dest_geo->longitude;
-                    	
-                    	# Process the hop definitions
-                        for my $m7p_troute_hops_tree ($m7p_xml_tree->findnodes('plan/test[@id="' . $m7p_test_id . '"]/host[@name="' . $m7p_troute_host . '"]/hops/hop/@number')) {
-                        	
-                        	# Get the statistics for the traceroute hop
-                        	my $m7p_troute_hop    		= $m7p_troute_hops_tree->textContent();
-                            my $m7p_troute_ip     		= $m7p_test_xpath->findvalue('plan/test[@id="' . $m7p_test_id . '"]/host[@name="' . $m7p_troute_host . '"]/hops/hop[@number="' . $m7p_troute_hop . '"]/ip');
-                            my $m7p_troute_try    		= $m7p_test_xpath->findvalue('plan/test[@id="' . $m7p_test_id . '"]/host[@name="' . $m7p_troute_host . '"]/hops/hop[@number="' . $m7p_troute_hop . '"]/try');
-                            my $m7p_troute_time   		= $m7p_test_xpath->findvalue('plan/test[@id="' . $m7p_test_id . '"]/host[@name="' . $m7p_troute_host . '"]/hops/hop[@number="' . $m7p_troute_hop . '"]/time');
-                        	my $m7p_troute_ip_lat		= "";
-                        	my $m7p_troute_ip_lon		= "";
-                        	
-                        	$m7p_troute_ip = $m7p_troute_ip . "";
-                        	# Get the hop IP geolocation and make sure the IP address is valid
-                        	if (is_ipv4($m7p_troute_ip) && !is_unroutable_ipv4($m7p_troute_ip) && !is_private_ipv4($m7p_troute_ip)) {
-                        		my $m7p_troute_ip_geo	= $m7p->geoip->record_by_addr($m7p_troute_ip);
-                        		$m7p_troute_ip_lat		= $m7p_troute_ip_geo->latitude;
-                       			$m7p_troute_ip_lon		= $m7p_troute_ip_geo->longitude;
-                        	} else {
-                        		$m7p_troute_ip_lat		= "";
-                        		$m7p_troute_ip_lon		= "";
-                        	}
-                        	
-                        	# Define the SQL insert string
-	                        my $m7p_troute_sql_string = "('" . $m7p->plan_id . "'" .
-	                        	",'" . $m7p_host_ipaddr . "'" .
-	                        	",'" . $m7p_host_region . "'" .
-	                        	",'" . $m7p_host_lat . "'" .
-	                        	",'" . $m7p_host_lon . "'" .
-	                        	",'" . $m7p_troute_dest_ip . "'" .
-	                        	",'" . $m7p_troute_dest_region . "'" .
-	                        	",'" . $m7p_troute_dest_lat . "'" .
-	                        	",'" . $m7p_troute_dest_lon . "'" .
-	                        	",'" . $m7p->runtime . "'" .
-	                        	",'" . $m7p_troute_hop . "'" .
-	                        	",'" . $m7p_troute_try . "'" .
-	                        	",'" . $m7p_troute_ip . "'" .
-	                        	",'" . $m7p_troute_ip_lat . "'" .
-	                        	",'" . $m7p_troute_ip_lon . "'" .
-	                        	",'" . $m7p_troute_time . "')";
-	                        
-	                        # Append the string to the array
-	                        push (@m7_troute_sql, $m7p_troute_sql_string)
-                        } 
-                    }
-                    
-                    # Flatten the traceroute SQL array and prepare the query string
-                    my $m7p_troute_sql_values		= join(", ", @m7_troute_sql);
-                    my $m7p_troute_sql_query			= "INSERT INTO " . $m7c->config->get('db_name') . "." . $m7p_host . "_net_traceroute(" . 
-                    						   		  "plan_id, source_ip, source_region, source_lat, source_lon, " . 
-                    						   		  "dest_ip, dest_region, dest_lat, dest_lon, run_time, hop, try, ip, ip_lat, ip_lon, time) " .
-                    						   		  "VALUES " . $m7p_troute_sql_values . ";";
-                    
-                    # Create the table rows for the traceroute test
-                    $m7p->db->do($m7p_troute_sql_query);
-
-				# MTR Test Results \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\ #
-				#
-				# Convert the test results for MTR from XML to database format
-				# and create an entry in the database for the host for each
-				# hop.
-                } elsif ($m7p_test_type eq "mtr") {
-                				
-                	# Initialize the MySQL insert array
-                	my @m7_mtr_sql;			
-                		
-                	# Process the host definitions
-                    for my $m7p_mtr_host_name_tree ($m7p_xml_tree->findnodes('plan/test[@id="' . $m7p_test_id . '"]/host/@name')) {
-                    	my $m7p_mtr_host				= $m7p_mtr_host_name_tree->textContent();
-                    	my $m7p_mtr_dest_ip			= $m7p_test_xpath->findvalue('plan/test[@id="' . $m7p_test_id . '"]/host[@name="' . $m7p_mtr_host . '"]/@ip');
-                    	my $m7p_mtr_dest_region		= $m7p_test_xpath->findvalue('plan/test[@id="' . $m7p_test_id . '"]/host[@name="' . $m7p_mtr_host . '"]/@region');
-                    	
-                    	# Get the target node geolocation
-                        my $m7p_mtr_dest_geo			= $m7p->geoip->record_by_addr($m7p_mtr_dest_ip);
-                        my $m7p_mtr_dest_lat			= $m7p_mtr_dest_geo->latitude;
-                       	my $m7p_mtr_dest_lon			= $m7p_mtr_dest_geo->longitude;
-                    	
-                    	# Process the hop definitions
-                        for my $m7p_mtr_hops_tree ($m7p_xml_tree->findnodes('plan/test[@id="' . $m7p_test_id . '"]/host[@name="' . $m7p_mtr_host . '"]/hops/hop/@number')) {
-                        	
-                        	# Get the statistics for the mtr hop
-                        	my $m7p_mtr_hop			= $m7p_mtr_hops_tree->textContent();
-                            my $m7p_mtr_ip_list		= "";
-                            my $m7p_mtr_ip_geolist	= "";
-                            my $m7p_mtr_ip_lat		= "";
-                            my $m7p_mtr_ip_lon		= "";
-                            for my $m7p_mtr_ip_tree ($m7p_xml_tree->findnodes('plan/test[@id="' . $m7p_test_id . '"]/host[@name="' . $m7p_mtr_host . '"]/hops/hop[@number="' . $m7p_mtr_hop . '"]/ips/ip')) {
-                            	my $m7p_mtr_hop_ip =  $m7p_mtr_ip_tree->textContent();
-                            	
-                            	# Get the hop IP geolocation
-	                        	if (is_ipv4($m7p_mtr_hop_ip) && !is_unroutable_ipv4($m7p_mtr_hop_ip) && !is_private_ipv4($m7p_mtr_hop_ip)) {
-	                        		my $m7p_mtr_ip_geo	= $m7p->geoip->record_by_addr($m7p_mtr_hop_ip);
-	                        		$m7p_mtr_ip_lat	    = $m7p_mtr_ip_geo->latitude;
-	                       			$m7p_mtr_ip_lon	    = $m7p_mtr_ip_geo->longitude;
-	                        	} else {
-	                        		$m7p_mtr_hop_ip   	= "*";
-	                        		$m7p_mtr_ip_lat		= "*";
-	                        		$m7p_mtr_ip_lon		= "*";
-	                        	}
-                            	
-                            	if ($m7p_mtr_ip_list eq "") {
-                            		$m7p_mtr_ip_geolist	= $m7p_mtr_ip_lat . ":" . $m7p_mtr_ip_lon;
-                                	$m7p_mtr_ip_list 	= $m7p_mtr_hop_ip;
-                                } else {
-                                	$m7p_mtr_ip_geolist 	.= "," . $m7p_mtr_ip_lat . ":" . $m7p_mtr_ip_lon;
-                                	$m7p_mtr_ip_list 	.= "," . $m7p_mtr_hop_ip;
-                                }
-                            }
-                            my $m7p_mtr_pkt_loss = $m7p_test_xpath->findvalue('plan/test[@id="' . $m7p_test_id . '"]/host[@name="' . $m7p_mtr_host . '"]/hops/hop[@number="' . $m7p_mtr_hop . '"]/pktLoss');
-                            my $m7p_mtr_min_time = $m7p_test_xpath->findvalue('plan/test[@id="' . $m7p_test_id . '"]/host[@name="' . $m7p_mtr_host . '"]/hops/hop[@number="' . $m7p_mtr_hop . '"]/minTime');
-                            my $m7p_mtr_avg_time = $m7p_test_xpath->findvalue('plan/test[@id="' . $m7p_test_id . '"]/host[@name="' . $m7p_mtr_host . '"]/hops/hop[@number="' . $m7p_mtr_hop . '"]/avgTime');
-                            my $m7p_mtr_max_time = $m7p_test_xpath->findvalue('plan/test[@id="' . $m7p_test_id . '"]/host[@name="' . $m7p_mtr_host . '"]/hops/hop[@number="' . $m7p_mtr_hop . '"]/maxTime');
-                            my $m7p_mtr_avg_dev  = $m7p_test_xpath->findvalue('plan/test[@id="' . $m7p_test_id . '"]/host[@name="' . $m7p_mtr_host . '"]/hops/hop[@number="' . $m7p_mtr_hop . '"]/avgDev');
-                        
-                        	# Define the SQL insert string
-	                        my $m7p_mtr_sql_string = "('" . $m7p->plan_id . "'" .
-	                        	",'" . $m7p_host_ipaddr . "'" .
-	                        	",'" . $m7p_host_region . "'" .
-	                        	",'" . $m7p_host_lat . "'" .
-	                        	",'" . $m7p_host_lon . "'" .
-	                        	",'" . $m7p_mtr_dest_ip . "'" .
-	                        	",'" . $m7p_mtr_dest_region . "'" .
-	                        	",'" . $m7p_mtr_dest_lat . "'" .
-	                        	",'" . $m7p_mtr_dest_lon . "'" .
-	                        	",'" . $m7p->runtime . "'" .
-	                        	",'" . $m7p_mtr_hop . "'" .
-	                        	",'" . $m7p_mtr_ip_list . "'" .
-	                        	",'" . $m7p_mtr_ip_geolist . "'" .
-	                        	",'" . $m7p_mtr_pkt_loss . "'" .
-	                        	",'" . $m7p_mtr_min_time . "'" .
-	                        	",'" . $m7p_mtr_avg_time . "'" .
-	                        	",'" . $m7p_mtr_max_time . "'" .
-	                        	",'" . $m7p_mtr_avg_dev . "')";
-	                        
-	                        # Append the string to the array
-	                        push (@m7_mtr_sql, $m7p_mtr_sql_string)
-                        } 
-                    }
-                    
-                    # Flatten the mtr SQL array and prepare the query
-                    my $m7p_mtr_sql_values	= join(", ", @m7_mtr_sql);
-                    my $m7p_mtr_sql_query	= "INSERT INTO " . $m7c->config->get('db_name') . "." . $m7p_host . "_net_mtr(" . 
-                    					 	  "plan_id, source_ip, source_region, source_lat, source_lon, " . 
-                    					 	  "dest_ip, dest_region, dest_lat, dest_lon, run_time, hop, ips, ips_gps, pkt_loss, min_time, avg_time, max_time, avg_dev) " .
-                    					 	  "VALUES " . $m7p_mtr_sql_values . ";";
-                    
-                    # Create the table rows for the mtr test
-                    $m7p->db->do($m7p_mtr_sql_query);
-
-                # Handle unknown test types
-                } else {
-                	# Nothing here yet
-                }
-            }
-        }
-    }
+	# Create the result XML objects
+	$m7p->setXMLResults($_);
+	
+	# Set the test host information
+	$m7p->setTestHost($m7p->results_xpath->findvalue('plan/host/@name'));
+	
+	# Make sure the appropriate test result tables exit
+	foreach(@{$m7p->test_types}) {
+		$m7p->createHostTable($_);
+	}
+	
+	# Process the test results and load into the database
+	foreach(@{$m7p->test_ids}) {
+		my $m7p_test_type = $m7p->results_xpath->findvalue('plan/test[@id="' . $_ . '"]/@type');
+		$m7p->loadXMLResults($_, $m7p_test_type);
+	}
 }   
