@@ -12,6 +12,7 @@ BEGIN {
 	use DBD::mysql;
 	use Geo::IP;
 	use Data::Validate::IP;
+	use Net::Nslookup;
 	use lib $ENV{HOME} . '/lib/perl/modules';
 	use M7Config;
 	use Data::Dumper;
@@ -159,7 +160,33 @@ sub setPlan {
 	$m7p->{_runtime}	= $m7p_plan_runtime;
 }
 
-# Initialize Plan Database Entry \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\ #
+# Add Destination IP \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\ #
+sub addDestIP {
+	my $m7p = shift;
+	my ($m7p_destip_val, $m7p_destip_alias) = @_;
+	
+	# Attempt to get the hostname mapping
+	my $m7p_destip_hostname = nslookup(host => $m7p_destip_val, type => 'PTR', timeout => '5');
+	if (not defined $m7p_destip_hostname) { $m7p_destip_hostname = 'unknown'; }
+	
+	# Create or update the destination IP entry
+	my $m7p_destip_check	= $m7p->db->selectcol_arrayref("SELECT * FROM net_destips WHERE ip='" . $m7p_destip_val . "'");
+	if (@$m7p_destip_check) {
+		$m7p->log->info('Updating destination IP entry: IP=' . $m7p_destip_val . ', Alias=' . $m7p_destip_alias . ', Hostname=' . $m7p_destip_hostname);
+		my $m7p_destip_update = "UPDATE `" . $m7p->config->get('db_name') . "`.`net_destips` SET alias='" . $m7p_destip_alias . "', hostname='" . $m7p_destip_hostname . "' WHERE ip=' . $m7_destip_val'";
+		$m7p->db->do($m7p_destip_update)
+			or $m7p->log->warn('Failed to update database entry');
+	} else {
+		$m7p->log->info('Creating destination IP entry: IP=' . $m7p_destip_val . ', Alias=' . $m7p_destip_alias . ', Hostname=' . $m7p_destip_hostname);
+		my $m7p_destip_create = "INSERT INTO `" . $m7p->config->get('db_name') . "`.`net_destips`(" .
+							 "`ip`, `alias`, `hostname`) VALUES(" . 
+						     "'" . $m7p_destip_val . "','" . $m7p_destip_alias . "','" . $m7p_destip_hostname . "')";
+		$m7p->db->do($m7p_destip_create)
+			or $m7p->log->warn('Failed to create database entry');
+	}
+}
+
+# Initialize Plan Database Entries \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\ #
 sub initPlanDB {
 	my $m7p = shift;
 	my $m7p_plan_check	= $m7p->db->selectcol_arrayref("SELECT * FROM plans WHERE plan_id='" . $m7p->plan_id . "'");
@@ -175,6 +202,15 @@ sub initPlanDB {
 						     "'" . $m7p->plan_id . "','net','" . $m7p->plan_desc . "','" . $m7p->runtime . "','" . $m7p->runtime . "', 1)";
 		$m7p->db->do($m7p_plan_create)
 			or $m7p->log->logdie('Failed to create database entry');
+	}
+	
+	# Add network test destination IPs
+	if ($m7p->plan_cat == 'net') {
+		for my $m7p_host_tree ($m7p->plan_xtree->findnodes('plan/hosts')) {
+			my $m7p_host_ip		= $m7p_host_tree->findvalue('host');
+			my $m7p_host_alias  = $m7p_host_tree->findvalue('host/@name');
+			$m7p->addDestIP($m7p_host_ip, $m7p_host_alias);
+		}
 	}
 }
 
