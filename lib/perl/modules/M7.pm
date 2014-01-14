@@ -756,9 +756,7 @@ sub testInit {
 	# Switch log files
 	$m7_client_log = $ENV{HOME} . '/log/client.' . $m7->plan_id . '.log';
 	$m7->log->info('Plan ID found - switching log files: ' . $m7_client_log);
-	$m7->logInit(
-		'file' => $m7_client_log
-	);
+	$m7->logInit($m7_client_log);
 	$m7->log->info('Initializing test run for plan ID: ' . $m7->plan_id);
 	
 	# Perform director tasks
