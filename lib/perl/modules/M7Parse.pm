@@ -205,13 +205,15 @@ sub initPlanDB {
 	}
 	
 	# Add network test destination IPs
-	if ($m7p->plan_cat == 'net') {
-		for my $m7p_host_tree ($m7p->plan_xtree->findnodes('plan/hosts')) {
-			my $m7p_host_ip		= $m7p_host_tree->findvalue('host');
-			my $m7p_host_alias  = $m7p_host_tree->findvalue('host/@name');
+	my $m7p_plan_cat = $m7p->plan_cat . "";
+	if ($m7p_plan_cat eq 'net') {
+		for my $m7p_host_tree ($m7p->plan_xtree->findnodes('plan/params/hosts/host')) {
+			my $m7p_host_alias  = $m7p_host_tree->findvalue('@name');
+			my $m7p_host_ip		= $m7p->plan_xtree->findvalue('plan/params/hosts/host[@name="' . $m7p_host_alias . '"]');
 			$m7p->addDestIP($m7p_host_ip, $m7p_host_alias);
 		}
 	}
+	exit 0;
 }
 
 # Create Host Results Table \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\ #
