@@ -1120,7 +1120,7 @@ sub monitor {
 		}
 		
 		# Parse the XML results into the database
-		$m7->log->info('Parsing XML results into M7 database with: ~/lib/perl/script/xml2DB.pl');
+		$m7->log->info('Parsing XML results into M7 database');
 		system('m7p "' . $m7->plan_id . '" "' . $m7->plan_runtime . '"');
 	}
 }
