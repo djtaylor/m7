@@ -107,7 +107,7 @@ foreach (@{$m7p->xml_files}) {
                     
                     # Flatten the ping SQL array and prepare the query string
                     my $m7p_ping_sql_values		= join(", ", @m7_ping_sql);
-                    my $m7p_ping_sql_query		= "INSERT INTO " . $m7->config->get('db_name') . "." . $m7p_host . "_net_ping(" . 
+                    my $m7p_ping_sql_query		= "INSERT INTO " . $m7c->config->get('db_name') . "." . $m7p_host . "_net_ping(" . 
                     				      		  "plan_id, source_ip, source_region, source_lat, source_lon, " . 
                     				      		  "dest_ip, dest_region, dest_lat, dest_lon, run_time, pkt_loss, min_time, avg_time, max_time, avg_dev) " .
                     					  		  "VALUES " . $m7p_ping_sql_values . ";";
@@ -183,7 +183,7 @@ foreach (@{$m7p->xml_files}) {
                     
                     # Flatten the traceroute SQL array and prepare the query string
                     my $m7p_troute_sql_values		= join(", ", @m7_troute_sql);
-                    my $m7p_troute_sql_query			= "INSERT INTO " . $m7->config->get('db_name') . "." . $m7p_host . "_net_traceroute(" . 
+                    my $m7p_troute_sql_query			= "INSERT INTO " . $m7c->config->get('db_name') . "." . $m7p_host . "_net_traceroute(" . 
                     						   		  "plan_id, source_ip, source_region, source_lat, source_lon, " . 
                     						   		  "dest_ip, dest_region, dest_lat, dest_lon, run_time, hop, try, ip, ip_lat, ip_lon, time) " .
                     						   		  "VALUES " . $m7p_troute_sql_values . ";";
@@ -276,7 +276,7 @@ foreach (@{$m7p->xml_files}) {
                     
                     # Flatten the mtr SQL array and prepare the query
                     my $m7p_mtr_sql_values	= join(", ", @m7_mtr_sql);
-                    my $m7p_mtr_sql_query	= "INSERT INTO " . $m7->config->get('db_name') . "." . $m7p_host . "_net_mtr(" . 
+                    my $m7p_mtr_sql_query	= "INSERT INTO " . $m7c->config->get('db_name') . "." . $m7p_host . "_net_mtr(" . 
                     					 	  "plan_id, source_ip, source_region, source_lat, source_lon, " . 
                     					 	  "dest_ip, dest_region, dest_lat, dest_lon, run_time, hop, ips, ips_gps, pkt_loss, min_time, avg_time, max_time, avg_dev) " .
                     					 	  "VALUES " . $m7p_mtr_sql_values . ";";

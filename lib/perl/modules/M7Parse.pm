@@ -62,8 +62,9 @@ sub logInit {
 	my $m7p = shift;
 	
 	# Read the log configuration into memory
-	my $m7p_log_conf = read_file($m7->config->get('log_conf_m7p'));
-	$m7p_log_conf =~ s/__LOGFILE__/$m7->config->get('log_file_m7p')/;
+	my $m7p_log_file = $m7p->config->get('log_file_m7p');
+	my $m7p_log_conf = read_file($m7p->config->get('log_conf_m7p'));
+	$m7p_log_conf =~ s/__LOGFILE__/$m7p_log_file/;
 	
 	# Initialize the logger
 	Log::Log4perl::init(\$m7p_log_conf)
@@ -77,9 +78,10 @@ sub logInit {
 # Initialize Database Connection \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\ #
 sub dbInit {
 	my $m7p = shift;
-	my $m7p_db_dsn = "dbi:mysql:" . $m7->config->get('db_name') . ":" . $m7->config->get('db_host') . ":" . $m7->config->get('db_port');
+		$m7p->log->info('Initializing database object');
+	my $m7p_db_dsn = "dbi:mysql:" . $m7p->config->get('db_name') . ":" . $m7p->config->get('db_host') . ":" . $m7p->config->get('db_port');
 	$m7p->{_db} = shift;
-	my $m7p_dbh = DBI->connect($m7p_db_dsn, $m7->config->get('db_user'), $m7->config->get('db_pass'), {
+	my $m7p_dbh = DBI->connect($m7p_db_dsn, $m7p->config->get('db_user'), $m7p->config->get('db_pass'), {
 		PrintError => 0,
 		RaiseError => 1
 	}) or $m7p->log->logdie("Failed to connect to database: '" . DBI->errstr . "'");
@@ -91,7 +93,7 @@ sub dbInit {
 sub geoIPInit {
 	my $m7p = shift;
 	$m7p->log->info('Initializing GeoIP object');
-	$m7p->{_geoip} = Geo::IP->open($m7->config->get('geo_db'), GEOIP_STANDARD)
+	$m7p->{_geoip} = Geo::IP->open($m7p->config->get('geo_db'), GEOIP_STANDARD)
 		or $m7p->log->logdie('Failed to initialize GeoIP object. Missing GeoIP database? : "' . $m7_geo{db} . '"');
 	return $m7->{_geoip};
 }
@@ -102,14 +104,14 @@ sub setPlan {
 	my ($m7p_plan_id, $m7p_plan_runtime) = @_;
 	
 	# Make sure all arguments are defined
-	if (not defined $m7p_plan_id || not defined $m7p_plan_runtime) {
+	unless( $m7p_plan_id and $m7p_plan_runtime) {
 		$m7p->log->logdie('Must specify both plan ID and runtime to parse XML results');
 	}
 	
 	# Begin setting module variables
 	$m7p->{_plan_id}	= $m7p_plan_id;
-	$m7p->{_plan_file}	= $ENV{"HOME"} . "/plans/" . $m7p_plan_id . ".xml"
-	$m7p->{_xml_dir}    = $ENV{"HOME"} . "/results/" . $m7p_plan_id . "/";
+	$m7p->{_plan_file}	= $m7p->config->home . "/plans/" . $m7p_plan_id . ".xml";
+	$m7p->{_xml_dir}    = $m7p->config->home . "/results/" . $m7p_plan_id . "/";
 	
 	# Load all the result files into an array
 	opendir(XML_DIR, $m7p->xml_dir)
@@ -230,3 +232,5 @@ sub createHostTable {
 		}
 	}
 }
+
+1;

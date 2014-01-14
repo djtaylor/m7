@@ -104,10 +104,16 @@ sub out_dir		 { return shift->{_out_dir};      }
 # Initialize Logger \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\ #
 sub logInit {
 	my $m7 = shift;
+	my ($m7_alt_log) = @_;
 	
 	# Read the log configuration into memory
+	if ($m7_alt_log) {
+		my $m7_log_file = $m7_alt_log;
+	} else {
+		my $m7_log_file = $m7->config->get('log_file_m7');	
+	}
 	my $m7_log_conf = read_file($m7->config->get('log_conf_m7'));
-	$m7_log_conf =~ s/__LOGFILE__/$m7->config->get('log_file_m7')/;
+	$m7_log_conf =~ s/__LOGFILE__/$m7_log_file/;
 	
 	# Initialize the logger
 	Log::Log4perl::init(\$m7_log_conf)
@@ -750,7 +756,6 @@ sub testInit {
 	$m7_client_log = $ENV{HOME} . '/log/client.' . $m7->plan_id . '.log';
 	$m7->log->info('Plan ID found - switching log files: ' . $m7_client_log);
 	$m7->logInit(
-		'conf' => $ENV{HOME} . '/lib/perl/log/m7.conf',
 		'file' => $m7_client_log
 	);
 	$m7->log->info('Initializing test run for plan ID: ' . $m7->plan_id);

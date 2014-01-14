@@ -45,9 +45,17 @@ sub forks	{ return shift->{_forks};  }
 # Initialize Logger \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\ #
 sub logInit {
 	my $m7d = shift;
+	
+	# Read the log file into memory
+	my $m7d_log_file = $m7p->config->get('log_file_m7d');
 	my $m7d_log_conf = read_file($m7->config->get('log_conf_m7d'));
-	$m7d_log_conf =~ s/__LOGFILE__/$m7->config->get('log_file_m7d')/;
-	Log::Log4perl::init(\$m7d_log_conf);
+	$m7d_log_conf =~ s/__LOGFILE__/$m7d_log_file/;
+	
+	# Initialize the logger
+	Log::Log4perl::init(\$m7d_log_conf)
+		or die 'Failed to initialize logger!';
+	
+	# Build the logger object
 	$m7d->{_log} = Log::Log4perl->get_logger;
 	return $m7d->{_log};
 }
