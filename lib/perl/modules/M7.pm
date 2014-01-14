@@ -807,7 +807,7 @@ sub testDist {
 				$m7->log->info('Copied test plan ' . $m7->plan_file . ' to: ' . $m7_host{name});
 				
 				# Run the test plan on the worker nodes
-				$m7_ssh->pipe_out("bash -c -l 'm7.pl run ~/plans/" . $m7->plan_id . ".xml' > /dev/null 2>&1 &")
+				$m7_ssh->pipe_out("bash -c -l 'm7 run ~/plans/" . $m7->plan_id . ".xml' > /dev/null 2>&1 &")
 					or $m7->log->logdie('Failed to execute command on worker node: ' . $m7_host{name});
 					
 				# Create a fork to monitor each worker node from the director
