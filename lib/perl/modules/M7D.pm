@@ -11,7 +11,7 @@ BEGIN {
 	use File::Slurp;
 	use DBI;
 	use DBD::mysql;
-	use lib $ENV{HOME} . '/lib/perl/modules';
+	use lib $ENV{M7_ROOT} . '/lib/perl/modules';
 	use M7Config;
 }
 

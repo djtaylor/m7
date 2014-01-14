@@ -6,6 +6,10 @@ use File::Slurp;
 use Term::ANSIColor;
 use feature 'switch';
 
+# Load the M7 configuration
+use lib $ENV{M7_ROOT} . '/lib/perl/modules';
+use M7Config;
+
 # \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\ #
 # Init Info \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\ #
 #
@@ -25,20 +29,20 @@ use feature 'switch';
 # processname:       m7d
 # pidfile:           /var/run/m7d.pid
 
-# Set the home variable and return value
-my $home = '/opt/vpls/m7';
+# Load the configuration values
+my $m7c = M7Config->new();
 my $retval = undef;
 
 # Set the service variables
 my %service = (
-	'name'	=> 'm7d',
-	'pid'	=> $home . '/run/m7d.pid',
-	'lock'	=> $home . '/lock/subsys/m7d',
-	'log'	=> $home . '/log/server.log'
+	'name'	=> $m7c->get('service'),
+	'pid'	=> $m7c->get('pidfile'),
+	'lock'	=> $m7c->get('lock'),
+	'log'	=> $m7c->get('log_file_m7d')
 );
 
 # Set the log file and read the configuration into memory
-my $log_conf	= $home . '/lib/perl/log/m7d.conf';
+my $log_conf	= $m7c->get('log_conf_m7d');
    $log_conf	= read_file($log_conf);
    $log_conf	=~ s/__LOGFILE__/$service{log}/;
    

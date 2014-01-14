@@ -12,7 +12,7 @@ BEGIN {
 	use DBD::mysql;
 	use Geo::IP;
 	use Data::Validate::IP;
-	use lib $ENV{HOME} . '/lib/perl/modules';
+	use lib $ENV{M7_ROOT} . '/lib/perl/modules';
 	use M7Config;
 	use Data::Dumper;
 }
