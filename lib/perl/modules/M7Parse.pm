@@ -21,6 +21,7 @@ BEGIN {
 # Package Constructor \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\ #
 sub new {
 	my $m7p = {
+		_config			=> M7Config->new(),
 		_libxml			=> XML::LibXML->new(),
 		_xpath			=> undef,
 		_geoip			=> undef,
@@ -31,22 +32,18 @@ sub new {
 		_runtime		=> undef,
 		_xml_dir		=> undef,
 		_xml_files		=> undef,
-		_db_name		=> $m7_db{name},
-		_db_host		=> $m7_db{host},
-		_db_port		=> $m7_db{port},
-		_db_user		=> $m7_db{user},
-		_db_pass		=> $m7_db{pass},
 		_db				=> undef,
 		_log			=> undef
 	};
-	&logInit();
-	&dbInit();
-	&geoIPInit();
 	bless $m7p, M7Parse;
+	$m7p->logInit();
+	$m7p->dbInit();
+	$m7p->geoIPInit();
 	return $m7p;
 }
 
 # Subroutine Shortcuts \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\ #
+sub config     { return shift->{_config};     }
 sub libxml     { return shift->{_libxml};     }
 sub plan_xpath { return shift->{_plan_xpath}; }
 sub plan_id    { return shift->{_plan_id};    }
@@ -57,11 +54,6 @@ sub runtime    { return shift->{_runtime};    }
 sub xml_dir    { return shift->{_xml_dir};    }
 sub xml_files  { return shift->{_xml_files};  }
 sub geoip      { return shift->{_geoip};      }
-sub db_name    { return shift->{_db_name};    }
-sub db_host    { return shift->{_db_host};    }
-sub db_port    { return shift->{_db_port};    }
-sub db_user    { return shift->{_db_user};    }
-sub db_pass    { return shift->{_db_pass};    }
 sub db 	       { return shift->{_db};         }
 sub log		   { return shift->{_log};		  }
 
@@ -70,8 +62,8 @@ sub logInit {
 	my $m7p = shift;
 	
 	# Read the log configuration into memory
-	my $m7p_log_conf = read_file($m7p_log{conf});
-	$m7p_log_conf =~ s/__LOGFILE__/$m7p_log{file}/;
+	my $m7p_log_conf = read_file($m7->config->get('log_conf_m7p'));
+	$m7p_log_conf =~ s/__LOGFILE__/$m7->config->get('log_file_m7p')/;
 	
 	# Initialize the logger
 	Log::Log4perl::init(\$m7p_log_conf)
@@ -85,10 +77,9 @@ sub logInit {
 # Initialize Database Connection \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\ #
 sub dbInit {
 	my $m7p = shift;
-	my (%m7_myslq_db_args) = @_;
-	my $m7p_db_dsn = "dbi:mysql:" . $m7p->db_name . ":" . $m7p->db_host . ":" . $m7p->db_port;
+	my $m7p_db_dsn = "dbi:mysql:" . $m7->config->get('db_name') . ":" . $m7->config->get('db_host') . ":" . $m7->config->get('db_port');
 	$m7p->{_db} = shift;
-	my $m7p_dbh = DBI->connect($m7p_db_dsn, $m7p->db_user, $m7p->db_pass, {
+	my $m7p_dbh = DBI->connect($m7p_db_dsn, $m7->config->get('db_user'), $m7->config->get('db_pass'), {
 		PrintError => 0,
 		RaiseError => 1
 	}) or $m7p->log->logdie("Failed to connect to database: '" . DBI->errstr . "'");
@@ -100,7 +91,7 @@ sub dbInit {
 sub geoIPInit {
 	my $m7p = shift;
 	$m7p->log->info('Initializing GeoIP object');
-	$m7p->{_geoip} = Geo::IP->open($m7_geo{db}, GEOIP_STANDARD)
+	$m7p->{_geoip} = Geo::IP->open($m7->config->get('geo_db'), GEOIP_STANDARD)
 		or $m7p->log->logdie('Failed to initialize GeoIP object. Missing GeoIP database? : "' . $m7_geo{db} . '"');
 	return $m7->{_geoip};
 }
@@ -141,12 +132,12 @@ sub initPlanDB {
 	my $m7p_plan_check	= $m7p->db->selectcol_arrayref("SELECT * FROM plans WHERE plan_id='" . $m7p->plan_id . "'");
 	if (@$m7p_plan_check) {
 		$m7p->log->info('Updating database entry for test plan: ID=' . $m7p->plan_id . ', Runtime=' . $m7p->runtime);
-		my $m7p_plan_update = "UPDATE `" . $m7p->db_name . "`.`plans` SET last_run='" . $m7p->runtime . "', run_count=run_count+1 WHERE plan_id='" . $m7p->plan_id . "'";
+		my $m7p_plan_update = "UPDATE `" . $m7->config->get('db_name') . "`.`plans` SET last_run='" . $m7p->runtime . "', run_count=run_count+1 WHERE plan_id='" . $m7p->plan_id . "'";
 		$m7p->db->do($m7_plan_update)
 			or $m7p->log->logdie('Failed to update database entry');
 	} else {
 		$m7p->log->info('Creating database entry for test plan: ID=' . $m7p->plan_id . ', Runtime=' . $m7p->runtime);
-		my $m7p_plan_create = "INSERT INTO `" . $m7p->db_name . "`.`plans`(" .
+		my $m7p_plan_create = "INSERT INTO `" . $m7->config->get('db_name') . "`.`plans`(" .
 							 "`plan_id`, `type`, `desc`, `first_run`, `last_run`, `run_count`) VALUES(" . 
 						     "'" . $m7p->plan_id . "','net','" . $m7p->plan_desc . "','" . $m7p->runtime . "','" . $m7p->runtime . "', 1)";
 		$m7p->db->do($m7p_plan_create)
@@ -163,7 +154,7 @@ sub createHostTable {
 	given ($m7p_table_type) {
 		when ('net_ping') {
 			$m7p->db->do("
-        		CREATE TABLE IF NOT EXISTS " . $m7p->db_name . "." . $m7p_table_host . "_" . $m7p_table_type . "(
+        		CREATE TABLE IF NOT EXISTS " . $m7->config->get('db_name') . "." . $m7p_table_host . "_" . $m7p_table_type . "(
             		id              INT NOT NULL AUTO_INCREMENT,
             		plan_id			INT NOT NULL,
                 	source_ip       VARCHAR(15) NOT NULL,
@@ -187,7 +178,7 @@ sub createHostTable {
 		} 
 		when ('net_traceroute') {
 			$m7p->db->do("
-        		CREATE TABLE IF NOT EXISTS " . $m7p->db_name . "." . $m7p_table_host . "_" . $m7p_table_type . "(
+        		CREATE TABLE IF NOT EXISTS " . $m7->config->get('db_name') . "." . $m7p_table_host . "_" . $m7p_table_type . "(
             		id              INT NOT NULL AUTO_INCREMENT,
             		plan_id			INT NOT NULL,
             		source_ip       VARCHAR(15) NOT NULL,
@@ -212,7 +203,7 @@ sub createHostTable {
 		}
 		when ('net-mtr') {
 			$m7p->db->do("
-				CREATE TABLE IF NOT EXISTS " . $m7p->db_name . "." . $m7p_table_host . "_" . $m7p_table_type . "(
+				CREATE TABLE IF NOT EXISTS " . $m7->config->get('db_name') . "." . $m7p_table_host . "_" . $m7p_table_type . "(
             		id              INT NOT NULL AUTO_INCREMENT,
             		plan_id			INT NOT NULL,
                 	source_ip       VARCHAR(15) NOT NULL,

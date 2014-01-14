@@ -23,6 +23,8 @@ BEGIN {
 	use File::Fetch;
 	use Time::HiRes;
 	use List::Util qw(sum);
+	use lib $ENV{HOME} . '/lib/perl/modules';
+	use M7Config;
 }
 
 # \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\ #
@@ -57,9 +59,13 @@ sub new {
 		_test_type		=> undef,
 		_test_results	=> undef,
 		_lock_dir		=> undef,
-		_out_dir		=> undef
+		_out_dir		=> undef,
+		_config			=> M7Config->new()
 	};
 	bless $m7, M7;
+	$m7->logInit();
+	$m7->dbInit();
+	$m7->checkDirector();
 	return $m7;
 }
 
@@ -93,14 +99,15 @@ sub test_type	 { return shift->{_test_type};    }
 sub test_results { return shift->{_test_results}; }
 sub lock_dir	 { return shift->{_lock_dir};     }
 sub out_dir		 { return shift->{_out_dir};      }
+sub config		 { return shift->{_config};       }
 
 # Initialize Logger \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\ #
 sub logInit {
 	my $m7 = shift;
 	
 	# Read the log configuration into memory
-	my $m7_log_conf = read_file($m7_log{conf});
-	$m7_log_conf =~ s/__LOGFILE__/$m7_log{file}/;
+	my $m7_log_conf = read_file($m7->config->get('log_conf_m7'));
+	$m7_log_conf =~ s/__LOGFILE__/$m7->config->get('log_file_m7')/;
 	
 	# Initialize the logger
 	Log::Log4perl::init(\$m7_log_conf)
@@ -114,11 +121,10 @@ sub logInit {
 # Initialze Database Object \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\ #
 sub dbInit {
 	my $m7 = shift;
-	my (%m7_db_args) = @_;
 	$m7->log->info('Initializing director database connection');
-	my $m7_db_dsn = "dbi:mysql:" . $m7_db_args{name} . ":" . $m7_db_args{host} . ":" . $m7_db_args{port};
+	my $m7_db_dsn = "dbi:mysql:" . $m7->config->get('db_name') . ":" . $m7->config->get('db_host') . ":" . $m7->config->get('db_port');
 	$m7->{_db} = shift;
-	my $m7_dbh = DBI->connect($m7_db_dsn, $m7_db_args{user}, $m7_db_args{pass}, {
+	my $m7_dbh = DBI->connect($m7_db_dsn, $m7->config->get('db_user'), $m7->config->get('db_pass'), {
 		PrintError => 0,
 		RaiseError => 1
 	}) or $m7->log->logdie("Failed to connect to database: '" . DBI->errstr . "'");

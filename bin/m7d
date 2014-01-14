@@ -9,26 +9,6 @@ use M7D;
 # Create the M7 server object
 my $m7d = M7D->new();
 
-# Initialize the logger
-$m7d->logInit();
-
-# Set the PID file
-$m7d->setPID(
-	'file' => $ENV{HOME} . '/run/m7d.pid'
-);
-
-# Initialize the database connection
-$m7d->dbInit(
-	'name' => $m7_db{name},
-	'host' => $m7_db{host},
-	'port' => $m7_db{port},
-	'user' => $m7_db{user},
-	'pass' => $m7_db{pass}
-);
-
-# Load the plan configurations and process each plan
-$m7d->planConfig();
-
 # Process each test plan in the configuration table
 foreach(@{$m7d->{_plans}}) {
 	my %m7d_plan_obj	= %{$_};

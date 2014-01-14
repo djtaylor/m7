@@ -11,6 +11,8 @@ BEGIN {
 	use File::Slurp;
 	use DBI;
 	use DBD::mysql;
+	use lib $ENV{HOME} . '/lib/perl/modules';
+	use M7Config;
 }
 
 # \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\ #
@@ -19,27 +21,32 @@ BEGIN {
 # Package Constructor \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\ #
 sub new {
 	my $m7d = {
+		_config		=> M7Config->new(),
 		_log		=> undef,
 		_db			=> undef,
 		_plans		=> undef,
 		_forks		=> undef
 	};
 	bless $m7d, M7D;
+	$m7d->logInit();
+	$m7d->setPID();
+	$m7d->dbInit();
+	$m7d->planConfig();
 	return $m7d;
 }
 
 # Subroutine Shortcuts \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\ #
-sub log		{ return shift->{_log}; }
-sub db		{ return shift->{_db}; }
-sub plans	{ return shift->{_plans}; }
-sub forks	{ return shift->{_forks}; }
+sub config  { return shift->{_config}; }
+sub log		{ return shift->{_log};    }
+sub db		{ return shift->{_db};     }
+sub plans	{ return shift->{_plans};  }
+sub forks	{ return shift->{_forks};  }
 
 # Initialize Logger \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\ #
 sub logInit {
 	my $m7d = shift;
-	my (%m7d_log_args) = @_;
-	my $m7d_log_conf = read_file($m7d_log{conf});
-	$m7d_log_conf =~ s/__LOGFILE__/$m7d_log{file}/;
+	my $m7d_log_conf = read_file($m7->config->get('log_conf_m7d'));
+	$m7d_log_conf =~ s/__LOGFILE__/$m7->config->get('log_file_m7d')/;
 	Log::Log4perl::init(\$m7d_log_conf);
 	$m7d->{_log} = Log::Log4perl->get_logger;
 	return $m7d->{_log};
@@ -48,8 +55,7 @@ sub logInit {
 # Set PID File \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\ #
 sub setPID {
 	my $m7d = shift;
-	my (%m7d_pid) = @_;
-	open(PIDFILE, '>' . $m7d_pid{file});
+	open(PIDFILE, '>' . $m7->config->get('pidfile'));
 	print PIDFILE $$;
 	close(PIDFILE);
 }
@@ -58,9 +64,9 @@ sub setPID {
 sub dbInit {
 	my $m7d = shift;
 	my (%m7d_db_args) = @_;
-	my $m7d_db_dsn = "dbi:mysql:" . $m7d_db_args{name} . ":" . $m7d_db_args{host} . ":" . $m7d_db_args{port};
+	my $m7d_db_dsn = "dbi:mysql:" . $m7->config->get('db_name') . ":" . $m7->config->get('db_host') . ":" . $m7->config->get('db_port');
 	$m7d->{_db} = shift;
-	my $m7d_dbh = DBI->connect($m7d_db_dsn, $m7d_db_args{user}, $m7d_db_args{pass}, {
+	my $m7d_dbh = DBI->connect($m7d_db_dsn, $m7->config->get('db_user'), $m7->config->get('db_pass'), {
 		PrintError => 0,
 		RaiseError => 1
 	}) or $m7d->log->logdie("Failed to connect to database: '" . DBI->errstr . "'");
