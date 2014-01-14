@@ -1,13 +1,10 @@
 <?php
 class Core {
 	
-	// Set the database connection parameters
-	private $db_host = 'localhost';
-	private $db_name = 'm7';
-	private $db_pass = 'password';
-	private $db_user = 'm7';
+	// Configuration values
+	private $m7_config;
 	
-	// Define the database connector
+	// Database object
 	public $m7_db;
 	
 	// M7 test types and categories
@@ -39,7 +36,13 @@ class Core {
 	
 	// Class constructor
 	public function __construct() {
-		$this->m7_db = new mysqli ( $this->db_host, $this->db_name, $this->db_pass, $this->db_user );
+		$this->m7_config = parse_ini_file('config.ini');
+		$this->m7_db = new mysqli (	
+			$this->m7_config['db_host'], 
+			$this->m7_config['db_name'], 
+			$this->m7_config['db_pass'], 
+			$this->m7_config['db_user'] 
+		);
 		
 		// Load up all the plan IDs
 		$m7_plans_query = $this->m7_db->query ( "SELECT * FROM plans" );

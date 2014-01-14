@@ -19,6 +19,7 @@ BEGIN {
 	use XML::Merge;
 	use DateTime;
 	use Net::OpenSSH;
+	use Net::Nslookup;
 	use File::Fetch;
 	use Time::HiRes;
 	use List::Util qw(sum);
@@ -215,6 +216,11 @@ sub checkDirector {
 	return $m7->{_is_dir};
 }
 
+# Git Synchronization \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\ #
+sub gitSync {
+	system('sh ' . $ENV{HOME} . '/lib/bash/gitsync.sh');
+}
+
 # Build Xpath Object \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\ #
 sub buildXpath {
 	my $m7 = shift;
@@ -236,7 +242,29 @@ sub workerLock {
 # DNS Tests \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\ #
 sub dnsLookup {
 	my $m7 = shift;
-	system('{ time nslookup ' . $m7_target_host . ' ' . $m7_dns_server . '; } &>> ' . $m7_test_log);
+	
+	# Set the log details and set the test base
+	my $m7_log_details = 'category=' . $m7->plan_cat . ', id=' . $m7->test_id . ', type=' . $m7->test_type . ', thread=' . $m7->test_thread . ', samples=' . $m7->test_samples;
+	my $m7_test_base = $m7->out_dir . '/test-' . $m7->test_id . '/thread-' . $m7->test_thread;
+	mkpath($m7_test_base, 0, 0755);
+	
+	# Run based on the number of samples
+	my $m7_samples_count = 0;
+	my $m7_key_count     = 0;
+	while ($m7_samples_count < $m7->test_samples) {
+		$m7_samples_count ++;
+		
+		# Initialize the averages arrays
+		my @m7_time_avgs;
+		
+		# Start the thread timer
+		my $m7_nsl_start = [Time::HiRes::gettimeofday];
+		foreach(@{$m7->{_test_hosts}}) {
+			nslookup(host => $_, server => $m7->test_host);
+		}	
+		$m7_key_count ++;
+	}
+	
 	exit 0;
 }
 
@@ -812,7 +840,15 @@ sub testExec {
 		
 		# DNS testing
 		when ('dns') {
+			
+			# Build an array of all hosts to lookup
+			for my $m7_nsl_host ($m7->plan_xtree->findnodes('plan/params/hosts/host')) {
+				$m7_nsl_name = $m7_nsl_host->textContent();
+				push(@{$m7->{_test_hosts}}, $m7_nsl_name);
+			}
+			
 			$m7->{_test_threads} = $m7->getXMLText('plan/params/threads');
+			my $m7_test_host	 = $m7->getXMLText('plan/params/nameserver');
 			foreach(@{$m7->test_ids}) {
 				my $m7_test_id		  = $_;
 				my $m7_test_type	  = $m7->getXMLText('plan/params/test[@id="' . $_ . '"]/type');
@@ -835,6 +871,11 @@ sub testExec {
 		
 					# Child process
 					} elsif ($m7_tm_pid == 0) {
+						$m7->{_test_id}		 = $m7_test_id;
+						$m7->{_test_thread}  = $m7_thread_count;
+						$m7->{_test_samples} = $m7_samples;
+						$m7->{_test_host}	 = $m7_test_host;
+						$m7->{_test_type}	 = $m7_test_type;
 						$m7->log->info($$ . ': Launching fork process for test - ' . $m7_thread_details);
 						given ($m7_test_type) {
 							when ('nslookup') {
@@ -894,7 +935,7 @@ sub testExec {
 				# Child process
 				} elsif ($m7_wm_pid == 0) {
 					$m7->{_test_id}		 = $m7_test_id;
-					$m7->{_test_type}	 = $m7_test_type;	
+					$m7->{_test_type}	 = $m7_test_type;
 					$m7->log->info($$ . ': Launching fork process for test - ' . $m7_test_details);
 					given ($m7_test_type) {
 						when ('ping') {
@@ -1071,7 +1112,7 @@ sub monitor {
 		
 		# Parse the XML results into the database
 		$m7->log->info('Parsing XML results into M7 database with: ~/lib/perl/script/xml2DB.pl');
-		system('/usr/bin/perl ' . $ENV{HOME} . '/lib/perl/script/xml2DB.pl "' . $m7->plan_id . '" "' . $m7->plan_runtime . '"');
+		system('m7p "' . $m7->plan_id . '" "' . $m7->plan_runtime . '"');
 	}
 }
 
