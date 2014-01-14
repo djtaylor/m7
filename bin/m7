@@ -20,11 +20,19 @@ given ($ARGV[0]) {
 	
 	# Run test plan
 	when('run') {
+		
+		# Initialize testing properties
 		$m7->testInit(
 			'plan' => $ARGV[1]
 		);
+		
+		# Test distribution and rmeote execution
 		$m7->testDist();
+		
+		# Local test execution
 		$m7->testExec();
+		
+		# Test results collection and parsing
 		$m7->monitor();
 	}
 	

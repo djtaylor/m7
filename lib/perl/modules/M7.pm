@@ -33,6 +33,8 @@ BEGIN {
 # Package Constructor \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\ #
 sub new {
 	my $m7 = {
+		_config			=> M7Config->new(),
+		_lib_xml		=> XML::LibXML->new(),
 		_log			=> undef,
 		_db				=> undef,
 		_dir			=> undef,
@@ -42,7 +44,6 @@ sub new {
 		_local			=> undef,
 		_wm_forks		=> undef,
 		_tm_forks		=> undef,
-		_lib_xml		=> XML::LibXML->new(),
 		_plan_file		=> undef,
 		_plan_xpath		=> undef,
 		_plan_xtree		=> undef,
@@ -60,7 +61,6 @@ sub new {
 		_test_results	=> undef,
 		_lock_dir		=> undef,
 		_out_dir		=> undef,
-		_config			=> M7Config->new()
 	};
 	bless $m7, M7;
 	$m7->logInit();
@@ -70,6 +70,8 @@ sub new {
 }
 
 # Subroutine Shortcuts \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\ #
+sub config		 { return shift->{_config};       }
+sub lib_xml		 { return shift->{_lib_xml};      }
 sub log			 { return shift->{_log};		  }
 sub db			 { return shift->{_db}; 		  }
 sub dir			 { return shift->{_dir};	 	  }
@@ -79,7 +81,6 @@ sub nodes		 { return shift->{_nodes};        }
 sub local		 { return shift->{_local}[0];	  }
 sub wm_forks	 { return shift->{_wm_forks}; 	  }
 sub tm_forks     { return shift->{_tm_forks};     }
-sub lib_xml		 { return shift->{_lib_xml};      }
 sub plan_file	 { return shift->{_plan_file}; 	  }
 sub plan_xpath	 { return shift->{_plan_xpath};   }
 sub plan_xtree	 { return shift->{_plan_xtree};   }
@@ -99,7 +100,6 @@ sub test_type	 { return shift->{_test_type};    }
 sub test_results { return shift->{_test_results}; }
 sub lock_dir	 { return shift->{_lock_dir};     }
 sub out_dir		 { return shift->{_out_dir};      }
-sub config		 { return shift->{_config};       }
 
 # Initialize Logger \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\ #
 sub logInit {
