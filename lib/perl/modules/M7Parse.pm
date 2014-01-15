@@ -171,24 +171,28 @@ sub addDestIP {
 	my $m7p = shift;
 	my ($m7p_destip_val, $m7p_destip_alias) = @_;
 	
-	# Attempt to get the hostname mapping
-	my $m7p_destip_hostname = nslookup(host => $m7p_destip_val, type => 'PTR', timeout => '5');
-	if (not defined $m7p_destip_hostname) { $m7p_destip_hostname = 'unknown'; }
-	
-	# Create or update the destination IP entry
-	my $m7p_destip_check	= $m7p->db->selectcol_arrayref("SELECT * FROM net_destips WHERE ip='" . $m7p_destip_val . "'");
-	if (@$m7p_destip_check) {
-		$m7p->log->info('Updating destination IP entry: IP=' . $m7p_destip_val . ', Alias=' . $m7p_destip_alias . ', Hostname=' . $m7p_destip_hostname);
-		my $m7p_destip_update = "UPDATE `" . $m7p->config->get('db_name') . "`.`net_destips` SET alias='" . $m7p_destip_alias . "', hostname='" . $m7p_destip_hostname . "' WHERE ip=' . $m7_destip_val'";
-		$m7p->db->do($m7p_destip_update)
-			or $m7p->log->warn('Failed to update database entry');
-	} else {
-		$m7p->log->info('Creating destination IP entry: IP=' . $m7p_destip_val . ', Alias=' . $m7p_destip_alias . ', Hostname=' . $m7p_destip_hostname);
-		my $m7p_destip_create = "INSERT INTO `" . $m7p->config->get('db_name') . "`.`net_destips`(" .
-							 "`ip`, `alias`, `hostname`) VALUES(" . 
-						     "'" . $m7p_destip_val . "','" . $m7p_destip_alias . "','" . $m7p_destip_hostname . "')";
-		$m7p->db->do($m7p_destip_create)
-			or $m7p->log->warn('Failed to create database entry');
+	# Only valid for network tests
+	if ($m7->plan_cat eq 'net') {
+		
+		# Attempt to get the hostname mapping
+		my $m7p_destip_hostname = nslookup(host => $m7p_destip_val, type => 'PTR', timeout => '5');
+		if (not defined $m7p_destip_hostname) { $m7p_destip_hostname = 'unknown'; }
+		
+		# Create or update the destination IP entry
+		my $m7p_destip_check	= $m7p->db->selectcol_arrayref("SELECT * FROM net_destips WHERE ip='" . $m7p_destip_val . "'");
+		if (@$m7p_destip_check) {
+			$m7p->log->info('Updating destination IP entry: IP=' . $m7p_destip_val . ', Alias=' . $m7p_destip_alias . ', Hostname=' . $m7p_destip_hostname);
+			my $m7p_destip_update = "UPDATE `" . $m7p->config->get('db_name') . "`.`net_destips` SET alias='" . $m7p_destip_alias . "', hostname='" . $m7p_destip_hostname . "' WHERE ip=' . $m7_destip_val'";
+			$m7p->db->do($m7p_destip_update)
+				or $m7p->log->warn('Failed to update database entry');
+		} else {
+			$m7p->log->info('Creating destination IP entry: IP=' . $m7p_destip_val . ', Alias=' . $m7p_destip_alias . ', Hostname=' . $m7p_destip_hostname);
+			my $m7p_destip_create = "INSERT INTO `" . $m7p->config->get('db_name') . "`.`net_destips`(" .
+								 "`ip`, `alias`, `hostname`) VALUES(" . 
+							     "'" . $m7p_destip_val . "','" . $m7p_destip_alias . "','" . $m7p_destip_hostname . "')";
+			$m7p->db->do($m7p_destip_create)
+				or $m7p->log->warn('Failed to create database entry');
+		}	
 	}
 }
 
@@ -229,6 +233,49 @@ sub createHostTable {
 	$m7p->log->info('Creating host test results table: "' . $m7p->test_host->{name} . '_' . $m7p->plan_cat . '_' . $m7p_test_type . '"');
 	$m7p_test_type .= "";
 	given ($m7p_test_type) {
+		when ('stress') {
+			$m7p->db->do("
+        		CREATE TABLE IF NOT EXISTS " . $m7p->config->get('db_name') . "." . $m7p->test_host->{name} . '_' . $m7p->plan_cat . '_' . $m7p_test_type . "(
+            		id              INT NOT NULL AUTO_INCREMENT,
+            		plan_id			INT NOT NULL,
+                	source_ip       VARCHAR(15) NOT NULL,
+                	source_region   VARCHAR(25) NOT NULL,
+                	source_lat		VARCHAR(10),
+                	source_lon		VARCHAR(10),
+                	run_time        DATETIME NOT NULL,
+                	nameserver		VARCHAR(35) NOT NULL,
+                	hosts			INT NOT NULL,
+                	thread			INT NOT NULL,
+                	samples			INT NOT NULL,
+                	avg_time		VARCHAR(5) NOT NULL,
+                	avg_fails		INT NOT NULL,
+                	modified        TIMESTAMP NOT NULL ON UPDATE CURRENT_TIMESTAMP,
+                	PRIMARY KEY(id)
+            	);
+        	");
+		}
+		when ('query') {
+			$m7p->db->do("
+        		CREATE TABLE IF NOT EXISTS " . $m7p->config->get('db_name') . "." . $m7p->test_host->{name} . '_' . $m7p->plan_cat . '_' . $m7p_test_type . "(
+            		id              INT NOT NULL AUTO_INCREMENT,
+            		plan_id			INT NOT NULL,
+                	source_ip       VARCHAR(15) NOT NULL,
+                	source_region   VARCHAR(25) NOT NULL,
+                	source_lat		VARCHAR(10),
+                	source_lon		VARCHAR(10),
+                	run_time        DATETIME NOT NULL,
+                	nameserver		VARCHAR(35) NOT NULL,
+                	hostname		VARCHAR(35) NOT NULL,
+                	forward			VARCHAR(15) NOT NULL,
+                	reverse			VARCHAR(35 NOT NULL,
+                	soa				VARCHAR(35) NOT NULL,
+                	ns				VARCHAR(35) NOT NULL,
+                	mx				VARCHAR(35) NOT NULL,
+                	modified        TIMESTAMP NOT NULL ON UPDATE CURRENT_TIMESTAMP,
+                	PRIMARY KEY(id)
+            	);
+        	");
+		}
 		when ('ping') {
 			$m7p->db->do("
         		CREATE TABLE IF NOT EXISTS " . $m7p->config->get('db_name') . "." . $m7p->test_host->{name} . '_' . $m7p->plan_cat . '_' . $m7p_test_type . "(
@@ -349,6 +396,96 @@ sub loadXMLResults {
 	$m7p->log->info('Loading XML test results: ID=' . $m7p_test_id . ', Type=' . $m7p_test_type);
 	$m7p_test_type .= "";
 	given ($m7p_test_type) {
+		when ('stress') {
+			my $m7p_nsstress_ns			= $m7p->getXMLText('plan/test[@id="' . $m7p_test_id . '"]/@nameserver');
+			my $m7p_nsstress_samples	= $m7p->getXMLText('plan/test[@id="' . $m7p_test_id . '"]/@samples');
+			my $m7p_nsstress_host_count = $m7p->getXMLText('plan/test[@id="' . $m7p_test_id . '"]/hosts/@count');
+			
+			# Initialize the MySQL insert array
+			my @m7p_nsstress_sql;
+			
+			# Process the thread definitions
+            for my $m7p_nsstress_thread_tree ($m7p->results_xtree->findnodes('plan/test[@id="' . $m7p_test_id . '"]/threads/thread')) {
+            	my $m7p_nsstress_thread	= $m7p_nsstress_thread_tree->findvalue('@number');
+            	my $m7p_nsstress_thread_avg_fails	= $m7p_nsstress_thread_tree->findvalue('average/@fails');
+            	my $m7p_nsstress_thread_avg_time	= $m7p_nsstress_thread_tree->findvalue('average/@time');
+            	
+            	 # Define the SQL insert string
+                my $m7p_nsstress_sql_string = "('" . $m7p->plan_id . "'" .
+                	",'" . $m7p->test_host->{ip} . "'" .
+                    ",'" . $m7p->test_host->{region} . "'" .
+                    ",'" . $m7p->test_host->{lat} . "'" .
+                    ",'" . $m7p->test_host->{lon} . "'" .
+                    ",'" . $m7p->runtime . "'" .
+                    ",'" . $m7p_nsstress_ns . "'" .
+                    ",'" . $m7p_nsstress_host_count . "'" .
+                    ",'" . $m7p_nsstress_thread . "'" .
+                    ",'" . $m7p_nsstress_samples . "'" .
+                    ",'" . $m7p_nstress_avg_time . "'" .
+                    ",'" . $m7p_nsstress_avg_fails . "')";
+                        
+				# Append the string to the array
+                push (@m7p_nsstress_sql, $m7p_nsstress_sql_string);  
+            }
+            
+            # Flatten the nsstress SQL array and prepare the query string
+            my $m7p_nsstress_sql_values	= join(", ", @m7p_nsstress_sql);
+            my $m7p_nsstress_sql_query	= "INSERT INTO " . $m7p->config->get('db_name') . "." . $m7p->test_host->{name} . "_dns_stress(" . 
+                    				      "plan_id, source_ip, source_region, source_lat, source_lon, " . 
+                    				      "run_time, nameserver, hosts, thread, samples, avg_time, avg_fails) " .
+                    					  "VALUES " . $m7p_nsstress_sql_values . ";";
+                    
+            # Create the table rows for the nsstress test
+            $m7p->db->do($m7p_nstress_sql_query);
+			
+		}
+		when ('query') {
+			my $m7p_nsquery_ns		= $m7p->getXMLText('plan/test[@id="' . $m7p_test_id . '"]/@nameserver');
+			
+			# Initialize the MySQL insert array
+			my @m7p_nsquery_sql;
+			
+			# Process the host definitions
+            for my $m7p_nsquery_host_tree ($m7p->results_xtree->findnodes('plan/test[@id="' . $m7p_test_id . '"]/hosts/host')) {
+            	my $m7p_nsquery_host	= $m7p_nsquery_host_tree->findvalue('@name');
+            	
+            	# Get the DNS resolutions
+            	my $m7p_nsquery_host_fwd	= $m7p->getXMLText('plan/test[@id="' . $m7p_test_id . '"]/hosts/host[@name="' . $m7p_nsquery_host . '"]/fwd');
+            	my $m7p_nsquery_host_rev	= $m7p->getXMLText('plan/test[@id="' . $m7p_test_id . '"]/hosts/host[@name="' . $m7p_nsquery_host . '"]/rev');
+            	my $m7p_nsquery_host_soa	= $m7p->getXMLText('plan/test[@id="' . $m7p_test_id . '"]/hosts/host[@name="' . $m7p_nsquery_host . '"]/soa');
+            	my $m7p_nsquery_host_mx		= $m7p->getXMLText('plan/test[@id="' . $m7p_test_id . '"]/hosts/host[@name="' . $m7p_nsquery_host . '"]/mx');
+            	my $m7p_nsquery_host_ns		= $m7p->getXMLText('plan/test[@id="' . $m7p_test_id . '"]/hosts/host[@name="' . $m7p_nsquery_host . '"]/ns');
+            	
+            	 # Define the SQL insert string
+                my $m7p_nsquery_sql_string = "('" . $m7p->plan_id . "'" .
+                	",'" . $m7p->test_host->{ip} . "'" .
+                    ",'" . $m7p->test_host->{region} . "'" .
+                    ",'" . $m7p->test_host->{lat} . "'" .
+                    ",'" . $m7p->test_host->{lon} . "'" .
+                    ",'" . $m7p->runtime . "'" .
+                    ",'" . $m7p_nsquery_ns . "'" .
+                    ",'" . $m7p_nsquery_host . "'" .
+                    ",'" . $m7p_nsquery_host_fw . "'" .
+                    ",'" . $m7p_nsquery_host_rev . "'" .
+                    ",'" . $m7p_nsquery_host_soa . "'" .
+                    ",'" . $m7p_nsquery_host_ns . "'" .
+                    ",'" . $m7p_nsquery_host_mx . "')";
+                        
+				# Append the string to the array
+                push (@m7p_nsquery_sql, $m7p_nsquery_sql_string);   
+            }
+            
+            # Flatten the nsquery SQL array and prepare the query string
+            my $m7p_nsquery_sql_values	= join(", ", @m7p_nsquery_sql);
+            my $m7p_nsquery_sql_query	= "INSERT INTO " . $m7p->config->get('db_name') . "." . $m7p->test_host->{name} . "_dns_query(" . 
+                    				      "plan_id, source_ip, source_region, source_lat, source_lon, " . 
+                    				      "run_time, nameserver, hostname, fwd, rev, soa, ns, mx) " .
+                    					  "VALUES " . $m7p_nsquery_sql_values . ";";
+                    
+            # Create the table rows for the nsquery test
+            $m7p->db->do($m7p_nsquery_sql_query);
+			
+		}
 		when ('ping') {
 			
 			# Initialize the MySQL insert array

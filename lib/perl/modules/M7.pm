@@ -268,7 +268,9 @@ sub dnsStress {
 			'type'       => $m7->test_type,
 			'id'	     => $m7->test_id,
 			'nameserver' => $m7->test_host,
+			'samples'	 => $m7->test_samples,
 			'hosts'	     => {
+				'count'	   => $m7_host_count,
 				'host'	   => []
 			},
 			'threads'  => {
@@ -278,7 +280,6 @@ sub dnsStress {
 						'sample' => []
 					},
 					'average' => {
-						'hosts' => $m7_host_count,
 						'time'	=> undef,
 						'fails'	=> undef
 					}
