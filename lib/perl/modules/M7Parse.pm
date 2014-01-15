@@ -6,7 +6,6 @@ BEGIN {
 	use strict;
 	use Log::Log4perl;
 	use File::Slurp;
-	use File::Copy;
 	use XML::LibXML;
 	use XML::XPath;
 	use DBI;
@@ -159,6 +158,12 @@ sub setPlan {
 	$m7p->{_plan_desc}	= $m7p->plan_xpath->findnodes('plan/desc');
 	$m7p->{_plan_cat}	= $m7p->plan_xpath->findnodes('plan/params/category');
 	$m7p->{_runtime}	= $m7p_plan_runtime;
+	
+	# Exit gracefully if plan category isn't supported
+	if ($m7p->plan_cat eq 'dns' or $m7p->plan_cat eq 'web') {
+		$m7p->log->warn('Parsing of plan category "' . $m7p->plan_cat . '" not yet supported');
+		exit 1;
+	}
 }
 
 # Add Destination IP \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\ #
@@ -334,12 +339,6 @@ sub setTestHost {
 	my $m7p_host_geo		= $m7p->geoip->record_by_addr($m7p->test_host->{ip});
 	$m7p->test_host->{lat}  = $m7p_host_geo->latitude;
 	$m7p->test_host->{lon}  = $m7p_host_geo->longitude;
-}
-
-# Flush Results Directory \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\ #
-sub flushXMLResults {
-	my $m7p = shift;
-	rmtree($m7p->xml_dir);
 }
 
 # Load XML Results \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\ #

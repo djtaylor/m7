@@ -31,5 +31,4 @@ foreach (@{$m7p->xml_files}) {
 		my $m7p_test_type = $m7p->results_xpath->findvalue('plan/test[@id="' . $_ . '"]/@type');
 		$m7p->loadXMLResults($_, $m7p_test_type);
 	}
-}   
-$m7p->flushXMLResults();
+}

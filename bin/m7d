@@ -47,7 +47,7 @@ while (1) {
 	# No forks present, shutdown
 	if (scalar(@{$m7d->forks}) == 0) {
 		$m7d->log->info('No fork processes running, terminating server: ' . $$);
-		exit 0;
+		exit 1;
 	}
 	
 	# Catch termination signal
@@ -58,6 +58,6 @@ while (1) {
 			kill('15', $_);
 		}
 		$m7d->log->info('Terminating server process: ' . $$);
-		exit 0;
+		exit 1;
 	}
 }

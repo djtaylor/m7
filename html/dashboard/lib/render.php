@@ -49,7 +49,9 @@ class Render extends D3JS {
 								$m7_coords_str .= '[' . $m7_ping_dlon . ',' . $m7_ping_dlat . ']';
 								$m7_paths_js .= 'svg.append("path")' . "\n";
 								$m7_paths_js .= '.datum({type: "LineString", coordinates: [' . $m7_coords_str . ']})' . "\n";
-								$m7_paths_js .= '.attr("class", "arc' . $m7_stroke_count . '")' . "\n";
+								$m7_paths_js .= '.style("stroke", function(d) { return color(' . $m7_stroke_count . '); })' . "\n";
+								$m7_paths_js .= '.style("fill", "none")' . "\n";
+								$m7_paths_js .= '.style("stroke-width", "2px")' . "\n";
 								$m7_paths_js .= '.attr("d", path);' . "\n";
 							}
 							break;
@@ -72,7 +74,9 @@ class Render extends D3JS {
 							}
 							$m7_paths_js .= 'svg.append("path")' . "\n";
 							$m7_paths_js .= '.datum({type: "LineString", coordinates: [' . $m7_hop_coords_str . ']})' . "\n";
-							$m7_paths_js .= '.attr("class", "arc' . $m7_stroke_count . '")' . "\n";
+							$m7_paths_js .= '.style("stroke", function(d) { return color(' . $m7_stroke_count . '); })' . "\n";
+							$m7_paths_js .= '.style("fill", "none")' . "\n";
+							$m7_paths_js .= '.style("stroke-width", "2px")' . "\n";
 							$m7_paths_js .= '.attr("d", path);' . "\n";
 							break;
 						case 'mtr' :
@@ -95,7 +99,9 @@ class Render extends D3JS {
 							}
 							$m7_paths_js .= 'svg.append("path")' . "\n";
 							$m7_paths_js .= '.datum({type: "LineString", coordinates: [' . $m7_hop_coords_str . ']})' . "\n";
-							$m7_paths_js .= '.attr("class", "arc' . $m7_stroke_count . '")' . "\n";
+							$m7_paths_js .= '.style("stroke", function(d) { return color(' . $m7_stroke_count . '); })' . "\n";
+							$m7_paths_js .= '.style("fill", "none")' . "\n";
+							$m7_paths_js .= '.style("stroke-width", "2px")' . "\n";
 							$m7_paths_js .= '.attr("d", path);' . "\n";
 							break;
 					}

@@ -248,36 +248,195 @@ sub workerLock {
 	my $m7_worker_results = $ENV{HOME} . '/results/' . $m7->plan_id . '/' . $m7_worker . '.xml';
 	sleep 1 while not -e $m7_worker_results;
 	$m7->log->info($$  . ': Worker results file received: ' . $m7_worker_results . ' - closing monitor');
-	exit 0;
+	exit 1;
 }
 
 # DNS Tests \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\ #
-sub dnsLookup {
+sub dnsStress {
 	my $m7 = shift;
 	
 	# Set the log details and set the test base
 	my $m7_log_details = 'category=' . $m7->plan_cat . ', id=' . $m7->test_id . ', type=' . $m7->test_type . ', thread=' . $m7->test_thread . ', samples=' . $m7->test_samples;
-	my $m7_test_base = $m7->out_dir . '/test-' . $m7->test_id . '/thread-' . $m7->test_thread;
+	my $m7_test_base   = $m7->out_dir . '/test-' . $m7->test_id . '/thread-' . $m7->test_thread;
+	my $m7_host_count  = @{$m7->{_test_hosts}};
 	mkpath($m7_test_base, 0, 0755);
+	
+	# Initialize the results hash
+	my $m7_results = {
+		'category' => $m7->plan_cat,
+		'test'     => {
+			'type'       => $m7->test_type,
+			'id'	     => $m7->test_id,
+			'nameserver' => $m7->test_host,
+			'hosts'	     => {
+				'host'	   => []
+			},
+			'threads'  => {
+				'thread' => [{
+					'number'  => $m7->test_thread,
+					'samples' => {
+						'sample' => []
+					},
+					'average' => {
+						'hosts' => $m7_host_count,
+						'time'	=> undef,
+						'fails'	=> undef
+					}
+				}]
+			}
+		}
+	};
+	
+	# Construct the list of lookup hostnames
+	my $m7_host_key = 0;
+	foreach(@{$m7->{_test_hosts}}) {
+		$m7_results->{test}{hosts}{host}[$m7_host_key] = $_;
+		$m7_host_key ++;
+	}	
+	
+	# Initialize the samples averages array
+	my @m7_time_avgs;
+	my @m7_fail_avgs;
 	
 	# Run based on the number of samples
 	my $m7_samples_count = 0;
 	my $m7_key_count     = 0;
 	while ($m7_samples_count < $m7->test_samples) {
 		$m7_samples_count ++;
-		
-		# Initialize the averages arrays
-		my @m7_time_avgs;
+		my $m7_fail_count = 0;
 		
 		# Start the thread timer
 		my $m7_nsl_start = [Time::HiRes::gettimeofday];
 		foreach(@{$m7->{_test_hosts}}) {
-			nslookup(host => $_, server => $m7->test_host);
+			$m7_nslookup = nslookup(host => $_, server => $m7->test_host);
+			if not defined($m7_nslookup) $m7_fail_count ++;
 		}	
+		
+		# Calculcate the total lookup time
+		my $m7_nsl_time_raw  = Time::HiRes::tv_interval($m7_nsl_start);
+		my $m7_nsl_time		 = sprintf("%.2f", $m7_nsl_time_raw);
+	
+		# Append to averages array
+		push(@m7_time_avgs, $m7_nsl_time);
+		push(@m7_fail_avgs, $m7_fail_count;)
+	
+		# Define the sample results hash block
+		my $m7_sample_results = {
+			'number' => $m7_samples_count,
+			'hosts'  => $m7_host_count,
+			'time'	 => $m7_nsl_time,
+			'fails'	 => $m7_fail_count
+		};
+		
+		# Append to the hash
+		$m7_results->{test}{threads}{thread}[0]{samples}{sample}[$m7_key_count] = $m7_sample_results;
 		$m7_key_count ++;
 	}
 	
-	exit 0;
+	# Calculate the averages
+	$m7_time_avg_raw  = sum(@m7_time_avgs)/@m7_time_avgs;
+	$m7_fail_avg_raw  = sum(@m7_fail_avgs)/@m7_fail_avgs;
+	
+	# Create the sample averages entries
+	$m7_results->{test}{threads}{thread}[0]{average}{time}	= sprintf("%.2f", $m7_time_avg_raw);
+	$m7_results->{test}{threads}{thread}[0]{average}{fails} = sprintf("%.2f", $m7_fail_avg_raw);
+	
+	# Dump the results hash to an XML file
+	my $m7_xml_file    = $m7_test_base . '/results.xml';
+	$m7->log->info($$ . ': Dumping results to XML file - ' . $m7_xml_file);
+	
+	# Convert the results hash to XML data and print to file
+	my $m7_results_xml = XMLout($m7_results, RootName => 'plan');
+	open(my $m7_xml_fh, '>', $m7_xml_file);
+	print $m7_xml_fh $m7_results_xml;
+	close($m7_xml_fh);
+	
+	# Test thread complete
+	$m7->log->info($$ . ': Test run complete - ' . $m7_log_details);
+	exit 1;
+}
+sub dnsQuery {
+	my $m7 = shift;
+	
+	# Set the log details and set the test base
+	my $m7_log_details = 'category=' . $m7->plan_cat . ', id=' . $m7->test_id . ', type=' . $m7->test_type;
+	my $m7_test_base   = $m7->out_dir . '/test-' . $m7->test_id;
+	mkpath($m7_test_base, 0, 0755);
+	
+	# Initialize the results hash
+	my $m7_results = {
+		'category' => $m7->plan_cat,
+		'test'     => {
+			'type'       => $m7->test_type,
+			'id'	     => $m7->test_id,
+			'nameserver' => $m7->test_host,
+			'hosts'	     => {
+				'host'	   => []
+			}
+		}
+	};
+	
+	# Perform the DNS tests for each hostname
+	my $m7_host_key = 0;
+	foreach(@{$m7->{_test_hosts}}) {
+		
+		# Test 1: Forward lookup
+		my $m7_nslookup_fwd;
+		if ($m7->test_host eq 'auto') {
+			$m7_nslookup_fwd = nslookup(host => $_);
+		} else {
+			$m7_nslookup_fwd = nslookup(host => $_, server => $m7->test_host);
+		}
+		$m7_nslookup_fwd = (defined($m7_nslookup_fwd) ? $m7_nslookup_fwd : '0.0.0.0')
+		
+		# Test 2: SOA lookup
+		my $m7_nslookup_soa;
+		if ($m7->test_host eq 'auto') {
+			$m7_nslookup_soa = nslookup(host => $_, type => 'SOA');
+			$m7_nslookup_soa =~ s///g;
+		} else {
+			$m7_nslookup_soa = nslookup(host => $_, server => $m7->test_host, type => 'SOA');
+			$m7_nslookup_soa =~ s///g;
+		}
+		$m7_nslookup_soa = (defined($m7_nslookup_soa) ? $m7_nslookup_soa : 'unknown')
+		
+		# Test 3: Reverse lookup
+		my $m7_nslookup_rev;
+		if ($m7_nslookup_fwd ne '0.0.0.0') {
+			if ($m7->test_host eq 'auto') {
+				$m7_nslookup_rev = nslookup(host => $m7_nslookup_fw, type => 'PTR');
+			} else {
+				$m7_nslookup_rev = nslookup(host => $m7_nslookup_fwd, server => $m7->test_host, type => 'PTR');
+			}
+			$m7_nslookup_rev = (defined($m7_nslookup_rev) ? $m7_nslookup_rev : 'unknown')
+		} else {
+			$m7_nslookup_rev = "unknown";
+		}
+		
+		# Define the host results hash and append
+		my $m7_results = {
+			'name' => $_,
+			'fwd'  => [$m7_nslookup_fwd],
+			'rev'  => [$m7_nslookup_rev],
+			'soa'  => [$m7_nslookup_soa]
+		}
+		$m7_results->{test}{hosts}{host}[$m7_host_key] = $m7_ping_results;
+		$m7_host_key ++;
+	};
+	
+	# Dump the results hash to an XML file
+	my $m7_xml_file    = $m7_test_base . '/results.xml';
+	$m7->log->info($$ . ': Dumping results to XML file - ' . $m7_xml_file);
+	
+	# Convert the results hash to XML data and print to file
+	my $m7_results_xml = XMLout($m7_results, RootName => 'plan');
+	open(my $m7_xml_fh, '>', $m7_xml_file);
+	print $m7_xml_fh $m7_results_xml;
+	close($m7_xml_fh);
+	
+	# Test thread complete
+	$m7->log->info($$ . ': Test run complete - ' . $m7_log_details);
+	exit 1;
 }
 
 # Network Tests \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\ #
@@ -358,7 +517,7 @@ sub netPing {
 	
 	# Test thread complete
 	$m7->log->info($$ . ': Test run complete - ' . $m7_log_details);
-	exit 0;
+	exit 1;
 }
 sub netTraceroute {
 	my $m7 = shift;
@@ -477,7 +636,7 @@ sub netTraceroute {
 	
 	# Test thread complete
 	$m7->log->info($$ . ': Test run complete - ' . $m7_log_details);
-	exit 0;
+	exit 1;
 }
 sub netMTR {
 	my $m7 = shift;
@@ -594,7 +753,7 @@ sub netMTR {
 	
 	# Test thread complete
 	$m7->log->info($$ . ': Test run complete - ' . $m7_log_details);
-	exit 0;
+	exit 1;
 }
 
 # Web Tests \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\ #
@@ -721,7 +880,7 @@ sub webDownload {
 	
 	# Test thread complete
 	$m7->log->info($$ . ': Test run complete - ' . $m7_log_details);
-	exit 0;
+	exit 1;
 }
 
 # Get XML Element Text \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\ #
@@ -849,53 +1008,74 @@ sub testExec {
 		
 		# DNS testing
 		when ('dns') {
+			my $m7_test_host  = $m7->getXMLText('plan/params/nameserver');
+			$m7->{_test_host} = $m7_test_host;
 			
 			# Build an array of all hosts to lookup
 			for my $m7_nsl_host ($m7->plan_xtree->findnodes('plan/params/hosts/host')) {
 				$m7_nsl_name = $m7_nsl_host->textContent();
 				push(@{$m7->{_test_hosts}}, $m7_nsl_name);
 			}
-			
-			$m7->{_test_threads} = $m7->getXMLText('plan/params/threads');
-			my $m7_test_host	 = $m7->getXMLText('plan/params/nameserver');
+	
+			# Process each test ID
 			foreach(@{$m7->test_ids}) {
-				my $m7_test_id		  = $_;
-				my $m7_test_type	  = $m7->getXMLText('plan/params/test[@id="' . $_ . '"]/type');
-				my $m7_samples		  = $m7->getXMLText('plan/params/test[@id="' . $_ . '"]/type[@="' . $m7_test_type . '"]/samples');
-				my $m7_thread_count   = 0;
+				my $m7_test_id	  = $_;
+				my $m7_test_type  = $m7->getXMLText('plan/params/test[@id="' . $_ . '"]/type');
+				$m7->{_test_id}   = $m7_test_id;
+				$m7->{_test_type} = $m7_test_type;
 				
-				# Fork based on the number of threads
-				while ($m7_thread_count < $m7->test_threads) {
-					$m7_thread_count ++;
-					my $m7_thread_details = 'category=' . $m7->plan_cat . ', id=' . $_ . ', type=' . $m7_test_type . ', thread=' . $m7_thread_count;
-					
-					# Fork the process for the test ID and thread
-					my $m7_tm_pid = fork();
-		
-					# Parent process
-					if ($m7_tm_pid) {
-						$m7->log->info('Fork PID(' . $m7_tm_pid . ') for test - ' . $m7_thread_details);
-						push(@{$m7->{_test_results}}, $m7->out_dir . '/test-' . $m7_test_id . '/thread-' . $m7_thread_count . '/results.xml');
-						push(@{$m7->{_tm_forks}}, $m7_tm_pid);
-		
-					# Child process
-					} elsif ($m7_tm_pid == 0) {
-						$m7->{_test_id}		 = $m7_test_id;
-						$m7->{_test_thread}  = $m7_thread_count;
-						$m7->{_test_samples} = $m7_samples;
-						$m7->{_test_host}	 = $m7_test_host;
-						$m7->{_test_type}	 = $m7_test_type;
-						$m7->log->info($$ . ': Launching fork process for test - ' . $m7_thread_details);
-						given ($m7_test_type) {
-							when ('nslookup') {
-								$m7->dnsLookup();
-							}
-							default {
-								$m7->log->logdie($$ . ': Invalid type for test ID ' . $_ . ': ' . $m7_test_type);
+				# Stress test uses threads, query test does not
+				given ($m7_test_type) {
+					when ('stress') {
+						$m7->{_test_threads} = $m7->getXMLText('plan/params/threads');
+						my $m7_samples		 = $m7->getXMLText('plan/params/test[@id="' . $_ . '"]/type[@="' . $m7_test_type . '"]/samples');
+						my $m7_thread_count  = 0;
+						
+						# Fork based on the number of threads
+						while ($m7_thread_count < $m7->test_threads) {
+							$m7_thread_count ++;
+							my $m7_thread_details = 'category=' . $m7->plan_cat . ', id=' . $_ . ', type=' . $m7_test_type . ', thread=' . $m7_thread_count;
+							
+							# Fork the process for the test ID and thread
+							my $m7_tm_pid = fork();
+				
+							# Parent process
+							if ($m7_tm_pid) {
+								$m7->log->info('Fork PID(' . $m7_tm_pid . ') for test - ' . $m7_thread_details);
+								push(@{$m7->{_test_results}}, $m7->out_dir . '/test-' . $m7_test_id . '/thread-' . $m7_thread_count . '/results.xml');
+								push(@{$m7->{_tm_forks}}, $m7_tm_pid);
+				
+							# Child process
+							} elsif ($m7_tm_pid == 0) {
+								$m7->{_test_thread}  = $m7_thread_count;
+								$m7->{_test_samples} = $m7_samples;
+								$m7->log->info($$ . ': Launching fork process for test - ' . $m7_thread_details);
+								$m7->dnsStress();
+							} else {
+								$m7->log->logdie('Error forking test thread process: ' . $!);
 							}
 						}
-					} else {
-						$m7->log->logdie('Error forking test thread process: ' . $!);
+					}
+					when ('query') {
+						my $m7_test_details = 'category=' . $m7->plan_cat . ', id=' . $_ . ', type=' . $m7_test_type . ', thread=' . $m7_thread_count;
+						
+						# Fork the process for the test ID
+						my $m7_tm_pid = fork();
+				
+						# Parent process
+						if ($m7_tm_pid) {
+							$m7->log->info('Fork PID(' . $m7_tm_pid . ') for test - ' . $m7_test_details);
+							push(@{$m7->{_test_results}}, $m7->out_dir . '/test-' . $m7_test_id . '/results.xml');
+							push(@{$m7->{_tm_forks}}, $m7_tm_pid);
+						
+						# Child process
+						} elsif ($m7_tm_pid == 0) {
+							$m7->log->info($$ . ': Launching fork process for test - ' . $m7_test_details);
+							$m7->dnsQuery();
+						}
+					}
+					default {
+						$m7->log->logdie($$ . ': Invalid type for test ID ' . $_ . ': ' . $m7_test_type);
 					}
 				}
 			}
@@ -1122,6 +1302,11 @@ sub monitor {
 		# Parse the XML results into the database
 		$m7->log->info('Parsing XML results into M7 database');
 		system('m7p "' . $m7->plan_id . '" "' . $m7->plan_runtime . '"');
+		
+		# Flush the results directory after parsing
+		my $m7_results_dir = $m7->config->home . '/results/' . $m7->plan_id;
+		rmtree($m7_results_dir)
+			or $m7->log->warn('Failed to clear XML results directory: ' . $m7_results_dir);
 	}
 }
 

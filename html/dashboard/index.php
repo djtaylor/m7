@@ -172,6 +172,8 @@ var projection = d3.geo.mercator()
 var path = d3.geo.path()
     .projection(projection);
 
+var color = d3.scale.category20();
+    
 var graticule = d3.geo.graticule();
 
 var svg = d3.select("#map_container").append("svg")
@@ -199,11 +201,5 @@ d3.json("/dashboard/json/world-50m.json", function(error, world) {
 
 d3.select(self.frameElement).style("height", height + "px");
     	</script>
-    	<?php
-					echo '<pre style="display:none;">';
-					print_r ( $render->m7_runtimes );
-					print_r ( $render->m7_plan );
-					echo '</pre>';
-					?>
 	</body>
 </html>

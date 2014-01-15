@@ -150,7 +150,7 @@ given ($ARGV[0]) {
 	when('status')	{ &status;	 }
 	when('start')	{ &start;	 }
 	when('stop')	{ &stop;	 }
-	when('restart') { &restart; }
+	when('restart') { &restart;  }
 	default 		{ &usage;	 }	
 }
 
