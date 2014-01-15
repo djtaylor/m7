@@ -24,25 +24,29 @@ class Render extends D3JS {
 	 */
 	public function mapPaths() {
 		$m7_paths_js = null;
-		switch ($this->m7_active ['cat']) {
-			case 'web' :
+		switch ($this->m7_active['cat']) {
+			case 'dns':
+				
+				//
+				break;
+			case 'web':
 				
 				// TODO: Still not sure how I'm going to handle rendering web tests on the world map
 				break;
-			case 'net' :
+			case 'net':
 				$m7_stroke_count = 1;
 				
 				// Render one path per destination IP
-				foreach ( $this->m7_destips as $m7_destip ) {
+				foreach ($this->m7_destips as $m7_destip) {
 					$m7_hop_coords_str = null;
-					switch ($this->m7_active ['type']) {
+					switch ($this->m7_active['type']) {
 						case 'ping' :
 							
 							// Get the latitude and longitude for the source and destination hosts
-							$m7_ping_slat = $this->m7_plan [$this->m7_active ['plan']] [$this->m7_active ['host']] ['lat'];
-							$m7_ping_slon = $this->m7_plan [$this->m7_active ['plan']] [$this->m7_active ['host']] ['lon'];
-							$m7_ping_dlat = $this->m7_plan [$this->m7_active ['plan']] [$this->m7_active ['host']] [$this->m7_active ['cat']] [$m7_destip] ['lat'];
-							$m7_ping_dlon = $this->m7_plan [$this->m7_active ['plan']] [$this->m7_active ['host']] [$this->m7_active ['cat']] [$m7_destip] ['lon'];
+							$m7_ping_slat = $this->m7_plan[$this->m7_active['plan']][$this->m7_active ['host']]['lat'];
+							$m7_ping_slon = $this->m7_plan[$this->m7_active['plan']][$this->m7_active ['host']]['lon'];
+							$m7_ping_dlat = $this->m7_plan[$this->m7_active['plan']][$this->m7_active ['host']][$this->m7_active['cat']][$m7_destip]['lat'];
+							$m7_ping_dlon = $this->m7_plan[$this->m7_active['plan']][$this->m7_active ['host']][$this->m7_active['cat']][$m7_destip]['lon'];
 							
 							// Only print if all coordinates are known
 							if ($m7_ping_slat != '*' && $m7_ping_slon != '*' && $m7_ping_dlat != '*' && $m7_ping_dlon != '*') {
@@ -57,16 +61,16 @@ class Render extends D3JS {
 							}
 							break;
 						case 'traceroute' :
-							foreach ( $this->m7_plan [$this->m7_active ['plan']] [$this->m7_active ['host']] [$this->m7_active ['cat']] [$m7_destip] ['traceroute'] [$this->m7_active ['start']] as $m7_traceroute_hop => $m7_traceroute_hop_params ) {
+							foreach ($this->m7_plan[$this->m7_active['plan']][$this->m7_active['host']][$this->m7_active['cat']][$m7_destip]['traceroute'][$this->m7_active['start']] as $m7_traceroute_hop => $m7_traceroute_hop_params) {
 								
 								// Get the hop latitude and longitude
-								$m7_hop_lat = $m7_traceroute_hop_params ['ip'] ['lat'];
-								$m7_hop_lon = $m7_traceroute_hop_params ['ip'] ['lon'];
+								$m7_hop_lat = $m7_traceroute_hop_params['ip']['lat'];
+								$m7_hop_lon = $m7_traceroute_hop_params['ip']['lon'];
 								
 								// Only print if both coordinates are known
 								if ($m7_hop_lat != '*' && $m7_hop_lon != '*') {
 									$m7_hop_coords = '[' . $m7_hop_lon . ',' . $m7_hop_lat . ']';
-									if (! isset ( $m7_hop_coords_str )) {
+									if (!isset($m7_hop_coords_str)) {
 										$m7_hop_coords_str = $m7_hop_coords;
 									} else {
 										$m7_hop_coords_str .= ',' . $m7_hop_coords;
@@ -81,17 +85,17 @@ class Render extends D3JS {
 							$m7_paths_js .= '.attr("d", path);' . "\n";
 							break;
 						case 'mtr' :
-							foreach ( $this->m7_plan [$this->m7_active ['plan']] [$this->m7_active ['host']] [$this->m7_active ['cat']] [$m7_destip] ['mtr'] [$this->m7_active ['start']] as $m7_mtr_hop => $m7_mtr_hop_params ) {
-								$m7_mtr_hop_ip = current ( array_keys ( $m7_mtr_hop_params ['ips'] ) );
+							foreach ( $this->m7_plan[$this->m7_active['plan']][$this->m7_active['host']][$this->m7_active['cat']][$m7_destip]['mtr'][$this->m7_active['start']] as $m7_mtr_hop => $m7_mtr_hop_params) {
+								$m7_mtr_hop_ip = current(array_keys($m7_mtr_hop_params['ips']));
 								
 								// Get the hop latitude and longitude
-								$m7_hop_lat = $m7_mtr_hop_params ['ips'] [$m7_mtr_hop_ip] ['lat'];
-								$m7_hop_lon = $m7_mtr_hop_params ['ips'] [$m7_mtr_hop_ip] ['lon'];
+								$m7_hop_lat = $m7_mtr_hop_params['ips'][$m7_mtr_hop_ip]['lat'];
+								$m7_hop_lon = $m7_mtr_hop_params['ips'][$m7_mtr_hop_ip]['lon'];
 								
 								// Only print if both coordinates are known
 								if ($m7_hop_lat != '*' && $m7_hop_lon != '*') {
 									$m7_hop_coords = '[' . $m7_hop_lon . ',' . $m7_hop_lat . ']';
-									if (! isset ( $m7_hop_coords_str )) {
+									if (!isset($m7_hop_coords_str)) {
 										$m7_hop_coords_str = $m7_hop_coords;
 									} else {
 										$m7_hop_coords_str .= ',' . $m7_hop_coords;
@@ -320,7 +324,7 @@ class Render extends D3JS {
 					}
 						
 					// Get the raw average value and round
-					$m7_troute_time_avg_raw = array_sum($m7_mtr_pkt_loss_avg_array) / count($m7_mtr_pkt_loss_avg_array);
+					$m7_troute_time_avg_raw = array_sum($m7_troute_time_avg_array) / count($m7_troute_time_avg_array);
 					$m7_troute_time_avg = round($m7_troute_time_avg_raw, 2);
 						
 					// Append the X/Y axis data

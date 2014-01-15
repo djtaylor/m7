@@ -135,7 +135,7 @@ class Core {
 		
 		// If loading the most recent test runtime
 		if ($start == 'recent') {
-			$m7_plan_runtime_query = $this->m7_db->query( "SELECT DISTINCT run_time FROM " . $table . " ORDER BY run_time ASC" );
+			$m7_plan_runtime_query = $this->m7_db->query("SELECT DISTINCT run_time FROM " . $table . " ORDER BY run_time ASC");
 			while ($m7_plan_runtime_result = $m7_plan_runtime_query->fetch_assoc() ) {
 				$start = $m7_plan_runtime_result['run_time'];
 				$this->m7_active['start'] = $m7_plan_runtime_result['run_time'];
@@ -174,7 +174,7 @@ class Core {
 			}
 			
 			// If loading a range of test times
-			if (isset($start ) && isset($stop ) && $stop != 'start') {
+			if (isset($start) && isset($stop) && $stop != 'start') {
 				$m7_runtimes = array();
 				$this->m7_active['stop'] = $stop;
 				

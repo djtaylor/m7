@@ -105,7 +105,7 @@ sub db_m7_create {
 		) or db_handle_error(DBI->errstr);
 	}
 	my $dbq_create_db	= 'CREATE DATABASE IF NOT EXISTS m7';
-	my $dbq_create_user	= 'GRANT ALL PRIVILEGES ON m7.* TO \'m7\'@\'%\' IDENTIFIED BY \'' . $db_upass . '\' WITH GRANT OPTION';
+	my $dbq_create_user	= 'GRANT ALL PRIVILEGES ON m7.* TO \'m7\'@\'%\' IDENTIFIED BY \'' . $db_upass . '\'';
 	my $dbq_flush_user  = 'FLUSH PRIVILEGES';
 	my $dbq_hosts_table = '
 		CREATE TABLE IF NOT EXISTS `m7`.`hosts` (
@@ -122,10 +122,11 @@ sub db_m7_create {
 	  		PRIMARY KEY (`id`)
 		);';
 	my $dbq_tests_table = '
-		CREATE TABLE IF NOT EXISTS `m7`.`tests` (
+		CREATE TABLE IF NOT EXISTS `m7`.`plans` (
 	  		`id` int(11) NOT NULL AUTO_INCREMENT,
-		  	`test_id` int(11) NOT NULL,
-		  	`type` varchar(10) NOT NULL,
+		  	`plan_id` int(11) NOT NULL,
+		  	`category` varchar(10) NOT NULL,
+		  	`types` varchar(10) NOT NULL,
 		  	`desc` varchar(128) DEFAULT NULL,
 		  	`first_run` datetime DEFAULT NULL,
 		  	`last_run` datetime DEFAULT NULL,
