@@ -63,7 +63,7 @@ svg.append("path")
 
 <?php if ($render->m7_ready) { echo $render->mapPaths(); } ?>
 
-d3.json("/dashboard/json/world-50m.json", function(error, world) {
+d3.json("/json/world-50m.json", function(error, world) {
 	svg.insert("path", ".graticule")
 		.datum(topojson.feature(world, world.objects.land))
 		.attr("class", "land")

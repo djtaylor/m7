@@ -23,7 +23,7 @@ $(document).ready(function() {
 		$('#test_params').submit();
 	});
 	$('.m7_configure').click(function() {
-		window.location.href = '/dashboard/configure.php';
+		window.location.href = '/configure.php';
 	});
 	
 	if (test_details_render === true) {
