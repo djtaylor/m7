@@ -771,6 +771,14 @@ sub webDownload {
 	mkpath($m7_test_base . '/tmp', 0, 0755);
 	my $m7_fetch_path = $m7_test_base . '/tmp/';
 	
+	# Build an array of all files to download
+	my $m7_file_count = 0;
+	for my $m7_file_path ($m7->plan_xtree->findnodes('plan/params/test[@id="' . $m7->test_id . '"]/paths/path')) {
+		push(@m7_target_files, $m7_file_path->textContent());
+		$m7_results->{test}{files}{file}[$m7_file_count] = $m7_file_path->textContent();
+		$m7_file_count ++;
+	}
+	
 	# Initialize the results hash
 	my $m7_results = {
 		'category' => $m7->plan_cat,
@@ -778,7 +786,7 @@ sub webDownload {
 			'type'     => $m7->test_type,
 			'id'	   => $m7->test_id,
 			'files'	   => {
-				'count' => ,
+				'count' => $m7_file_count,
 				'file'	=> []
 			},
 			'threads'  => {
@@ -795,14 +803,6 @@ sub webDownload {
 			}
 		}
 	};
-	
-	# Build an array of all files to download
-	my $m7_file_key = 0;
-	for my $m7_file_path ($m7->plan_xtree->findnodes('plan/params/test[@id="' . $m7->test_id . '"]/paths/path')) {
-		push(@m7_target_files, $m7_file_path->textContent());
-		$m7_results->{test}{files}{file}[$m7_file_key] = $m7_file_path->textContent();
-		$m7_file_key ++;
-	}
 	
 	# Initialize the transfer/file property variables
 	my $m7_fetch_size_bytes;
