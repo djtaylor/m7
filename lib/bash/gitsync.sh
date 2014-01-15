@@ -6,6 +6,13 @@ mkdir /tmp/m7; cd /tmp/m7
 # Clone the Git repository
 git clone https://github.com/djtaylor/m7.git
 
+# Make sure the git clone was successfull
+if [ "$?" != "0" ]; then
+	echo -e "Git clone failed, please verify your network settings..."
+	rm -rf /tmp/m7
+	exit 1;
+fi
+
 # Preserve configuration files
 cp ~/lib/perl/modules/M7Config.pm /tmp/m7/.
 if [ -f ~/html/dashboard/lib/config.ini ]; then

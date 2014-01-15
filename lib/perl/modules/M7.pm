@@ -778,6 +778,7 @@ sub webDownload {
 			'type'     => $m7->test_type,
 			'id'	   => $m7->test_id,
 			'files'	   => {
+				'count' => ,
 				'file'	=> []
 			},
 			'threads'  => {
