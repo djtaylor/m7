@@ -193,6 +193,7 @@ sub addDestIP {
 # Initialize Plan Database Entries \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\ #
 sub initPlanDB {
 	my $m7p = shift;
+	my $m7p_plan_types  = join(',', @{$m7p->{_test_types}});
 	my $m7p_plan_check	= $m7p->db->selectcol_arrayref("SELECT * FROM plans WHERE plan_id='" . $m7p->plan_id . "'");
 	if (@$m7p_plan_check) {
 		$m7p->log->info('Updating database entry for test plan: ID=' . $m7p->plan_id . ', Runtime=' . $m7p->runtime);
@@ -202,8 +203,8 @@ sub initPlanDB {
 	} else {
 		$m7p->log->info('Creating database entry for test plan: ID=' . $m7p->plan_id . ', Runtime=' . $m7p->runtime);
 		my $m7p_plan_create = "INSERT INTO `" . $m7p->config->get('db_name') . "`.`plans`(" .
-							 "`plan_id`, `type`, `desc`, `first_run`, `last_run`, `run_count`) VALUES(" . 
-						     "'" . $m7p->plan_id . "','net','" . $m7p->plan_desc . "','" . $m7p->runtime . "','" . $m7p->runtime . "', 1)";
+							 "`plan_id`, `category`, `types`, `desc`, `first_run`, `last_run`, `run_count`) VALUES(" . 
+						     "'" . $m7p->plan_id . "','net',','" . $m7p_plan_types . "','" . $m7p->plan_desc . "','" . $m7p->runtime . "','" . $m7p->runtime . "', 1)";
 		$m7p->db->do($m7p_plan_create)
 			or $m7p->log->logdie('Failed to create database entry');
 	}

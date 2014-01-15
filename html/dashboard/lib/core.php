@@ -7,32 +7,14 @@ class Core {
 	// Database object
 	public $m7_db;
 	
-	// M7 test types and categories
-	public $m7_categories = array(
-			'net' => array(
-					'desc' => 'Network',
-					'types' => array(
-							'ping' => 'Ping',
-							'traceroute' => 'Traceroute',
-							'mtr' => 'MTR' 
-					) 
-			),
-			'web' => array(
-					'desc' => 'Web',
-					'types' => array(
-							'single-download' => 'Single file download',
-							'multi-download' => 'Multiple file download' 
-					) 
-			) 
-	);
-	
 	// M7 plan and result properties
-	public $m7_plan = array();
-	public $m7_active = array();
-	public $m7_plans = array();
-	public $m7_hosts = array();
-	public $m7_destips = array();
-	public $m7_runtimes = array();
+	public $m7_plan       = array();
+	public $m7_active     = array();
+	public $m7_plans      = array();
+	public $m7_hosts      = array();
+	public $m7_destips    = array();
+	public $m7_runtimes   = array();
+	public $m7_test_types = array();
 	
 	// Class constructor
 	public function __construct() {
@@ -48,7 +30,8 @@ class Core {
 		$m7_plans_query = $this->m7_db->query( "SELECT * FROM plans" );
 		while($m7_plans_row = $m7_plans_query->fetch_assoc() ) {
 			$this->m7_plans[$m7_plans_row['plan_id']] = array(
-					'desc' => $m7_plans_row['desc'] 
+					'desc'  => $m7_plans_row['desc'],
+					'types' => $m7_plans_row['types']
 			);
 		}
 		
@@ -246,78 +229,92 @@ class Core {
 				
 				// Set the array host properties
 				$this->m7_plan[$this->m7_active['plan']][$this->m7_active['host']]['ip'] = $m7_plan_shost_result['ipaddr'];
-				;
 				$this->m7_plan[$this->m7_active['plan']][$this->m7_active['host']]['lat'] = $m7_plan_shost_result['latitude'];
-				;
 				$this->m7_plan[$this->m7_active['plan']][$this->m7_active['host']]['lon'] = $m7_plan_shost_result['longitude'];
 				$this->m7_plan[$this->m7_active['plan']][$this->m7_active['host']]['region'] = $m7_plan_shost_result['region'];
 				
-				// If the test category is defined
-				if(isset($_GET['cat'])) {
-					$this->m7_plan[$this->m7_active['plan']][$this->m7_active['host']][$_GET['cat']] = array();
-					$this->m7_active['cat'] = $_GET['cat'];
+				// Get the plan category
+				$m7_plan_cat_query      = $this->m7_db->query("SELECT * FROM plans WHERE plan_id='" . $this->m7_active['plan'] . "'");
+				$m7_plan_cat_info       = $m7_destip_query->fetch_assoc();
+				$m7_plan_cat            = $m7_destip_info['category'];
+				
+				// Set the category in the active and plan arrays
+				$this->m7_active['cat'] = $m7_plan_cat;
+				$this->m7_plan[$this->m7_active['plan']][$this->m7_active['host']][$this->m7_active['cat']] = array();
 					
-					// Build an array of all runtimes
-					$m7_runtimes_query = $this->m7_db->query( "SELECT DISTINCT run_time FROM " . $this->m7_active['db_prefix'] . "_" . $this->m7_active['cat'] . "_" . $_GET['type'] . " ORDER BY run_time DESC" );
-					while($m7_runtimes_row = $m7_runtimes_query->fetch_assoc() ) {
-						array_push($this->m7_runtimes, $m7_runtimes_row['run_time']);
-					}
-					
-					// If loading all destination IPs
+				// Build an array of all runtimes
+				$m7_runtimes_query = $this->m7_db->query( "SELECT DISTINCT run_time FROM " . $this->m7_active['db_prefix'] . "_" . $this->m7_active['cat'] . "_" . $_GET['type'] . " ORDER BY run_time DESC" );
+				while($m7_runtimes_row = $m7_runtimes_query->fetch_assoc() ) {
+					array_push($this->m7_runtimes, $m7_runtimes_row['run_time']);
+				}
+				
+				// Render network tests
+				if ($this->m7_active['cat'] == 'net') {
 					if($_GET['destip'] == 'all') {
-						
+							
 						// Build an array of all destination IP addresses
 						$m7_dest_ips_query = $this->m7_db->query( "SELECT DISTINCT dest_ip FROM " . $this->m7_active['db_prefix'] . "_" . $this->m7_active['cat'] . "_" . $_GET['type']);
-						
+							
 						// Build the destination IP array for each entry
 						while($m7_dest_ips_result = $m7_dest_ips_query->fetch_assoc() ) {
-							
+					
 							# Get the destination IP information and load the array
 							$m7_destip_query     = $this->m7_db->query("SELECT * FROM net_destips WHERE ip='" . $m7_dest_ips_result['dest_ip'] . "'");
 							$m7_destip_info      = $m7_destip_query->fetch_assoc();
-							$m7_destip_alias     = $m7_destip_info['alias']; 
-							$m7_destip_hostname  = $m7_destip_info['hostname'];					
+							$m7_destip_alias     = $m7_destip_info['alias'];
+							$m7_destip_hostname  = $m7_destip_info['hostname'];
 							$this->m7_destips[$m7_destip_alias] = $m7_dest_ips_result['dest_ip'];
-							$this->loadDestinationIP( array(
-									'id' => $this->m7_active['plan'],
-									'shost' => $this->m7_active['host'],
-									'cat' => $this->m7_active['cat'],
-									'destip' => $m7_dest_ips_result['dest_ip'],
-									'type' => $_GET['type'],
-									'start' => $_GET['start'],
-									'stop' => $_GET['stop'] 
-							) );
+							$this->loadDestinationIP(array(
+								'id' => $this->m7_active['plan'],
+								'shost' => $this->m7_active['host'],
+								'cat' => $this->m7_active['cat'],
+								'destip' => $m7_dest_ips_result['dest_ip'],
+								'type' => $_GET['type'],
+								'start' => $_GET['start'],
+								'stop' => $_GET['stop']
+							));
 						}
 						$this->m7_active['destip'] = 'all';
 					} elseif(isset($_GET['destip'])) {
-						
+									
 						# Get the destination IP information and load the array
 						$m7_destip_query     = $this->m7_db->query("SELECT * FROM net_destips WHERE ip='" . $_GET['destip'] . "'");
 						$m7_destip_info      = $m7_destip_query->fetch_assoc();
 						$m7_destip_alias     = $m7_destip_info['alias'];
 						$m7_destip_hostname  = $m7_destip_info['hostname'];
 						$this->m7_destips[$m7_destip_alias] = $_GET['destip'];
-						$this->loadDestinationIP( array(
-								'id' => $this->m7_active['plan'],
-								'shost' => $this->m7_active['host'],
-								'cat' => $this->m7_active['cat'],
-								'destip' => $_GET['destip'],
-								'type' => $_GET['type'],
-								'start' => $_GET['start'],
-								'stop' => $_GET['stop'] 
-						) );
+						$this->loadDestinationIP(array(
+							'id' => $this->m7_active['plan'],
+							'shost' => $this->m7_active['host'],
+							'cat' => $this->m7_active['cat'],
+							'destip' => $_GET['destip'],
+							'type' => $_GET['type'],
+							'start' => $_GET['start'],
+							'stop' => $_GET['stop']
+						));
 					} else {
-						
+							
 						// TODO: Right now I'm going to only support rendering either a single destination
 						// IP or all destination IPs. I will add support for filtered sets in the future.
 						return false;
-					}
-				} else {
-					throw new Exception( 'Test category required(web/net)...' );
+					}	
+				}
+				
+				// Render DNS tests
+				if ($this->m7_active['cat'] == 'dns') {
+					
+				}
+				
+				// Render web tests
+				if ($this->m7_active['cat'] == 'web') {
+					
 				}
 			} else {
 				
-				// TODO: For now I am only going to support the loading of single source hosts into memory
+				// TODO: For now I am only going to support the loading of single source hosts into memory.
+				// For future reference, I should convert all the code in the first block of this statement
+				// into a method. Here I should generate an array of all source hosts, loop through them, and
+				// render the tests for each host.
 				return false;
 			}
 		}
@@ -333,24 +330,22 @@ class Core {
 	public function m7RenderCheck() {
 		if(isset($this->m7_active['plan'])) {
 			if(isset($this->m7_active['host'])) {
-				if(isset($this->m7_active['cat'])) {
-					if(isset($this->m7_active['destip'])) {
-						return true;
-					} else {
-						// Destination IP - Must be 'all' or a specific IP
-						return false;
-					}
+				if(isset($this->m7_active['destip'])) {
+					$this->m7_ready = true;
 				} else {
-					// Plan Category -> Required
-					return false;
+					if ($this->m7_active['cat'] == 'net') {
+						$this->m7_ready = false;
+					} else {
+						$this->m7_ready = true;
+					}
 				}
 			} else {
 				// Source Host -> Required
-				return false;
+				$this->m7_ready = false;
 			}
 		} else {
 			// Plan ID -> Required
-			return false;
+			$this->m7_ready = false;
 		}
 	}
 }

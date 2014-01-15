@@ -31,28 +31,6 @@ html,body {
 	stroke-width: .5px;
 }
 
-.arc1,.arc2,.arc3,.arc4 {
-	fill: none;
-	stroke-width: 2px;
-	stroke-linecap: round;
-}
-
-.arc1 {
-	stroke: red;
-}
-
-.arc2 {
-	stroke: blue;
-}
-
-.arc3 {
-	stroke: yellow;
-}
-
-.arc4 {
-	stroke: green;
-}
-
 .key1 {
 	background-color: red;
 }
@@ -131,15 +109,30 @@ html,body {
 	overflow: auto;
 }
 
-.m7_test_cat_title,.m7_test_cat_menu,.m7_plan_id_title,.m7_plan_id_menu,.m7_test_shost_title,.m7_test_shost_menu,.m7_test_type_title,.m7_test_type_menu,.m7_test_start_title,.m7_test_start_menu,.m7_test_stop_title,.m7_test_stop_menu,.m7_test_destip_title,.m7_test_destip_menu
-	{
+.m7_plan_id_title,
+.m7_plan_id_menu,
+.m7_test_shost_title,
+.m7_test_shost_menu,
+.m7_test_type_title,
+.m7_test_type_menu,
+.m7_test_start_title,
+.m7_test_start_menu,
+.m7_test_stop_title,
+.m7_test_stop_menu,
+.m7_test_destip_title,
+.m7_test_destip_menu {
 	line-height: 40px;
 	float: left;
 	margin: 0 5px 0 0;
 }
 
-.m7_test_cat,.m7_plan_id,.m7_test_shost,.m7_test_type,.m7_test_destip,.m7_test_start,.m7_test_stop,.m7_test_details_show
-	{
+.m7_plan_id,
+.m7_test_shost,
+.m7_test_type,
+.m7_test_destip,
+.m7_test_start,
+.m7_test_stop,
+.m7_test_details_show {
 	overflow: auto;
 	margin: 0 0 0 5px;
 	float: left;
@@ -165,7 +158,8 @@ html,body {
 	margin-right: 5px !important;
 }
 
-.m7_test_submit,.m7_configure {
+.m7_test_submit,
+.m7_configure {
 	height: 18px;
 	font-size: 1.2em;
 	font-weight: bold;
@@ -183,7 +177,8 @@ html,body {
 	box-shadow: 0px 0px 5px 0px rgba(0, 0, 0, 0.2);
 }
 
-.m7_test_submit:hover,.m7_configure:hover {
+.m7_test_submit:hover,
+.m7_configure:hover {
 	cursor: pointer;
 	-webkit-box-shadow: 0px 0px 5px 0px rgba(0, 0, 0, 0.4);
 	-moz-box-shadow: 0px 0px 5px 0px rgba(0, 0, 0, 0.4);
@@ -226,8 +221,9 @@ html,body {
 	padding: 3px;
 }
 
-.m7_test_details_pheader,.m7_test_details_sheader,.m7_test_details_cheader
-	{
+.m7_test_details_pheader,
+.m7_test_details_sheader,
+.m7_test_details_cheader {
 	width: 100%;
 	height: 30px;
 	border-bottom: solid 3px #000;
@@ -237,13 +233,16 @@ html,body {
 	background: #333;
 }
 
-.m7_test_details_pheader p,.m7_test_details_sheader p,.m7_test_details_cheader p
-	{
+.m7_test_details_pheader p,
+.m7_test_details_sheader p,
+.m7_test_details_cheader p {
 	margin: 0;
 	padding: 0 0 0 5px;
 }
 
-.m7_test_details_pcontent,.m7_test_details_scontent,.m7_test_details_ccontent
+.m7_test_details_pcontent,
+.m7_test_details_scontent,
+.m7_test_details_ccontent
 	{
 	margin: 10px 0 10px 0;
 }
@@ -274,7 +273,8 @@ html,body {
 	width: 150px;
 }
 
-.m7_test_destination_ip_menu,.m7_test_destination_ip_title {
+.m7_test_destination_ip_menu,
+.m7_test_destination_ip_title {
 	float: left;
 	font-weight: bold;
 }
@@ -312,7 +312,8 @@ html,body {
 	margin: 0 0 5px 0;
 }
 
-.m7_map_key_color,.m7_map_key_txt {
+.m7_map_key_color,
+.m7_map_key_txt {
 	float: left;
 	line-height: 20px;
 }
