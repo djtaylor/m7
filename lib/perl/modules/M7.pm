@@ -323,7 +323,6 @@ sub dnsStress {
 		# Define the sample results hash block
 		my $m7_sample_results = {
 			'number' => $m7_samples_count,
-			'hosts'  => $m7_host_count,
 			'time'	 => $m7_nsl_time,
 			'fails'	 => $m7_fail_count
 		};
@@ -393,10 +392,10 @@ sub dnsQuery {
 		my $m7_nslookup_soa;
 		if ($m7->test_host eq 'auto') {
 			$m7_nslookup_soa = nslookup(host => $_, type => 'SOA');
-			$m7_nslookup_soa =~ s///g;
+			$m7_nslookup_soa =~ s/(^[\w\d\.]+)\s.*$/$1/g;
 		} else {
 			$m7_nslookup_soa = nslookup(host => $_, server => $m7->test_host, type => 'SOA');
-			$m7_nslookup_soa =~ s///g;
+			$m7_nslookup_soa =~ s/(^[\w\d\.]+)\s.*$/$1/g;
 		}
 		$m7_nslookup_soa = (defined($m7_nslookup_soa) ? $m7_nslookup_soa : 'unknown');
 		
@@ -404,7 +403,7 @@ sub dnsQuery {
 		my $m7_nslookup_rev;
 		if ($m7_nslookup_fwd ne '0.0.0.0') {
 			if ($m7->test_host eq 'auto') {
-				$m7_nslookup_rev = nslookup(host => $m7_nslookup_fw, type => 'PTR');
+				$m7_nslookup_rev = nslookup(host => $m7_nslookup_fwd, type => 'PTR');
 			} else {
 				$m7_nslookup_rev = nslookup(host => $m7_nslookup_fwd, server => $m7->test_host, type => 'PTR');
 			}
@@ -413,14 +412,42 @@ sub dnsQuery {
 			$m7_nslookup_rev = "unknown";
 		}
 		
+		# Test 4: MX lookup
+		my $m7_nslookup_mx;
+		if ($m7_nslookup_fwd ne '0.0.0.0') {
+			if ($m7->test_host eq 'auto') {
+				$m7_nslookup_mx = nslookup(host => $_, type => 'MX');
+			} else {
+				$m7_nslookup_mx = nslookup(host => $_, server => $m7->test_host, type => 'MX');
+			}
+			$m7_nslookup_mx = (defined($m7_nslookup_mx) ? $m7_nslookup_mx : 'unknown');
+		} else {
+			$m7_nslookup_mx = "unknown";
+		}
+		
+		# Test 5: NS lookup
+		my $m7_nslookup_ns;
+		if ($m7_nslookup_fwd ne '0.0.0.0') {
+			if ($m7->test_host eq 'auto') {
+				$m7_nslookup_ns = nslookup(host => $_, type => 'NS');
+			} else {
+				$m7_nslookup_ns = nslookup(host => $_, server => $m7->test_host, type => 'NS');
+			}
+			$m7_nslookup_ns = (defined($m7_nslookup_ns) ? $m7_nslookup_ns : 'unknown');
+		} else {
+			$m7_nslookup_ns = "unknown";
+		}
+		
 		# Define the host results hash and append
-		my $m7_results = {
+		my $m7_host_results = {
 			'name' => $_,
 			'fwd'  => [$m7_nslookup_fwd],
 			'rev'  => [$m7_nslookup_rev],
-			'soa'  => [$m7_nslookup_soa]
+			'soa'  => [$m7_nslookup_soa],
+			'mx'   => [$m7_nslookup_mx],
+			'ns'   => [$m7_nslookup_ns]
 		};
-		$m7_results->{test}{hosts}{host}[$m7_host_key] = $m7_ping_results;
+		$m7_results->{test}{hosts}{host}[$m7_host_key] = $m7_host_results;
 		$m7_host_key ++;
 	};
 	
@@ -1029,13 +1056,13 @@ sub testExec {
 				given ($m7_test_type) {
 					when ('stress') {
 						$m7->{_test_threads} = $m7->getXMLText('plan/params/threads');
-						my $m7_samples		 = $m7->getXMLText('plan/params/test[@id="' . $_ . '"]/type[@="' . $m7_test_type . '"]/samples');
+						my $m7_samples		 = $m7->getXMLText('plan/params/test[@id="' . $m7_test_id . '"]/samples');
 						my $m7_thread_count  = 0;
 						
 						# Fork based on the number of threads
 						while ($m7_thread_count < $m7->test_threads) {
 							$m7_thread_count ++;
-							my $m7_thread_details = 'category=' . $m7->plan_cat . ', id=' . $_ . ', type=' . $m7_test_type . ', thread=' . $m7_thread_count;
+							my $m7_thread_details = 'category=' . $m7->plan_cat . ', id=' . $m7_test_id . ', type=' . $m7_test_type . ', thread=' . $m7_thread_count;
 							
 							# Fork the process for the test ID and thread
 							my $m7_tm_pid = fork();
@@ -1058,7 +1085,7 @@ sub testExec {
 						}
 					}
 					when ('query') {
-						my $m7_test_details = 'category=' . $m7->plan_cat . ', id=' . $_ . ', type=' . $m7_test_type . ', thread=' . $m7_thread_count;
+						my $m7_test_details = 'category=' . $m7->plan_cat . ', id=' . $m7_test_id . ', type=' . $m7_test_type . ', thread=' . $m7_thread_count;
 						
 						# Fork the process for the test ID
 						my $m7_tm_pid = fork();
