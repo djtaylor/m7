@@ -318,7 +318,7 @@ sub dnsStress {
 	
 		# Append to averages array
 		push(@m7_time_avgs, $m7_nsl_time);
-		push(@m7_fail_avgs, $m7_fail_count;)
+		push(@m7_fail_avgs, $m7_fail_count);
 	
 		# Define the sample results hash block
 		my $m7_sample_results = {
@@ -419,7 +419,7 @@ sub dnsQuery {
 			'fwd'  => [$m7_nslookup_fwd],
 			'rev'  => [$m7_nslookup_rev],
 			'soa'  => [$m7_nslookup_soa]
-		}
+		};
 		$m7_results->{test}{hosts}{host}[$m7_host_key] = $m7_ping_results;
 		$m7_host_key ++;
 	};
