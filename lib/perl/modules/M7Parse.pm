@@ -158,12 +158,6 @@ sub setPlan {
 	$m7p->{_plan_desc}	= $m7p->plan_xpath->findnodes('plan/desc');
 	$m7p->{_plan_cat}	= $m7p->plan_xpath->findnodes('plan/params/category');
 	$m7p->{_runtime}	= $m7p_plan_runtime;
-	
-	# Exit gracefully if plan category isn't supported
-	if ($m7p->plan_cat eq 'dns' or $m7p->plan_cat eq 'web') {
-		$m7p->log->warn('Parsing of plan category "' . $m7p->plan_cat . '" not yet supported');
-		exit 1;
-	}
 }
 
 # Add Destination IP \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\ #
@@ -266,8 +260,8 @@ sub createHostTable {
                 	run_time        DATETIME NOT NULL,
                 	nameserver		VARCHAR(35) NOT NULL,
                 	hostname		VARCHAR(35) NOT NULL,
-                	forward			VARCHAR(15) NOT NULL,
-                	reverse			VARCHAR(35 NOT NULL,
+                	fwd				VARCHAR(15) NOT NULL,
+                	rev				VARCHAR(35) NOT NULL,
                 	soa				VARCHAR(35) NOT NULL,
                 	ns				VARCHAR(35) NOT NULL,
                 	mx				VARCHAR(35) NOT NULL,
@@ -421,8 +415,8 @@ sub loadXMLResults {
                     ",'" . $m7p_nsstress_host_count . "'" .
                     ",'" . $m7p_nsstress_thread . "'" .
                     ",'" . $m7p_nsstress_samples . "'" .
-                    ",'" . $m7p_nstress_avg_time . "'" .
-                    ",'" . $m7p_nsstress_avg_fails . "')";
+                    ",'" . $m7p_nsstress_thread_avg_time . "'" .
+                    ",'" . $m7p_nsstress_thread_avg_fails . "')";
                         
 				# Append the string to the array
                 push (@m7p_nsstress_sql, $m7p_nsstress_sql_string);  
@@ -436,7 +430,7 @@ sub loadXMLResults {
                     					  "VALUES " . $m7p_nsstress_sql_values . ";";
                     
             # Create the table rows for the nsstress test
-            $m7p->db->do($m7p_nstress_sql_query);
+            $m7p->db->do($m7p_nsstress_sql_query);
 			
 		}
 		when ('query') {
@@ -465,7 +459,7 @@ sub loadXMLResults {
                     ",'" . $m7p->runtime . "'" .
                     ",'" . $m7p_nsquery_ns . "'" .
                     ",'" . $m7p_nsquery_host . "'" .
-                    ",'" . $m7p_nsquery_host_fw . "'" .
+                    ",'" . $m7p_nsquery_host_fwd . "'" .
                     ",'" . $m7p_nsquery_host_rev . "'" .
                     ",'" . $m7p_nsquery_host_soa . "'" .
                     ",'" . $m7p_nsquery_host_ns . "'" .
