@@ -8,14 +8,18 @@ git clone https://github.com/djtaylor/m7.git
 
 # Preserve configuration files
 cp ~/lib/perl/modules/M7Config.pm /tmp/m7/.
-cp ~/html/dashboard/lib/config.ini /tmp/m7/.
+if [ -f ~/html/dashboard/lib/config.ini ]; then
+	cp ~/html/dashboard/lib/config.ini /tmp/m7/.
+fi
 
 # Rsync the directories
 rsync -a /tmp/m7/m7/ /opt/vpls/m7/.
 
 # Restore configuration files
 mv -f /tmp/m7/M7Config.pm ~/lib/perl/modules/.
-mv -f /tmp/m7/config.ini ~/html/dashboard/lib/.
+if [ -f ~/html/dashboard/lib/config.ini ]; then
+	mv -f /tmp/m7/config.ini ~/html/dashboard/lib/.
+fi
 
 # Leave the working directory and delete it
 cd && rm -rf /tmp/m7
