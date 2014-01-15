@@ -152,12 +152,12 @@ class Core {
 		$this->m7_plan[$plan_id][$shost][$cat][$destip]['region'] = $m7_plan_destip_result['dest_region'];
 		
 		// If loading a specific test type
-		if(isset($type )) {
+		if(isset($type)) {
 			$this->m7_plan[$plan_id][$shost][$cat][$destip][$type] = array();
 			$this->m7_active['type'] = $type;
 			
 			// If loading a single test runtime
-			if(isset($start ) && isset($stop ) && $stop == 'start') {
+			if(isset($start) && isset($stop) && $stop == 'start') {
 				$this->m7_active['stop'] = 'start';
 				$this->loadTestSingle( array(
 						'id' => $plan_id,
@@ -211,8 +211,20 @@ class Core {
 			$m7_plan_desc_result = $m7_plan_desc_query->fetch_assoc();
 			$this->m7_plan[$this->m7_active['plan']]['desc'] = $m7_plan_desc_result['desc'];
 			
-			// If a source host is defined
-			if(isset($_GET['shost'])) {
+			// If no source host defined, use the first available one
+			if(!isset($_GET['shost'])) {
+				$m7_first_host = key($this->m7_hosts);
+				$_GET['shost'] = $m7_first_host;
+			}
+			
+			// If the test type isn't set, use the first available type
+			if (!isset($_GET['type'])) {
+				$m7_plan_cat_types = explode(',', $this->m7_plans[$this->m7_active['plan']]['types']);
+				$_GET['type'] = current($m7_plan_cat_types);
+			}
+			
+			// Render for a specific source host
+			if(isset($_GET['shost']) && $_GET['shost'] != 'all') {
 				$this->m7_plan[$this->m7_active['plan']][$_GET['shost']] = array();
 				$this->m7_active['host'] = $_GET['shost'];
 				$this->m7_active['db_prefix'] = preg_replace( "/-/", "_", $_GET['shost']);
@@ -235,21 +247,24 @@ class Core {
 				
 				// Get the plan category
 				$m7_plan_cat_query      = $this->m7_db->query("SELECT * FROM plans WHERE plan_id='" . $this->m7_active['plan'] . "'");
-				$m7_plan_cat_info       = $m7_destip_query->fetch_assoc();
-				$m7_plan_cat            = $m7_destip_info['category'];
+				$m7_plan_cat_info       = $m7_plan_cat_query->fetch_assoc();
+				$m7_plan_cat            = $m7_plan_cat_info['category'];
 				
 				// Set the category in the active and plan arrays
 				$this->m7_active['cat'] = $m7_plan_cat;
 				$this->m7_plan[$this->m7_active['plan']][$this->m7_active['host']][$this->m7_active['cat']] = array();
-					
+				
 				// Build an array of all runtimes
-				$m7_runtimes_query = $this->m7_db->query( "SELECT DISTINCT run_time FROM " . $this->m7_active['db_prefix'] . "_" . $this->m7_active['cat'] . "_" . $_GET['type'] . " ORDER BY run_time DESC" );
+				$m7_runtimes_query = $this->m7_db->query("SELECT DISTINCT run_time FROM " . $this->m7_active['db_prefix'] . "_" . $this->m7_active['cat'] . "_" . $_GET['type'] . " ORDER BY run_time DESC");
 				while($m7_runtimes_row = $m7_runtimes_query->fetch_assoc() ) {
 					array_push($this->m7_runtimes, $m7_runtimes_row['run_time']);
 				}
 				
 				// Render network tests
 				if ($this->m7_active['cat'] == 'net') {
+					
+					// Make sure the destination IP is set, usefull mainly for initial test renders
+					if(!isset($_GET['destip'])) { $_GET['destip'] = 'all'; }
 					if($_GET['destip'] == 'all') {
 							
 						// Build an array of all destination IP addresses
@@ -309,7 +324,9 @@ class Core {
 				if ($this->m7_active['cat'] == 'web') {
 					
 				}
-			} else {
+			
+			// Render results for all source hosts
+			if (isset($_GET['shost']) && $_GET['shost'] == 'all') {
 				
 				// TODO: For now I am only going to support the loading of single source hosts into memory.
 				// For future reference, I should convert all the code in the first block of this statement

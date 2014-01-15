@@ -166,7 +166,8 @@ sub addDestIP {
 	my ($m7p_destip_val, $m7p_destip_alias) = @_;
 	
 	# Only valid for network tests
-	if ($m7->plan_cat eq 'net') {
+	my $m7p_plan_cat = $m7p->plan_cat . "";
+	if ($m7p_plan_cat eq 'net') {
 		
 		# Attempt to get the hostname mapping
 		my $m7p_destip_hostname = nslookup(host => $m7p_destip_val, type => 'PTR', timeout => '5');

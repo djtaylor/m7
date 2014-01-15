@@ -552,12 +552,12 @@ class Render extends D3JS {
 	
 	// Render the map key
 	public function mapKey() {
-		if ($render->m7_ready) {
+		if ($this->m7_ready) {
 			$map_key_html = null;
 			
 			// Network test map key
 			if ($this->m7_active['cat'] == 'net') {
-				if (!empty ($render->m7_destips)) {
+				if (!empty ($this->m7_destips)) {
 					$map_key_html .= '<div class="m7_map_key">';
 					$map_key_html .= '<div class="m7_map_key_title">Map Key</div>';
 					$m7_key_count = 1;
@@ -581,10 +581,10 @@ class Render extends D3JS {
 			if ($this->m7_active['cat'] == 'web') {
 				
 			}
+			
+			// Return the map key HTML
+			return $map_key_html;
 		}
-		
-		// Return the map key HTML
-		return $map_key_html;
 	}
 	
 	// Render the test plan menu
@@ -600,93 +600,95 @@ class Render extends D3JS {
 		}
 		$plan_menu_html .= '</select></div></div>';
 
-		// Source host dropdown
-		$plan_menu_html .= '<div class="m7_test_host">';
-		$plan_menu_html .= '<div class="m7_test_shost_title">Host</div>';
-		$plan_menu_html .= '<div class="m7_test_shost_menu">';
-		$plan_menu_html .= '<select name="shost">';
-		foreach ( $this->m7_hosts as $m7_host => $m7_host_params ) {
-			if (isset ( $this->m7_active['host'] ) && $m7_host == $this->m7_active['host']) {
-				$plan_menu_html .= '<option selected="selected" value="' . $m7_host . '">' . $m7_host . ' - ' . $m7_host_params ['desc'] . '</option>' . "\n";
-			} else {
-				$plan_menu_html .= '<option value="' . $m7_host . '">' . $m7_host . ' - ' . $m7_host_params ['desc'] . '</option>' . "\n";
-			}
-		}
-		$plan_menu_html .= '</select></div></div>';
+		// Only render the rest of the menu if a plan ID is selected
+		if ($this->m7_ready) {
 
-		// Test plan type dropdown
-		$plan_menu_html .= '<div class="m7_test_type">';
-		$plan_menu_html .= '<div class="m7_test_type_title">Type</div>';
-		$plan_menu_html .= '<div class="m7_test_type_menu">';
-		$plan_menu_html .= '<select name="type">';
-		
-		// Get an array of all types by plan ID
-		$m7_plan_cat_types = explode(',', $this->m7_plans[$this->m7_active['plan']]['types']);
-		
-		foreach ( $m7_plan_cat_types as $m7_plan_cat_type ) {
-			if (isset ( $this->m7_active['type'] ) && $m7_plan_cat_type == $this_active['type']) {
-				$plan_menu_html .= '<option selected="selected" value="' . $m7_plan_cat_type . '">' . $m7_plan_cat_type . '</option>' . "\n";
-			} else {
-				$plan_menu_html .= '<option value="' . $m7_plan_cat_type . '">' . $m7_plan_cat_type . '</option>' . "\n";
+			// Source host dropdown
+			$plan_menu_html .= '<div class="m7_test_host">';
+			$plan_menu_html .= '<div class="m7_test_shost_title">Host</div>';
+			$plan_menu_html .= '<div class="m7_test_shost_menu">';
+			$plan_menu_html .= '<select name="shost">';
+			foreach ( $this->m7_hosts as $m7_host => $m7_host_params ) {
+				if (isset ( $this->m7_active['host'] ) && $m7_host == $this->m7_active['host']) {
+					$plan_menu_html .= '<option selected="selected" value="' . $m7_host . '">' . $m7_host . ' - ' . $m7_host_params ['desc'] . '</option>' . "\n";
+				} else {
+					$plan_menu_html .= '<option value="' . $m7_host . '">' . $m7_host . ' - ' . $m7_host_params ['desc'] . '</option>' . "\n";
+				}
 			}
-		}
-		$plan_menu_html .= '</select></div></div>';
-
-		// Destination IPs dropdown
-		if ($this->m7_active['cat'] == 'net') {
-			$plan_menu_html .= '<div class="m7_test_destip_type">';
-			$plan_menu_html .= '<div class="m7_test_destip_title">Destination IP</div>';
-			$plan_menu_html .= '<div class="m7_test_destip_menu">';
-			$plan_menu_html .= '<select name="destip">';
-			$plan_menu_html .= '<option value="all">--All--</option>';
-			if (isset ( $this->m7_destips )) {
-				foreach ( $this->m7_destips as $m7_destip_alias => $m7_destip_val ) {
-					if ($m7_destip_val == $this->m7_active['destip']) {
-						$plan_menu_html .= '<option selected="selected" value="' . $m7_destip_val . '">' . $m7_destip_val . ' - ' . $m7_destip_alias . '</option>' . "\n";
+			$plan_menu_html .= '</select></div></div>';
+			
+			// Test plan type dropdown
+			$plan_menu_html .= '<div class="m7_test_type">';
+			$plan_menu_html .= '<div class="m7_test_type_title">Type</div>';
+			$plan_menu_html .= '<div class="m7_test_type_menu">';
+			$plan_menu_html .= '<select name="type">';
+			
+			// Get an array of all types by plan ID
+			$m7_plan_cat_types = explode(',', $this->m7_plans[$this->m7_active['plan']]['types']);
+			
+			foreach ( $m7_plan_cat_types as $m7_plan_cat_type ) {
+				if (isset ( $this->m7_active['type'] ) && $m7_plan_cat_type == $this_active['type']) {
+					$plan_menu_html .= '<option selected="selected" value="' . $m7_plan_cat_type . '">' . $m7_plan_cat_type . '</option>' . "\n";
+				} else {
+					$plan_menu_html .= '<option value="' . $m7_plan_cat_type . '">' . $m7_plan_cat_type . '</option>' . "\n";
+				}
+			}
+			$plan_menu_html .= '</select></div></div>';
+			
+			// Destination IPs dropdown
+			if ($this->m7_active['cat'] == 'net') {
+				$plan_menu_html .= '<div class="m7_test_destip_type">';
+				$plan_menu_html .= '<div class="m7_test_destip_title">Destination IP</div>';
+				$plan_menu_html .= '<div class="m7_test_destip_menu">';
+				$plan_menu_html .= '<select name="destip">';
+				$plan_menu_html .= '<option value="all">--All--</option>';
+				if (isset ( $this->m7_destips )) {
+					foreach ( $this->m7_destips as $m7_destip_alias => $m7_destip_val ) {
+						if ($m7_destip_val == $this->m7_active['destip']) {
+							$plan_menu_html .= '<option selected="selected" value="' . $m7_destip_val . '">' . $m7_destip_val . ' - ' . $m7_destip_alias . '</option>' . "\n";
+						} else {
+							$plan_menu_html .= '<option value="' . $m7_destip_val . '">' . $m7_destip_val . ' - ' . $m7_destip_alias . '</option>' . "\n";
+						}
+					}
+				}
+				$plan_menu_html .= '</select></div></div>';
+			}
+			
+			// Test start time dropdown
+			$plan_menu_html .= '<div class="m7_test_start">';
+			$plan_menu_html .= '<div class="m7_test_start_title">Start Time</div>';
+			$plan_menu_html .= '<div class="m7_test_start_menu">';
+			$plan_menu_html .= '<select name="start">';
+			$plan_menu_html .= '<option value="recent">--Most Recent--</option>';
+			if (isset ( $this->m7_runtimes )) {
+				foreach ( $this->m7_runtimes as $m7_start_val ) {
+					if (isset ( $this->m7_active['start'] ) && $m7_start_val == $this->m7_active['start']) {
+						$plan_menu_html .= '<option selected="selected" value="' . $m7_start_val . '">' . $m7_start_val . '</option>';
 					} else {
-						$plan_menu_html .= '<option value="' . $m7_destip_val . '">' . $m7_destip_val . ' - ' . $m7_destip_alias . '</option>' . "\n";
+						$plan_menu_html .= '<option value="' . $m7_start_val . '">' . $m7_start_val . '</option>';
 					}
 				}
 			}
-			$plan_menu_html .= '</select></div></div>';						
-		}
-		
-		// Test start time dropdown
-		$plan_menu_html .= '<div class="m7_test_start">';
-		$plan_menu_html .= '<div class="m7_test_start_title">Start Time</div>';
-		$plan_menu_html .= '<div class="m7_test_start_menu">';
-		$plan_menu_html .= '<select name="start">';
-		$plan_menu_html .= '<option value="recent">--Most Recent--</option>';
-		if (isset ( $this->m7_runtimes )) {
-			foreach ( $this->m7_runtimes as $m7_start_val ) {
-				if (isset ( $this->m7_active['start'] ) && $m7_start_val == $this->m7_active['start']) {
-					$plan_menu_html .= '<option selected="selected" value="' . $m7_start_val . '">' . $m7_start_val . '</option>';
-				} else {
-					$plan_menu_html .= '<option value="' . $m7_start_val . '">' . $m7_start_val . '</option>';
+			$plan_menu_html .= '</select></div></div>';
+			 
+			// Test stop time dropdown
+			$plan_menu_html .= '<div class="m7_test_stop">';
+			$plan_menu_html .= '<div class="m7_test_stop_title">Stop Time</div>';
+			$plan_menu_html .= '<div class="m7_test_stop_menu">';
+			$plan_menu_html .= '<select name="stop">';
+			$plan_menu_html .= '<option value="start">--Start--</option>';
+			if (isset ( $this->m7_runtimes )) {
+				foreach ( $this->m7_runtimes as $m7_stop_val ) {
+					if (isset ( $this->m7_active['stop'] ) && $m7_stop_val == $this->m7_active['stop']) {
+						$plan_menu_html .= '<option selected="selected" value="' . $m7_stop_val . '">' . $m7_stop_val . '</option>';
+					} else {
+						$plan_menu_html .= '<option value="' . $m7_stop_val . '">' . $m7_stop_val . '</option>';
+					}
 				}
 			}
+			$plan_menu_html .= '</select></div></div>';
+			$plan_menu_html .= $this->testDetails();
 		}
-		$plan_menu_html .= '</select></div></div>';
-			                        
-		// Test stop time dropdown			
-		$plan_menu_html .= '<div class="m7_test_stop">';
-		$plan_menu_html .= '<div class="m7_test_stop_title">Stop Time</div>';
-		$plan_menu_html .= '<div class="m7_test_stop_menu">';
-		$plan_menu_html .= '<select name="stop">';
-		$plan_menu_html .= '<option value="start">--Start--</option>';
-		if (isset ( $render->m7_runtimes )) {
-			foreach ( $render->m7_runtimes as $m7_stop_val ) {
-				if (isset ( $render->m7_active ['stop'] ) && $m7_stop_val == $render->m7_active ['stop']) {
-					$plan_menu_html .= '<option selected="selected" value="' . $m7_stop_val . '">' . $m7_stop_val . '</option>';
-				} else {
-					$plan_menu_html .= '<option value="' . $m7_stop_val . '">' . $m7_stop_val . '</option>';
-				}
-			}
-		}
-		$plan_menu_html .= '</select></div></div>';
-		
-		// Test details
-		if ($this->m7_ready) { $plan_menu_html .= $this->testDetails(); }
 		
 		// Return the plan menu HTML
 		return $plan_menu_html;
