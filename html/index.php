@@ -13,29 +13,29 @@ $render->varCheck();
 
 ?>
 <html>
-<head>
-<title>M7 Dashboard</title>
-<meta charset="utf-8">
-<script><?php echo 'var test_details_render = ',($render->m7_ready === true ? 'true' : 'false'); ?></script>
-<script src="js/d3.v3.min.js"></script>
-<script src="js/topojson.v1.min.js"></script>
-<script src="js/jquery-1.10.2.min.js"></script>
-<script src="js/dashboard.js"></script>
-<link rel="stylesheet" type="text/css" href="css/dashboard.css">
-</head>
-<body>
-	<div class="m7_dashboard_nav">
-		<form id="test_params" action="index.php" action="post">
-			<div class="m7_dashboard_content">
-				<div class="m7_configure">Configure</div>
-				<div class="m7_test_submit">Submit</div>
-				<?php echo $render->planMenu(); ?>	
-	        </div>
-		</form>
-	</div>
+	<head>
+		<title>M7 Dashboard</title>
+		<meta charset="utf-8">
+		<script><?php echo 'var test_details_render = ',($render->m7_ready === true ? 'true' : 'false'); ?></script>
+		<script src="js/d3.v3.min.js"></script>
+		<script src="js/topojson.v1.min.js"></script>
+		<script src="js/jquery-1.10.2.min.js"></script>
+		<script src="js/dashboard.js"></script>
+		<link rel="stylesheet" type="text/css" href="css/dashboard.css">
+	</head>
+	<body>
+		<div class="m7_dashboard_nav">
+			<form id="test_params" action="index.php" action="post">
+				<div class="m7_dashboard_content">
+					<div class="m7_configure">Configure</div>
+					<div class="m7_test_submit">Submit</div>
+					<?php echo $render->planMenu(); ?>	
+	        	</div>
+			</form>
+		</div>
     	<?php echo $render->mapKey(); ?>
     	<div id="map_container"></div>
-	<script>
+		<script>
 
 var width = window.innerWidth;
 height = window.innerHeight;

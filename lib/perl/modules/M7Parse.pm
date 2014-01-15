@@ -15,7 +15,6 @@ BEGIN {
 	use Net::Nslookup;
 	use lib $ENV{HOME} . '/lib/perl/modules';
 	use M7Config;
-	use Data::Dumper;
 }
 
 # \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\ #
@@ -493,7 +492,6 @@ sub loadXMLResults {
 
                 # Get the ping statistics
                 my $m7p_ping_ip			= $m7p->getXMLText('plan/test[@id="' . $m7p_test_id . '"]/host[@name="' . $m7p_ping_host . '"]/@ip');
-                my $m7p_ping_region		= $m7p->getXMLText('plan/test[@id="' . $m7p_test_id . '"]/host[@name="' . $m7p_ping_host . '"]/@region');
                 my $m7p_ping_pkt_loss 	= $m7p->getXMLText('plan/test[@id="' . $m7p_test_id . '"]/host[@name="' . $m7p_ping_host . '"]/pktLoss');
                 my $m7p_ping_min_time 	= $m7p->getXMLText('plan/test[@id="' . $m7p_test_id . '"]/host[@name="' . $m7p_ping_host . '"]/minTime');
                 my $m7p_ping_avg_time 	= $m7p->getXMLText('plan/test[@id="' . $m7p_test_id . '"]/host[@name="' . $m7p_ping_host . '"]/avgTime');
@@ -504,6 +502,7 @@ sub loadXMLResults {
                 my $m7p_ping_geo			= $m7p->geoip->record_by_addr($m7p_ping_ip);
                 my $m7p_ping_lat			= $m7p_ping_geo->latitude;
                 my $m7p_ping_lon			= $m7p_ping_geo->longitude;
+                my $m7p_ping_region			= $m7p_ping_geo->country_code;
                         
                 # Define the SQL insert string
                 my $m7p_ping_sql_string = "('" . $m7p->plan_id . "'" .
@@ -545,12 +544,12 @@ sub loadXMLResults {
             for my $m7p_troute_host_name_tree ($m7p->results_xtree->findnodes('plan/test[@id="' . $m7p_test_id . '"]/host')) {
             	my $m7p_troute_host			= $m7p_troute_host_name_tree->findvalue('@name');
                 my $m7p_troute_dest_ip		= $m7p->getXMLText('plan/test[@id="' . $m7p_test_id . '"]/host[@name="' . $m7p_troute_host . '"]/@ip');
-                my $m7p_troute_dest_region	= $m7p->getXMLText('plan/test[@id="' . $m7p_test_id . '"]/host[@name="' . $m7p_troute_host . '"]/@region');
                     	
                 # Get the target node geolocation
                 my $m7p_troute_dest_geo		= $m7p->geoip->record_by_addr($m7p_troute_dest_ip);
                 my $m7p_troute_dest_lat		= $m7p_troute_dest_geo->latitude;
                 my $m7p_troute_dest_lon		= $m7p_troute_dest_geo->longitude;
+                my $m7p_troute_dest_region  = $m7p_troute_dest_geo->country_code;
                     	
                 # Process the hop definitions
                 for my $m7p_troute_hops_tree ($m7p->results_xtree->findnodes('plan/test[@id="' . $m7p_test_id . '"]/host[@name="' . $m7p_troute_host . '"]/hops/hop')) {
@@ -616,12 +615,12 @@ sub loadXMLResults {
             for my $m7p_mtr_host_name_tree ($m7p->results_xtree->findnodes('plan/test[@id="' . $m7p_test_id . '"]/host')) {
             	my $m7p_mtr_host			= $m7p_mtr_host_name_tree->findvalue('@name');
                 my $m7p_mtr_dest_ip			= $m7p->getXMLText('plan/test[@id="' . $m7p_test_id . '"]/host[@name="' . $m7p_mtr_host . '"]/@ip');
-                my $m7p_mtr_dest_region		= $m7p->getXMLText('plan/test[@id="' . $m7p_test_id . '"]/host[@name="' . $m7p_mtr_host . '"]/@region');
                     	
                 # Get the target node geolocation
                 my $m7p_mtr_dest_geo			= $m7p->geoip->record_by_addr($m7p_mtr_dest_ip);
                 my $m7p_mtr_dest_lat			= $m7p_mtr_dest_geo->latitude;
                 my $m7p_mtr_dest_lon			= $m7p_mtr_dest_geo->longitude;
+                my $m7p_mtr_dest_region			= $m7p_mtr_dest_geo->country_code;
                     	
                 # Process the hop definitions
                 for my $m7p_mtr_hops_tree ($m7p->results_xtree->findnodes('plan/test[@id="' . $m7p_test_id . '"]/host[@name="' . $m7p_mtr_host . '"]/hops/hop')) {
