@@ -309,7 +309,7 @@ sub dnsStress {
 		my $m7_nsl_start = [Time::HiRes::gettimeofday];
 		foreach(@{$m7->{_test_hosts}}) {
 			$m7_nslookup = nslookup(host => $_, server => $m7->test_host);
-			if not defined($m7_nslookup) $m7_fail_count ++;
+			if (not defined($m7_nslookup)) { $m7_fail_count ++; }
 		}	
 		
 		# Calculcate the total lookup time
@@ -387,7 +387,7 @@ sub dnsQuery {
 		} else {
 			$m7_nslookup_fwd = nslookup(host => $_, server => $m7->test_host);
 		}
-		$m7_nslookup_fwd = (defined($m7_nslookup_fwd) ? $m7_nslookup_fwd : '0.0.0.0')
+		$m7_nslookup_fwd = (defined($m7_nslookup_fwd) ? $m7_nslookup_fwd : '0.0.0.0');
 		
 		# Test 2: SOA lookup
 		my $m7_nslookup_soa;
@@ -398,7 +398,7 @@ sub dnsQuery {
 			$m7_nslookup_soa = nslookup(host => $_, server => $m7->test_host, type => 'SOA');
 			$m7_nslookup_soa =~ s///g;
 		}
-		$m7_nslookup_soa = (defined($m7_nslookup_soa) ? $m7_nslookup_soa : 'unknown')
+		$m7_nslookup_soa = (defined($m7_nslookup_soa) ? $m7_nslookup_soa : 'unknown');
 		
 		# Test 3: Reverse lookup
 		my $m7_nslookup_rev;
@@ -408,7 +408,7 @@ sub dnsQuery {
 			} else {
 				$m7_nslookup_rev = nslookup(host => $m7_nslookup_fwd, server => $m7->test_host, type => 'PTR');
 			}
-			$m7_nslookup_rev = (defined($m7_nslookup_rev) ? $m7_nslookup_rev : 'unknown')
+			$m7_nslookup_rev = (defined($m7_nslookup_rev) ? $m7_nslookup_rev : 'unknown');
 		} else {
 			$m7_nslookup_rev = "unknown";
 		}
