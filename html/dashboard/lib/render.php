@@ -22,7 +22,7 @@ class Render extends D3JS {
 	 *
 	 * @return string
 	 */
-	public function m7MapPaths() {
+	public function mapPaths() {
 		$m7_paths_js = null;
 		switch ($this->m7_active ['cat']) {
 			case 'web' :
@@ -125,12 +125,12 @@ class Render extends D3JS {
 	 * @return string
 	 */
 	public function lineChart($chart_params = array(), $test_range) {
-		$post = '_' . $chart_params ['post'];
-		$x_data = $chart_params ['x_data'];
-		$y_data = $chart_params ['y_data'];
+		$post = '_' . $chart_params['post'];
+		$x_data = $chart_params['x_data'];
+		$y_data = $chart_params['y_data'];
 		
 		// Get the max value for the X axis
-		$x_max = max ( $x_data );
+		$x_max = max ($x_data);
 		
 		// Set the X axis label
 		if ($test_range) {
@@ -141,34 +141,34 @@ class Render extends D3JS {
 		
 		// Calculate the max value for the Y-axis w/ padding
 		$y_data_max_array = array ();
-		foreach ( $y_data as $data_type => $data_params ) {
-			foreach ( $data_params ['values'] as $data_value ) {
-				array_push ( $y_data_max_array, $data_value );
+		foreach ($y_data as $data_type => $data_params) {
+			foreach ($data_params['values'] as $data_value) {
+				array_push($y_data_max_array, $data_value);
 			}
 		}
-		$y_max_base = max ( $y_data_max_array );
-		$y_buffer = bcdiv ( $y_max_base, '5', '0' );
-		$y_max = bcadd ( $y_max_base, $y_buffer );
+		$y_max_base = max($y_data_max_array);
+		$y_buffer	= bcdiv($y_max_base, '5', '0');
+		$y_max		= bcadd($y_max_base, $y_buffer);
 		
 		// Construct the D3JS JavaScript
-		$chart_js = $this->buildLineChart ( array (
-				'post' => $post,
-				'x' => array (
-						'unit' => 'hop',
-						'max' => $x_max,
-						'label' => $x_label,
-						'data' => array (
-								'label' => false,
-								'values' => $x_data 
-						) 
-				),
-				'y' => array (
-						'unit' => 'ms',
-						'max' => $y_max,
-						'label' => 'Time (ms)',
-						'data' => $y_data 
+		$chart_js = $this->buildLineChart(array (
+			'post' => $post,
+			'x'    => array (
+				'unit'  => 'hop',
+				'max'   => $x_max,
+				'label' => $x_label,
+				'data'  => array (
+					'label'  => false,
+					'values' => $x_data 
 				) 
-		), $test_range );
+			),
+			'y'    => array (
+				'unit'  => 'ms',
+				'max'   => $y_max,
+				'label' => 'Time (ms)',
+				'data'  => $y_data 
+			) 
+		), $test_range);
 		return $chart_js;
 	}
 	
@@ -178,37 +178,37 @@ class Render extends D3JS {
 		
 		// If building test results for a date range
 		$test_range = false;
-		if ($test_params ['stop'] != 'start') {
+		if ($test_params['stop'] != 'start') {
 			$test_range = true;
 			
 			// Build the test query
-			$m7_test_query_str = "SELECT * FROM " . $this->m7_active ['db_prefix'] . "_" . $test_params ['cat'] . "_" . $test_params ['type'];
-			$m7_test_query_str .= " WHERE plan_id='" . $test_params ['id'] . "' AND run_time BETWEEN '" . $test_params ['start'] . "' AND '" . $test_params ['stop'] . "' AND dest_ip='" . $test_params ['destip'] . "'";
+			$m7_test_query_str = "SELECT * FROM " . $this->m7_active['db_prefix'] . "_" . $test_params['cat'] . "_" . $test_params['type'];
+			$m7_test_query_str .= " WHERE plan_id='" . $test_params['id'] . "' AND run_time BETWEEN '" . $test_params['start'] . "' AND '" . $test_params['stop'] . "' AND dest_ip='" . $test_params['destip'] . "'";
 		} else {
 			
 			// Build the test query
-			$m7_test_query_str = "SELECT * FROM " . $this->m7_active ['db_prefix'] . "_" . $test_params ['cat'] . "_" . $test_params ['type'];
-			$m7_test_query_str .= " WHERE plan_id='" . $test_params ['id'] . "' AND run_time='" . $test_params ['start'] . "' AND dest_ip='" . $test_params ['destip'] . "'";
+			$m7_test_query_str = "SELECT * FROM " . $this->m7_active['db_prefix'] . "_" . $test_params['cat'] . "_" . $test_params['type'];
+			$m7_test_query_str .= " WHERE plan_id='" . $test_params['id'] . "' AND run_time='" . $test_params['start'] . "' AND dest_ip='" . $test_params['destip'] . "'";
 		}
 		
 		// Execute the test query
-		$m7_test_query = $this->m7_db->query ( $m7_test_query_str );
+		$m7_test_query = $this->m7_db->query($m7_test_query_str);
 		
 		// If rendering the current item
-		if ($test_params ['render'] === true) {
+		if ($test_params['render'] === true) {
 			$m7_test_details_render = 'block';
 		} else {
 			$m7_test_details_render = 'none';
 		}
 		
 		// Build the destination IP HTML ID
-		$m7_test_destip_tag = preg_replace ( "/\./", "_", $test_params ['destip'] );
+		$m7_test_destip_tag = preg_replace("/\./", "_", $test_params['destip']);
 		
 		// Build the column headers
-		if ($test_params ['cat'] == 'net') {
-			if ($test_params ['type'] == 'ping') {
+		if ($test_params['cat'] == 'net') {
+			if ($test_params['type'] == 'ping') {
 				$test_results_html = '<div class="m7_test_details_stats" style="display:' . $m7_test_details_render . ';" id="scontent_' . $m7_test_destip_tag . '">' . "\n";
-				$test_results_html .= '<div class="m7_test_details_sheader"><p>Test Statistics - ' . $test_params ['destip'] . '</p></div>' . "\n";
+				$test_results_html .= '<div class="m7_test_details_sheader"><p>Test Statistics - ' . $test_params['destip'] . '</p></div>' . "\n";
 				$test_results_html .= '<div class="m7_test_details_scontent">' . "\n";
 				$test_results_html .= '<div class="m7_test_details_col_headers">' . "\n";
 				if ($test_range) {
@@ -221,24 +221,24 @@ class Render extends D3JS {
 				$test_results_html .= '<div class="m7_test_details_col_header"><div class="m7_test_details_col_header_txt">Avg. Deviation</div></div>' . "\n";
 				$test_results_html .= '</div>' . "\n";
 			}
-			if ($test_params ['type'] == 'traceroute') {
+			if ($test_params['type'] == 'traceroute') {
 				$test_results_html = '<div class="m7_test_details_stats" style="display:' . $m7_test_details_render . ';" id="scontent_' . $m7_test_destip_tag . '">' . "\n";
-				$test_results_html .= '<div class="m7_test_details_sheader"><p>Test Statistics - ' . $test_params ['destip'] . '</p></div>' . "\n";
+				$test_results_html .= '<div class="m7_test_details_sheader"><p>Test Statistics - ' . $test_params['destip'] . '</p></div>' . "\n";
 				$test_results_html .= '<div class="m7_test_details_scontent">' . "\n";
 				$test_results_html .= '<div class="m7_test_details_col_headers">' . "\n";
 				if ($test_range) {
 					$test_results_html .= '<div class="m7_test_details_col_header"><div class="m7_test_details_col_header_txt">Runtime</div></div>' . "\n";
 				} else {
 					$test_results_html .= '<div class="m7_test_details_col_header"><div class="m7_test_details_col_header_txt">Hop</div></div>' . "\n";
+					$test_results_html .= '<div class="m7_test_details_col_header"><div class="m7_test_details_col_header_txt">Try</div></div>' . "\n";
+					$test_results_html .= '<div class="m7_test_details_col_header"><div class="m7_test_details_col_header_txt">IP</div></div>' . "\n";
 				}
-				$test_results_html .= '<div class="m7_test_details_col_header"><div class="m7_test_details_col_header_txt">Try</div></div>' . "\n";
-				$test_results_html .= '<div class="m7_test_details_col_header"><div class="m7_test_details_col_header_txt">IP</div></div>' . "\n";
 				$test_results_html .= '<div class="m7_test_details_col_header"><div class="m7_test_details_col_header_txt">Time</div></div>' . "\n";
 				$test_results_html .= '</div>' . "\n";
 			}
-			if ($test_params ['type'] == 'mtr') {
+			if ($test_params['type'] == 'mtr') {
 				$test_results_html = '<div class="m7_test_details_stats" style="display:' . $m7_test_details_render . ';" id="scontent_' . $m7_test_destip_tag . '">' . "\n";
-				$test_results_html .= '<div class="m7_test_details_sheader"><p>Test Statistics - ' . $test_params ['destip'] . '</p></div>' . "\n";
+				$test_results_html .= '<div class="m7_test_details_sheader"><p>Test Statistics - ' . $test_params['destip'] . '</p></div>' . "\n";
 				$test_results_html .= '<div class="m7_test_details_scontent">' . "\n";
 				$test_results_html .= '<div class="m7_test_details_col_headers">' . "\n";
 				if ($test_range) {
@@ -257,37 +257,37 @@ class Render extends D3JS {
 		}
 		
 		// Define the X/Y axis data arrays
-		if ($test_params ['type'] == 'traceroute') {
-			$m7_test_x_axis = array ();
-			$m7_test_y_axis = array (
-					'time' => array (
-							'label' => false,
-							'values' => array () 
-					) 
+		if ($test_params['type'] == 'traceroute') {
+			$m7_test_x_axis = array();
+			$m7_test_y_axis = array(
+				'time' => array(
+					'label'  => false,
+					'values' => array() 
+				) 
 			);
 		}
-		if ($test_params ['type'] == 'mtr') {
-			$m7_test_x_axis = array ();
-			$m7_test_y_axis = array (
-					'min_time' => array (
-							'label' => 'Min. Time',
-							'values' => array () 
-					),
-					'avg_time' => array (
-							'label' => 'Avg. Time',
-							'values' => array () 
-					),
-					'max_time' => array (
-							'label' => 'Max. Time',
-							'values' => array () 
-					) 
+		if ($test_params['type'] == 'mtr') {
+			$m7_test_x_axis = array();
+			$m7_test_y_axis = array(
+				'min_time' => array(
+					'label'  => 'Min. Time',
+					'values' => array() 
+				),
+				'avg_time' => array (
+					'label'  => 'Avg. Time',
+					'values' => array() 
+				),
+				'max_time' => array(
+					'label'  => 'Max. Time',
+					'values' => array() 
+				) 
 			);
 		}
 		
 		// Construct the result rows
 		$m7_test_row_alt = false;
 		if ($test_range) {
-			foreach ( $this->m7_plan [$this->m7_active ['plan']] [$this->m7_active ['host']] [$this->m7_active ['cat']] [$test_params ['destip']] [$this->m7_active ['type']] as $m7_plan_runtime => $m7_plan_runtime_data ) {
+			foreach ($this->m7_plan[$this->m7_active['plan']][$this->m7_active['host']][$this->m7_active ['cat']][$test_params['destip']][$this->m7_active['type']] as $m7_plan_runtime => $m7_plan_runtime_data) {
 				if ($m7_test_row_alt === false) {
 					$m7_test_row_class = 'row_main';
 					$m7_test_row_alt = true;
@@ -295,65 +295,89 @@ class Render extends D3JS {
 					$m7_test_row_class = 'row_alt';
 					$m7_test_row_alt = false;
 				}
-				if ($test_params ['type'] == 'ping') {
+				if ($test_params['type'] == 'ping') {
 					$test_results_html .= '<div class="m7_test_details_row ' . $m7_test_row_class . '">' . "\n";
 					$test_results_html .= '<div class="m7_test_details_cell"><div class="m7_test_details_cell_txt">' . $m7_plan_runtime . '</div></div>' . "\n";
-					$test_results_html .= '<div class="m7_test_details_cell"><div class="m7_test_details_cell_txt">' . $m7_plan_runtime_data ['pkt_loss'] . '</div></div>' . "\n";
-					$test_results_html .= '<div class="m7_test_details_cell"><div class="m7_test_details_cell_txt">' . $m7_plan_runtime_data ['min_time'] . '</div></div>' . "\n";
-					$test_results_html .= '<div class="m7_test_details_cell"><div class="m7_test_details_cell_txt">' . $m7_plan_runtime_data ['avg_time'] . '</div></div>' . "\n";
-					$test_results_html .= '<div class="m7_test_details_cell"><div class="m7_test_details_cell_txt">' . $m7_plan_runtime_data ['max_time'] . '</div></div>' . "\n";
-					$test_results_html .= '<div class="m7_test_details_cell"><div class="m7_test_details_cell_txt">' . $m7_plan_runtime_data ['avg_dev'] . '</div></div>' . "\n";
+					$test_results_html .= '<div class="m7_test_details_cell"><div class="m7_test_details_cell_txt">' . $m7_plan_runtime_data['pkt_loss'] . '</div></div>' . "\n";
+					$test_results_html .= '<div class="m7_test_details_cell"><div class="m7_test_details_cell_txt">' . $m7_plan_runtime_data['min_time'] . '</div></div>' . "\n";
+					$test_results_html .= '<div class="m7_test_details_cell"><div class="m7_test_details_cell_txt">' . $m7_plan_runtime_data['avg_time'] . '</div></div>' . "\n";
+					$test_results_html .= '<div class="m7_test_details_cell"><div class="m7_test_details_cell_txt">' . $m7_plan_runtime_data['max_time'] . '</div></div>' . "\n";
+					$test_results_html .= '<div class="m7_test_details_cell"><div class="m7_test_details_cell_txt">' . $m7_plan_runtime_data['avg_dev'] . '</div></div>' . "\n";
 					$test_results_html .= '</div>' . "\n";
 				}
-				if ($test_params ['type'] == 'traceroute') {
-					
-					// TODO: Need to copy the functionality from MTR to here. And render the single line.
-				}
-				if ($test_params ['type'] == 'mtr') {
+				if ($test_params['type'] == 'traceroute') {
 					
 					// Get the hop averages
-					$m7_mtr_pkt_loss_avg_array = array ();
-					$m7_mtr_min_time_avg_array = array ();
-					$m7_mtr_avg_time_avg_array = array ();
-					$m7_mtr_max_time_avg_array = array ();
-					$m7_mtr_avg_dev_avg_array = array ();
-					foreach ( $m7_plan_runtime_data as $m7_hop => $m7_hop_data ) {
+					$m7_troute_time_avg_array = array();
+					foreach ($m7_plan_runtime_data as $m7_hop => $m7_hop_data) {
+					
+						// Strip out trailing decimal points for the time (Y axis) and convert * to 0
+						$m7_time_clean = preg_replace("/(^[0-9]*)\.[0-9]*$/", "$1", $m7_hop_data['time']);
+						$m7_time_clean = preg_replace("/\*/", "0", $m7_time_clean);
+					
+						// Insert the averages in the arrays
+						array_push($m7_troute_time_avg_array, $m7_time_clean);
+					}
+						
+					// Get the raw average value and round
+					$m7_troute_time_avg_raw = array_sum($m7_mtr_pkt_loss_avg_array) / count($m7_mtr_pkt_loss_avg_array);
+					$m7_troute_time_avg = round($m7_troute_time_avg_raw, 2);
+						
+					// Append the X/Y axis data
+					array_push($m7_test_x_axis, $m7_plan_runtime);
+					array_push($m7_test_y_axis['time']['values'], $m7_troute_time_avg);
+						
+					// Render the HTML block
+					$test_results_html .= '<div class="m7_test_details_row ' . $m7_test_row_class . '">' . "\n";
+					$test_results_html .= '<div class="m7_test_details_cell"><div class="m7_test_details_cell_txt">' . $m7_plan_runtime . '</div></div>' . "\n";
+					$test_results_html .= '<div class="m7_test_details_cell"><div class="m7_test_details_cell_txt">' . $m7_troute_time_avg . '</div></div>' . "\n";
+					$test_results_html .= '</div>' . "\n";
+				}
+				if ($test_params['type'] == 'mtr') {
+					
+					// Get the hop averages
+					$m7_mtr_pkt_loss_avg_array = array();
+					$m7_mtr_min_time_avg_array = array();
+					$m7_mtr_avg_time_avg_array = array();
+					$m7_mtr_max_time_avg_array = array();
+					$m7_mtr_avg_dev_avg_array = array();
+					foreach ($m7_plan_runtime_data as $m7_hop => $m7_hop_data) {
 						
 						// Strip out trailing decimal points for the time (Y axis) and convert * to 0
-						$m7_time_min_clean = preg_replace ( "/(^[0-9]*)\.[0-9]*$/", "$1", $m7_hop_data ['min_time'] );
-						$m7_time_min_clean = preg_replace ( "/\*/", "0", $m7_time_min_clean );
-						$m7_time_avg_clean = preg_replace ( "/(^[0-9]*)\.[0-9]*$/", "$1", $m7_hop_data ['avg_time'] );
-						$m7_time_avg_clean = preg_replace ( "/\*/", "0", $m7_time_avg_clean );
-						$m7_time_max_clean = preg_replace ( "/(^[0-9]*)\.[0-9]*$/", "$1", $m7_hop_data ['max_time'] );
-						$m7_time_max_clean = preg_replace ( "/\*/", "0", $m7_time_max_clean );
+						$m7_time_min_clean = preg_replace("/(^[0-9]*)\.[0-9]*$/", "$1", $m7_hop_data['min_time']);
+						$m7_time_min_clean = preg_replace("/\*/", "0", $m7_time_min_clean);
+						$m7_time_avg_clean = preg_replace("/(^[0-9]*)\.[0-9]*$/", "$1", $m7_hop_data['avg_time']);
+						$m7_time_avg_clean = preg_replace("/\*/", "0", $m7_time_avg_clean);
+						$m7_time_max_clean = preg_replace("/(^[0-9]*)\.[0-9]*$/", "$1", $m7_hop_data['max_time']);
+						$m7_time_max_clean = preg_replace("/\*/", "0", $m7_time_max_clean);
 						
 						// Insert the averages in the arrays
-						array_push ( $m7_mtr_pkt_loss_avg_array, $m7_hop_data ['pkt_loss'] );
-						array_push ( $m7_mtr_min_time_avg_array, $m7_time_min_clean );
-						array_push ( $m7_mtr_avg_time_avg_array, $m7_time_avg_clean );
-						array_push ( $m7_mtr_max_time_avg_array, $m7_time_max_clean );
-						array_push ( $m7_mtr_avg_dev_avg_array, $m7_hop_data ['avg_dev'] );
+						array_push ($m7_mtr_pkt_loss_avg_array, $m7_hop_data['pkt_loss']);
+						array_push ($m7_mtr_min_time_avg_array, $m7_time_min_clean);
+						array_push ($m7_mtr_avg_time_avg_array, $m7_time_avg_clean);
+						array_push ($m7_mtr_max_time_avg_array, $m7_time_max_clean);
+						array_push ($m7_mtr_avg_dev_avg_array, $m7_hop_data['avg_dev']);
 					}
 					
 					// Get the raw average values of each array
-					$m7_mtr_pkt_loss_avg_raw = array_sum ( $m7_mtr_pkt_loss_avg_array ) / count ( $m7_mtr_pkt_loss_avg_array );
-					$m7_mtr_min_time_avg_raw = array_sum ( $m7_mtr_min_time_avg_array ) / count ( $m7_mtr_min_time_avg_array );
-					$m7_mtr_avg_time_avg_raw = array_sum ( $m7_mtr_avg_time_avg_array ) / count ( $m7_mtr_avg_time_avg_array );
-					$m7_mtr_max_time_avg_raw = array_sum ( $m7_mtr_max_time_avg_array ) / count ( $m7_mtr_max_time_avg_array );
-					$m7_mtr_avg_dev_avg_raw = array_sum ( $m7_mtr_avg_dev_avg_array ) / count ( $m7_mtr_avg_dev_avg_array );
+					$m7_mtr_pkt_loss_avg_raw = array_sum($m7_mtr_pkt_loss_avg_array) / count($m7_mtr_pkt_loss_avg_array);
+					$m7_mtr_min_time_avg_raw = array_sum($m7_mtr_min_time_avg_array) / count($m7_mtr_min_time_avg_array);
+					$m7_mtr_avg_time_avg_raw = array_sum($m7_mtr_avg_time_avg_array) / count($m7_mtr_avg_time_avg_array);
+					$m7_mtr_max_time_avg_raw = array_sum($m7_mtr_max_time_avg_array) / count($m7_mtr_max_time_avg_array);
+					$m7_mtr_avg_dev_avg_raw = array_sum($m7_mtr_avg_dev_avg_array) / count($m7_mtr_avg_dev_avg_array);
 					
 					// Round the average values to 2 decimal places
-					$m7_mtr_pkt_loss_avg = round ( $m7_mtr_pkt_loss_avg_raw, 2 );
-					$m7_mtr_min_time_avg = round ( $m7_mtr_min_time_avg_raw, 2 );
-					$m7_mtr_avg_time_avg = round ( $m7_mtr_avg_time_avg_raw, 2 );
-					$m7_mtr_max_time_avg = round ( $m7_mtr_max_time_avg_raw, 2 );
-					$m7_mtr_avg_dev_avg = round ( $m7_mtr_avg_dev_avg_raw, 2 );
+					$m7_mtr_pkt_loss_avg = round($m7_mtr_pkt_loss_avg_raw, 2);
+					$m7_mtr_min_time_avg = round($m7_mtr_min_time_avg_raw, 2);
+					$m7_mtr_avg_time_avg = round($m7_mtr_avg_time_avg_raw, 2);
+					$m7_mtr_max_time_avg = round($m7_mtr_max_time_avg_raw, 2);
+					$m7_mtr_avg_dev_avg = round($m7_mtr_avg_dev_avg_raw, 2);
 					
 					// Append the X/Y axis data
-					array_push ( $m7_test_x_axis, $m7_plan_runtime );
-					array_push ( $m7_test_y_axis ['min_time'] ['values'], $m7_mtr_min_time_avg );
-					array_push ( $m7_test_y_axis ['avg_time'] ['values'], $m7_mtr_avg_time_avg );
-					array_push ( $m7_test_y_axis ['max_time'] ['values'], $m7_mtr_max_time_avg );
+					array_push($m7_test_x_axis, $m7_plan_runtime);
+					array_push($m7_test_y_axis['min_time']['values'], $m7_mtr_min_time_avg);
+					array_push($m7_test_y_axis['avg_time']['values'], $m7_mtr_avg_time_avg);
+					array_push($m7_test_y_axis['max_time']['values'], $m7_mtr_max_time_avg);
 					
 					// Render the HTML block
 					$test_results_html .= '<div class="m7_test_details_row ' . $m7_test_row_class . '">' . "\n";
@@ -367,7 +391,7 @@ class Render extends D3JS {
 				}
 			}
 		} else {
-			while ( $m7_test_row = $m7_test_query->fetch_assoc () ) {
+			while ($m7_test_row = $m7_test_query->fetch_assoc()) {
 				if ($m7_test_row_alt === false) {
 					$m7_test_row_class = 'row_main';
 					$m7_test_row_alt = true;
@@ -377,7 +401,7 @@ class Render extends D3JS {
 				}
 				
 				// Build the chart data
-				if ($test_params ['type'] == 'ping') {
+				if ($test_params['type'] == 'ping') {
 					
 					// Render the HTML block
 					$test_results_html .= '<div class="m7_test_details_row ' . $m7_test_row_class . '">' . "\n";
@@ -388,52 +412,52 @@ class Render extends D3JS {
 					$test_results_html .= '<div class="m7_test_details_cell"><div class="m7_test_details_cell_txt">' . $m7_test_row ['avg_dev'] . '</div></div>' . "\n";
 					$test_results_html .= '</div>' . "\n";
 				}
-				if ($test_params ['type'] == 'traceroute') {
+				if ($test_params['type'] == 'traceroute') {
 					
 					// Strip out trailing decimal points for the time (Y axis) and convert * to 0
-					$m7_time_ms_clean = preg_replace ( "/(^[0-9]*)\.[0-9]*$/", "$1", $m7_test_row ['time'] );
-					$m7_time_ms_clean = preg_replace ( "/\*/", "0", $m7_time_ms_clean );
+					$m7_time_ms_clean = preg_replace("/(^[0-9]*)\.[0-9]*$/", "$1", $m7_test_row['time']);
+					$m7_time_ms_clean = preg_replace("/\*/", "0", $m7_time_ms_clean);
 					
 					// Append the X/Y axis data
-					array_push ( $m7_test_x_axis, $m7_test_row ['hop'] );
-					array_push ( $m7_test_y_axis ['time'] ['values'], $m7_time_ms_clean );
+					array_push($m7_test_x_axis, $m7_test_row['hop']);
+					array_push($m7_test_y_axis['time']['values'], $m7_time_ms_clean);
 					
 					// Define the row HTML
 					$test_results_html .= '<div class="m7_test_details_row ' . $m7_test_row_class . '">' . "\n";
-					$test_results_html .= '<div class="m7_test_details_cell"><div class="m7_test_details_cell_txt">' . $m7_test_row ['hop'] . '</div></div>' . "\n";
-					$test_results_html .= '<div class="m7_test_details_cell"><div class="m7_test_details_cell_txt">' . $m7_test_row ['try'] . '</div></div>' . "\n";
-					$test_results_html .= '<div class="m7_test_details_cell"><div class="m7_test_details_cell_txt">' . $m7_test_row ['ip'] . '</div></div>' . "\n";
-					$test_results_html .= '<div class="m7_test_details_cell"><div class="m7_test_details_cell_txt">' . $m7_test_row ['time'] . '</div></div>' . "\n";
+					$test_results_html .= '<div class="m7_test_details_cell"><div class="m7_test_details_cell_txt">' . $m7_test_row['hop'] . '</div></div>' . "\n";
+					$test_results_html .= '<div class="m7_test_details_cell"><div class="m7_test_details_cell_txt">' . $m7_test_row['try'] . '</div></div>' . "\n";
+					$test_results_html .= '<div class="m7_test_details_cell"><div class="m7_test_details_cell_txt">' . $m7_test_row['ip'] . '</div></div>' . "\n";
+					$test_results_html .= '<div class="m7_test_details_cell"><div class="m7_test_details_cell_txt">' . $m7_test_row['time'] . '</div></div>' . "\n";
 					$test_results_html .= '</div>' . "\n";
 				}
-				if ($test_params ['type'] == 'mtr') {
+				if ($test_params['type'] == 'mtr') {
 					
 					// Strip out trailing decimal points for the time (Y axis) and convert * to 0
-					$m7_time_min_clean = preg_replace ( "/(^[0-9]*)\.[0-9]*$/", "$1", $m7_test_row ['min_time'] );
-					$m7_time_min_clean = preg_replace ( "/\*/", "0", $m7_time_min_clean );
-					$m7_time_avg_clean = preg_replace ( "/(^[0-9]*)\.[0-9]*$/", "$1", $m7_test_row ['avg_time'] );
-					$m7_time_avg_clean = preg_replace ( "/\*/", "0", $m7_time_avg_clean );
-					$m7_time_max_clean = preg_replace ( "/(^[0-9]*)\.[0-9]*$/", "$1", $m7_test_row ['max_time'] );
-					$m7_time_max_clean = preg_replace ( "/\*/", "0", $m7_time_max_clean );
+					$m7_time_min_clean = preg_replace("/(^[0-9]*)\.[0-9]*$/", "$1", $m7_test_row['min_time']);
+					$m7_time_min_clean = preg_replace("/\*/", "0", $m7_time_min_clean);
+					$m7_time_avg_clean = preg_replace("/(^[0-9]*)\.[0-9]*$/", "$1", $m7_test_row['avg_time']);
+					$m7_time_avg_clean = preg_replace("/\*/", "0", $m7_time_avg_clean);
+					$m7_time_max_clean = preg_replace("/(^[0-9]*)\.[0-9]*$/", "$1", $m7_test_row['max_time']);
+					$m7_time_max_clean = preg_replace("/\*/", "0", $m7_time_max_clean);
 					
 					// Append the X/Y axis data
-					array_push ( $m7_test_x_axis, $m7_test_row ['hop'] );
-					array_push ( $m7_test_y_axis ['min_time'] ['values'], $m7_time_min_clean );
-					array_push ( $m7_test_y_axis ['avg_time'] ['values'], $m7_time_avg_clean );
-					array_push ( $m7_test_y_axis ['max_time'] ['values'], $m7_time_max_clean );
+					array_push($m7_test_x_axis, $m7_test_row['hop']);
+					array_push($m7_test_y_axis['min_time']['values'], $m7_time_min_clean);
+					array_push($m7_test_y_axis['avg_time']['values'], $m7_time_avg_clean);
+					array_push($m7_test_y_axis['max_time']['values'], $m7_time_max_clean);
 					
 					// Grab the first IP, we will deal with secondary IPs later
-					$m7_test_mtr_ip = preg_replace ( "/(^[^,]*),.*$/", "$1", $m7_test_row ['ips'] );
+					$m7_test_mtr_ip = preg_replace("/(^[^,]*),.*$/", "$1", $m7_test_row['ips'] );
 					
 					// Render the HTML block
 					$test_results_html .= '<div class="m7_test_details_row ' . $m7_test_row_class . '">' . "\n";
-					$test_results_html .= '<div class="m7_test_details_cell"><div class="m7_test_details_cell_txt">' . $m7_test_row ['hop'] . '</div></div>' . "\n";
+					$test_results_html .= '<div class="m7_test_details_cell"><div class="m7_test_details_cell_txt">' . $m7_test_row['hop'] . '</div></div>' . "\n";
 					$test_results_html .= '<div class="m7_test_details_cell"><div class="m7_test_details_cell_txt">' . $m7_test_mtr_ip . '</div></div>' . "\n";
-					$test_results_html .= '<div class="m7_test_details_cell"><div class="m7_test_details_cell_txt">' . $m7_test_row ['pkt_loss'] . '</div></div>' . "\n";
-					$test_results_html .= '<div class="m7_test_details_cell"><div class="m7_test_details_cell_txt">' . $m7_test_row ['min_time'] . '</div></div>' . "\n";
-					$test_results_html .= '<div class="m7_test_details_cell"><div class="m7_test_details_cell_txt">' . $m7_test_row ['avg_time'] . '</div></div>' . "\n";
-					$test_results_html .= '<div class="m7_test_details_cell"><div class="m7_test_details_cell_txt">' . $m7_test_row ['max_time'] . '</div></div>' . "\n";
-					$test_results_html .= '<div class="m7_test_details_cell"><div class="m7_test_details_cell_txt">' . $m7_test_row ['avg_dev'] . '</div></div>' . "\n";
+					$test_results_html .= '<div class="m7_test_details_cell"><div class="m7_test_details_cell_txt">' . $m7_test_row['pkt_loss'] . '</div></div>' . "\n";
+					$test_results_html .= '<div class="m7_test_details_cell"><div class="m7_test_details_cell_txt">' . $m7_test_row['min_time'] . '</div></div>' . "\n";
+					$test_results_html .= '<div class="m7_test_details_cell"><div class="m7_test_details_cell_txt">' . $m7_test_row['avg_time'] . '</div></div>' . "\n";
+					$test_results_html .= '<div class="m7_test_details_cell"><div class="m7_test_details_cell_txt">' . $m7_test_row['max_time'] . '</div></div>' . "\n";
+					$test_results_html .= '<div class="m7_test_details_cell"><div class="m7_test_details_cell_txt">' . $m7_test_row['avg_dev'] . '</div></div>' . "\n";
 					$test_results_html .= '</div>' . "\n";
 				}
 			}
@@ -441,18 +465,18 @@ class Render extends D3JS {
 		$test_results_html .= '</div>' . "\n";
 		
 		// Only render a chart for traceroute or MTR
-		if ($test_params ['type'] == 'traceroute' || $test_params ['type'] == 'mtr') {
+		if ($test_params['type'] == 'traceroute' || $test_params['type'] == 'mtr') {
 			
 			// Generate the chart HTML block
 			$test_chart_html = '<div class="m7_test_details_chart" style="display:' . $m7_test_details_render . ';" id="ccontent_' . $m7_test_destip_tag . '">' . "\n";
-			$test_chart_html .= '<div class="m7_test_details_cheader"><p>Test Chart - ' . $test_params ['destip'] . '</p></div>' . "\n";
+			$test_chart_html .= '<div class="m7_test_details_cheader"><p>Test Chart - ' . $test_params['destip'] . '</p></div>' . "\n";
 			$test_chart_html .= '<div class="m7_test_details_ccontent">' . "\n";
 			$test_chart_html .= '<div id="chart_' . $m7_test_destip_tag . '"></div>' . "\n";
-			$test_chart_html .= $this->lineChart ( array (
-					'post' => $m7_test_destip_tag,
+			$test_chart_html .= $this->lineChart(array(
+					'post'   => $m7_test_destip_tag,
 					'x_data' => $m7_test_x_axis,
 					'y_data' => $m7_test_y_axis 
-			), $test_range );
+			),$test_range);
 			$test_chart_html .= '</div></div>' . "\n";
 			$test_details_html .= $test_chart_html;
 		}
@@ -466,13 +490,13 @@ class Render extends D3JS {
 	// Return test details in HTML format
 	public function testDetails() {
 		$m7_test_details_properties = array (
-				'plan_id' => 'ID',
-				'desc' => 'Description',
-				'host' => 'Host',
-				'cat' => 'Category',
-				'type' => 'Type',
+				'plan_id'	=> 'ID',
+				'desc'		=> 'Description',
+				'host'		=> 'Host',
+				'cat'		=> 'Category',
+				'type'		=> 'Type',
 				'first_run' => 'First Run',
-				'last_run' => 'Last Run' 
+				'last_run'	=> 'Last Run' 
 		);
 		
 		// Open the test details HTML block
@@ -482,7 +506,7 @@ class Render extends D3JS {
 		$test_details_html .= '<div class="m7_test_details_content">';
 		
 		// Query the tests table
-		$m7_test_table_query = $this->m7_db->query ( "SELECT * FROM plans WHERE plan_id='" . $this->m7_active ['plan'] . "'" );
+		$m7_test_table_query = $this->m7_db->query ( "SELECT * FROM plans WHERE plan_id='" . $this->m7_active['plan'] . "'" );
 		
 		// Build the test detail properties
 		$test_details_html .= '<div class="m7_test_details_properties">' . "\n";
@@ -491,7 +515,7 @@ class Render extends D3JS {
 			$test_details_html .= '<div class="m7_test_details_pcontent" id="pcontent">' . "\n";
 			foreach ( $m7_test_details_properties as $m7_test_details_key => $m7_test_details_desc ) {
 				if ($m7_test_details_key == 'host' || $m7_test_details_key == 'cat' || $m7_test_details_key == 'type') {
-					$m7_test_details_value = $this->m7_active [$m7_test_details_key];
+					$m7_test_details_value = $this->m7_active[$m7_test_details_key];
 				} else {
 					$m7_test_details_value = $m7_test_table_row [$m7_test_details_key];
 				}
@@ -504,15 +528,15 @@ class Render extends D3JS {
 		$test_details_html .= '</div></div>' . "\n";
 		
 		// If a destination IP specified
-		if (isset ( $this->m7_active ['destip'] ) && $this->m7_active ['destip'] != 'all') {
+		if (isset ( $this->m7_active['destip'] ) && $this->m7_active['destip'] != 'all') {
 			$test_details_html .= $this->singleIPTestResults ( array (
-					'id' => $this->m7_active ['plan'],
-					'host' => $this->m7_active ['host'],
-					'cat' => $this->m7_active ['cat'],
-					'destip' => $this->m7_active ['destip'],
-					'type' => $this->m7_active ['type'],
-					'start' => $this->m7_active ['start'],
-					'stop' => $this->m7_active ['stop'],
+					'id'	 => $this->m7_active['plan'],
+					'host'	 => $this->m7_active['host'],
+					'cat'	 => $this->m7_active['cat'],
+					'destip' => $this->m7_active['destip'],
+					'type' 	 => $this->m7_active['type'],
+					'start'  => $this->m7_active['start'],
+					'stop'   => $this->m7_active['stop'],
 					'render' => true 
 			) );
 		} else {
@@ -532,13 +556,13 @@ class Render extends D3JS {
 			$m7_test_details_render = true;
 			foreach ( $this->m7_destips as $m7_test_destip ) {
 				$test_details_html .= $this->singleIPTestResults ( array (
-						'id' => $this->m7_active ['plan'],
-						'host' => $this->m7_active ['host'],
-						'type' => $this->m7_active ['type'],
-						'cat' => $this->m7_active ['cat'],
+						'id'	 => $this->m7_active['plan'],
+						'host'	 => $this->m7_active['host'],
+						'type'	 => $this->m7_active['type'],
+						'cat'	 => $this->m7_active['cat'],
 						'destip' => $m7_test_destip,
-						'start' => $this->m7_active ['start'],
-						'stop' => $this->m7_active ['stop'],
+						'start'  => $this->m7_active['start'],
+						'stop'   => $this->m7_active['stop'],
 						'render' => $m7_test_details_render 
 				) );
 				$m7_test_details_render = false;
@@ -596,7 +620,11 @@ class Render extends D3JS {
 		$plan_menu_html .= '<div class="m7_plan_id_menu">';
 		$plan_menu_html .= '<select name="id">';
 		foreach ( $this->m7_plans as $m7_plan_id => $m7_plan_params ) {
-			$plan_menu_html .= '<option value="' . $m7_plan_id . '">' . $m7_plan_id . ' - ' . $m7_plan_params['desc'] . '</option>' . "\n";
+			if (isset ( $this->m7_active['plan'] ) && $m7_plan_id == $this->m7_active['plan']) {
+				$plan_menu_html .= '<option selected="selected" value="' . $m7_plan_id . '">' . $m7_plan_id . ' - ' . $m7_plan_params['desc'] . '</option>' . "\n";
+			} else {
+				$plan_menu_html .= '<option value="' . $m7_plan_id . '">' . $m7_plan_id . ' - ' . $m7_plan_params['desc'] . '</option>' . "\n";
+			}
 		}
 		$plan_menu_html .= '</select></div></div>';
 
@@ -625,9 +653,8 @@ class Render extends D3JS {
 			
 			// Get an array of all types by plan ID
 			$m7_plan_cat_types = explode(',', $this->m7_plans[$this->m7_active['plan']]['types']);
-			
 			foreach ( $m7_plan_cat_types as $m7_plan_cat_type ) {
-				if (isset ( $this->m7_active['type'] ) && $m7_plan_cat_type == $this_active['type']) {
+				if (isset ( $this->m7_active['type'] ) && $m7_plan_cat_type == $this->m7_active['type']) {
 					$plan_menu_html .= '<option selected="selected" value="' . $m7_plan_cat_type . '">' . $m7_plan_cat_type . '</option>' . "\n";
 				} else {
 					$plan_menu_html .= '<option value="' . $m7_plan_cat_type . '">' . $m7_plan_cat_type . '</option>' . "\n";

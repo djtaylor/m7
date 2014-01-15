@@ -205,7 +205,7 @@ sub initPlanDB {
 		$m7p->log->info('Creating database entry for test plan: ID=' . $m7p->plan_id . ', Runtime=' . $m7p->runtime);
 		my $m7p_plan_create = "INSERT INTO `" . $m7p->config->get('db_name') . "`.`plans`(" .
 							 "`plan_id`, `category`, `types`, `desc`, `first_run`, `last_run`, `run_count`) VALUES(" . 
-						     "'" . $m7p->plan_id . "','net',','" . $m7p_plan_types . "','" . $m7p->plan_desc . "','" . $m7p->runtime . "','" . $m7p->runtime . "', 1)";
+						     "'" . $m7p->plan_id . "','net','" . $m7p_plan_types . "','" . $m7p->plan_desc . "','" . $m7p->runtime . "','" . $m7p->runtime . "', 1)";
 		$m7p->db->do($m7p_plan_create)
 			or $m7p->log->logdie('Failed to create database entry');
 	}

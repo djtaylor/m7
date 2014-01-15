@@ -8,6 +8,9 @@ require_once ('lib/d3js.php');
 require_once ('lib/render.php');
 $render = new Render ();
 
+// Make sure enough variables are set before rendering
+$render->varCheck();
+
 ?>
 <html>
 <head>
@@ -58,7 +61,7 @@ svg.append("path")
     .attr("class", "graticule")
     .attr("d", path);
 
-<?php if ($render->m7_ready) { echo $render->m7MapPaths(); } ?>
+<?php if ($render->m7_ready) { echo $render->mapPaths(); } ?>
 
 d3.json("/dashboard/json/world-50m.json", function(error, world) {
 	svg.insert("path", ".graticule")
