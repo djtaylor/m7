@@ -304,7 +304,7 @@ class Core {
 						while ($m7_dest_ips_result = $m7_dest_ips_query->fetch_assoc() ) {
 					
 							# Get the destination IP information and load the array
-							$m7_destip_query     = $this->m7_db->query("SELECT * FROM net_destips WHERE ip='" . $m7_dest_ips_result['dest_ip'] . "'");
+							$m7_destip_query     = $this->m7_db->query("SELECT * FROM destips WHERE ip='" . $m7_dest_ips_result['dest_ip'] . "'");
 							$m7_destip_info      = $m7_destip_query->fetch_assoc();
 							$m7_destip_alias     = $m7_destip_info['alias'];
 							$m7_destip_hostname  = $m7_destip_info['hostname'];
@@ -329,7 +329,7 @@ class Core {
 					} elseif (isset($_GET['destip'])) {
 									
 						# Get the destination IP information and load the array
-						$m7_destip_query     = $this->m7_db->query("SELECT * FROM net_destips WHERE ip='" . $_GET['destip'] . "'");
+						$m7_destip_query     = $this->m7_db->query("SELECT * FROM destips WHERE ip='" . $_GET['destip'] . "'");
 						$m7_destip_info      = $m7_destip_query->fetch_assoc();
 						$m7_destip_alias     = $m7_destip_info['alias'];
 						$m7_destip_hostname  = $m7_destip_info['hostname'];
