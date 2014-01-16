@@ -171,15 +171,16 @@ sub addDestIP {
 		# Attempt to get the hostname mapping
 		my $m7p_destip_hostname = nslookup(host => $m7p_destip_val, type => 'PTR', timeout => '5');
 		if (not defined $m7p_destip_hostname) { $m7p_destip_hostname = 'unknown'; }
+		$m7p_destip_hostname = lc($m7p_destip_hostname);
 		
 		# Get the region, latitude, and longitude
 		my $m7p_destip_geo		= $m7p->geoip->record_by_addr($m7p_destip_val);
 		my $m7p_destip_region	= $m7p_destip_geo->country_code;
 		my $m7p_destip_lat		= $m7p_destip_geo->latitude;
-		m7 $m7p_destip_lon		= $m7p_destip_geo->longitude;
+		my $m7p_destip_lon		= $m7p_destip_geo->longitude;
 		
 		# Create or update the destination IP entry
-		my $m7p_destip_check	= $m7p->db->selectcol_arrayref("SELECT * FROM net_destips WHERE ip='" . $m7p_destip_val . "'");
+		my $m7p_destip_check	= $m7p->db->selectcol_arrayref("SELECT * FROM destips WHERE ip='" . $m7p_destip_val . "'");
 		if (@$m7p_destip_check) {
 			$m7p->log->info('Updating destination IP entry: IP=' . $m7p_destip_val . ', Alias=' . $m7p_destip_alias . ', Hostname=' . $m7p_destip_hostname);
 			my $m7p_destip_update = "UPDATE `" . $m7p->config->get('db_name') . "`.`destips` SET alias='" . $m7p_destip_alias . "', hostname='" . $m7p_destip_hostname . "' WHERE ip=' . $m7_destip_val'";
@@ -624,7 +625,7 @@ sub loadXMLResults {
             my $m7p_mtr_sql_query	= "INSERT INTO " . $m7p->config->get('db_name') . "." . $m7p->test_host->{name} . "_net_mtr(" . 
                     				  "plan_id, source_ip, " . 
                     				  "dest_ip, run_time, hop, ips, ips_gps, pkt_loss, min_time, avg_time, max_time, avg_dev) " .
-                    				  "VALUES " . $m7p_mtr_sql_values . ";";
+                    				  "VALUES " . $m7p_mtr_sql_values . ";"; 
                     
             # Create the table rows for the mtr test
             $m7p->db->do($m7p_mtr_sql_query);
