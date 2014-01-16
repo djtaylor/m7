@@ -507,12 +507,10 @@ sub netPing {
 		}
 		close(PING_LOG);
 		
-		# Set the region and type
+		# Set the type
 		if (defined $m7->nodeExists($m7_net_host)) {
-			$m7_ping_region = $m7->getNode($m7_net_host, 'region');
 			$m7_ping_type   = 'cluster';
 		} else {
-			$m7_ping_region = undef;
 			$m7_ping_type   = 'satellite';
 		}
 		
@@ -520,7 +518,6 @@ sub netPing {
 		my $m7_ping_results = {
 			'name'	 => $m7_net_host,
 			'ip'	 => $m7_net_ipaddr,
-			'region' => $m7_ping_region,
 			'type'   => $m7_ping_type,
 			'pktLoss'	=> [$pkt_loss],
 			'minTime'	=> [$min_time],
@@ -615,12 +612,10 @@ sub netTraceroute {
 		}
 		close(TROUTE_LOG);
 		
-		# Set the region and type
+		# Set the host type
 		if (defined $m7->nodeExists($m7_net_host)) {
-			$m7_troute_region = $m7->getNode($m7_net_host, 'region');
 			$m7_troute_type   = 'cluster';
 		} else {
-			$m7_troute_region = undef;
 			$m7_troute_type   = 'satellite';
 		}
 		
@@ -628,7 +623,6 @@ sub netTraceroute {
 		my $m7_troute_results = {
 			'name'	 => $m7_net_host,
 			'ip'	 => $m7_net_ipaddr,
-			'region' => $m7_troute_region,
 			'type'   => $m7_troute_type,
 			'hops'	 => {
 				'hop'	=> []
@@ -727,12 +721,10 @@ sub netMTR {
 		}
 		close(MTR_LOG);
 		
-		# Set the region and type
+		# Set the and type
 		if (defined $m7->nodeExists($m7_net_host)) {
-			$m7_mtr_region = $m7->getNode($m7_net_host, 'region');
 			$m7_mtr_type   = 'cluster';
 		} else {
-			$m7_mtr_region = undef;
 			$m7_mtr_type   = 'satellite';
 		}
 		
@@ -740,7 +732,6 @@ sub netMTR {
 		my $m7_mtr_results = {
 			'name'	 => $m7_net_host,
 			'ip'	 => $m7_net_ipaddr,
-			'region' => $m7_mtr_region,
 			'type'   => $m7_mtr_type,
 			'hops'	 => {
 				'hop'	=> []
@@ -1238,8 +1229,7 @@ sub mergeLocal {
 		'category'	=> $m7->plan_cat,
 		'host'		=> {
 			'name'		=> $m7->local->{name},
-			'ip'		=> $m7->local->{ipaddr},
-			'region'	=> $m7->local->{region}
+			'ip'		=> $m7->local->{ipaddr}
 		}
 	};	
 	
