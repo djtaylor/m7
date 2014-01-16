@@ -372,15 +372,15 @@ sub setTestHost {
 	my ($m7p_test_host) = @_;
 	$m7p->test_host->{name}   = $m7p_test_host ;
     $m7p->test_host->{ip}     = $m7p->getXMLText('plan/host/@ip');
-    $m7p->test_host->{region} = $m7p->getXMLText('plan/host/@region');
     
     # Set the database friendly host name
     $m7p->test_host->{name} =~ s/-/_/g;
 
 	# Get the host's geolocation
-	my $m7p_host_geo		= $m7p->geoip->record_by_addr($m7p->test_host->{ip});
-	$m7p->test_host->{lat}  = $m7p_host_geo->latitude;
-	$m7p->test_host->{lon}  = $m7p_host_geo->longitude;
+	my $m7p_host_geo		  = $m7p->geoip->record_by_addr($m7p->test_host->{ip});
+	$m7p->test_host->{lat}    = $m7p_host_geo->latitude;
+	$m7p->test_host->{lon}    = $m7p_host_geo->longitude;
+	$m7p->test_host->{region} = $m7p_host_geo->country_code;
 }
 
 # Load XML Results \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\ #
