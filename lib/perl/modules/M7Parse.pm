@@ -172,18 +172,24 @@ sub addDestIP {
 		my $m7p_destip_hostname = nslookup(host => $m7p_destip_val, type => 'PTR', timeout => '5');
 		if (not defined $m7p_destip_hostname) { $m7p_destip_hostname = 'unknown'; }
 		
+		# Get the region, latitude, and longitude
+		my $m7p_destip_geo		= $m7p->geoip->record_by_addr($m7p_destip_val);
+		my $m7p_destip_region	= $m7p_destip_geo->country_code;
+		my $m7p_destip_lat		= $m7p_destip_geo->latitude;
+		m7 $m7p_destip_lon		= $m7p_destip_geo->longitude;
+		
 		# Create or update the destination IP entry
 		my $m7p_destip_check	= $m7p->db->selectcol_arrayref("SELECT * FROM net_destips WHERE ip='" . $m7p_destip_val . "'");
 		if (@$m7p_destip_check) {
 			$m7p->log->info('Updating destination IP entry: IP=' . $m7p_destip_val . ', Alias=' . $m7p_destip_alias . ', Hostname=' . $m7p_destip_hostname);
-			my $m7p_destip_update = "UPDATE `" . $m7p->config->get('db_name') . "`.`net_destips` SET alias='" . $m7p_destip_alias . "', hostname='" . $m7p_destip_hostname . "' WHERE ip=' . $m7_destip_val'";
+			my $m7p_destip_update = "UPDATE `" . $m7p->config->get('db_name') . "`.`destips` SET alias='" . $m7p_destip_alias . "', hostname='" . $m7p_destip_hostname . "' WHERE ip=' . $m7_destip_val'";
 			$m7p->db->do($m7p_destip_update)
 				or $m7p->log->warn('Failed to update database entry');
 		} else {
 			$m7p->log->info('Creating destination IP entry: IP=' . $m7p_destip_val . ', Alias=' . $m7p_destip_alias . ', Hostname=' . $m7p_destip_hostname);
-			my $m7p_destip_create = "INSERT INTO `" . $m7p->config->get('db_name') . "`.`net_destips`(" .
-								 "`ip`, `alias`, `hostname`) VALUES(" . 
-							     "'" . $m7p_destip_val . "','" . $m7p_destip_alias . "','" . $m7p_destip_hostname . "')";
+			my $m7p_destip_create = "INSERT INTO `" . $m7p->config->get('db_name') . "`.`destips`(" .
+								 "`alias`, `ip`, `hostname`, `region`, `latitude`, `longitude`) VALUES(" . 
+							     "'" . $m7p_destip_alias . "','" . $m7p_destip_val . "','" . $m7p_destip_hostname . "','" . $m7p_destip_region . "','" . $m7p_destip_lat . "','" . $m7p_destip_lon . "')";
 			$m7p->db->do($m7p_destip_create)
 				or $m7p->log->warn('Failed to create database entry');
 		}	
@@ -234,9 +240,6 @@ sub createHostTable {
             		id              INT NOT NULL AUTO_INCREMENT,
             		plan_id			INT NOT NULL,
                 	source_ip       VARCHAR(15) NOT NULL,
-                	source_region   VARCHAR(25) NOT NULL,
-                	source_lat		VARCHAR(10),
-                	source_lon		VARCHAR(10),
                 	run_time        DATETIME NOT NULL,
                 	nameserver		VARCHAR(35) NOT NULL,
                 	hosts			INT NOT NULL,
@@ -255,9 +258,6 @@ sub createHostTable {
             		id              INT NOT NULL AUTO_INCREMENT,
             		plan_id			INT NOT NULL,
                 	source_ip       VARCHAR(15) NOT NULL,
-                	source_region   VARCHAR(25) NOT NULL,
-                	source_lat		VARCHAR(10),
-                	source_lon		VARCHAR(10),
                 	run_time        DATETIME NOT NULL,
                 	nameserver		VARCHAR(35) NOT NULL,
                 	hostname		VARCHAR(35) NOT NULL,
@@ -277,13 +277,7 @@ sub createHostTable {
             		id              INT NOT NULL AUTO_INCREMENT,
             		plan_id			INT NOT NULL,
                 	source_ip       VARCHAR(15) NOT NULL,
-                	source_region   VARCHAR(25) NOT NULL,
-                	source_lat		VARCHAR(10),
-                	source_lon		VARCHAR(10),
                 	dest_ip         VARCHAR(15) NOT NULL,
-                	dest_region     VARCHAR(25),
-               		dest_lat		VARCHAR(10),
-                	dest_lon		VARCHAR(10),
                 	run_time        DATETIME NOT NULL,
                 	pkt_loss        VARCHAR(5) NOT NULL,
                 	min_time        VARCHAR(10) NOT NULL,
@@ -301,13 +295,7 @@ sub createHostTable {
             		id              INT NOT NULL AUTO_INCREMENT,
             		plan_id			INT NOT NULL,
             		source_ip       VARCHAR(15) NOT NULL,
-            		source_region   VARCHAR(25) NOT NULL,
-            		source_lat		VARCHAR(10),
-            	    source_lon		VARCHAR(10),
            			dest_ip         VARCHAR(15) NOT NULL,
-           			dest_region     VARCHAR(25),
-           			dest_lat		VARCHAR(10),
-            	    dest_lon		VARCHAR(10),
             		run_time        DATETIME NOT NULL,
             		hop             INT NOT NULL,
             		try             INT NOT NULL,
@@ -326,13 +314,7 @@ sub createHostTable {
             		id              INT NOT NULL AUTO_INCREMENT,
             		plan_id			INT NOT NULL,
                 	source_ip       VARCHAR(15) NOT NULL,
-                	source_region   VARCHAR(25) NOT NULL,
-                	source_lat		VARCHAR(10),
-                	source_lon		VARCHAR(10),
                 	dest_ip         VARCHAR(15) NOT NULL,
-                	dest_region     VARCHAR(25),
-                	dest_lat		VARCHAR(10),
-                	dest_lon		VARCHAR(10),
                 	run_time        DATETIME NOT NULL,
                 	hop             INT NOT NULL,
                 	ips             VARCHAR(256) NOT NULL,
@@ -375,12 +357,6 @@ sub setTestHost {
     
     # Set the database friendly host name
     $m7p->test_host->{name} =~ s/-/_/g;
-
-	# Get the host's geolocation
-	my $m7p_host_geo		  = $m7p->geoip->record_by_addr($m7p->test_host->{ip});
-	$m7p->test_host->{lat}    = $m7p_host_geo->latitude;
-	$m7p->test_host->{lon}    = $m7p_host_geo->longitude;
-	$m7p->test_host->{region} = $m7p_host_geo->country_code;
 }
 
 # Load XML Results \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\ #
@@ -408,9 +384,6 @@ sub loadXMLResults {
             	 # Define the SQL insert string
                 my $m7p_nsstress_sql_string = "('" . $m7p->plan_id . "'" .
                 	",'" . $m7p->test_host->{ip} . "'" .
-                    ",'" . $m7p->test_host->{region} . "'" .
-                    ",'" . $m7p->test_host->{lat} . "'" .
-                    ",'" . $m7p->test_host->{lon} . "'" .
                     ",'" . $m7p->runtime . "'" .
                     ",'" . $m7p_nsstress_ns . "'" .
                     ",'" . $m7p_nsstress_host_count . "'" .
@@ -426,7 +399,7 @@ sub loadXMLResults {
             # Flatten the nsstress SQL array and prepare the query string
             my $m7p_nsstress_sql_values	= join(", ", @m7p_nsstress_sql);
             my $m7p_nsstress_sql_query	= "INSERT INTO " . $m7p->config->get('db_name') . "." . $m7p->test_host->{name} . "_dns_stress(" . 
-                    				      "plan_id, source_ip, source_region, source_lat, source_lon, " . 
+                    				      "plan_id, source_ip, " . 
                     				      "run_time, nameserver, hosts, thread, samples, avg_time, avg_fails) " .
                     					  "VALUES " . $m7p_nsstress_sql_values . ";";
                     
@@ -454,9 +427,6 @@ sub loadXMLResults {
             	 # Define the SQL insert string
                 my $m7p_nsquery_sql_string = "('" . $m7p->plan_id . "'" .
                 	",'" . $m7p->test_host->{ip} . "'" .
-                    ",'" . $m7p->test_host->{region} . "'" .
-                    ",'" . $m7p->test_host->{lat} . "'" .
-                    ",'" . $m7p->test_host->{lon} . "'" .
                     ",'" . $m7p->runtime . "'" .
                     ",'" . $m7p_nsquery_ns . "'" .
                     ",'" . $m7p_nsquery_host . "'" .
@@ -473,7 +443,7 @@ sub loadXMLResults {
             # Flatten the nsquery SQL array and prepare the query string
             my $m7p_nsquery_sql_values	= join(", ", @m7p_nsquery_sql);
             my $m7p_nsquery_sql_query	= "INSERT INTO " . $m7p->config->get('db_name') . "." . $m7p->test_host->{name} . "_dns_query(" . 
-                    				      "plan_id, source_ip, source_region, source_lat, source_lon, " . 
+                    				      "plan_id, source_ip, " . 
                     				      "run_time, nameserver, hostname, fwd, rev, soa, ns, mx) " .
                     					  "VALUES " . $m7p_nsquery_sql_values . ";";
                     
@@ -498,22 +468,10 @@ sub loadXMLResults {
                 my $m7p_ping_max_time 	= $m7p->getXMLText('plan/test[@id="' . $m7p_test_id . '"]/host[@name="' . $m7p_ping_host . '"]/maxTime');
                 my $m7p_ping_avg_dev  	= $m7p->getXMLText('plan/test[@id="' . $m7p_test_id . '"]/host[@name="' . $m7p_ping_host . '"]/avgDev');
                         
-                # Get the target node geolocation
-                my $m7p_ping_geo			= $m7p->geoip->record_by_addr($m7p_ping_ip);
-                my $m7p_ping_lat			= $m7p_ping_geo->latitude;
-                my $m7p_ping_lon			= $m7p_ping_geo->longitude;
-                my $m7p_ping_region			= $m7p_ping_geo->country_code;
-                        
                 # Define the SQL insert string
                 my $m7p_ping_sql_string = "('" . $m7p->plan_id . "'" .
                 	",'" . $m7p->test_host->{ip} . "'" .
-                    ",'" . $m7p->test_host->{region} . "'" .
-                    ",'" . $m7p->test_host->{lat} . "'" .
-                    ",'" . $m7p->test_host->{lon} . "'" .
                     ",'" . $m7p_ping_ip . "'" .
-                    ",'" . $m7p_ping_region . "'" .
-                    ",'" . $m7p_ping_lat . "'" .
-                    ",'" . $m7p_ping_lon . "'" .
                     ",'" . $m7p->runtime . "'" .
                     ",'" . $m7p_ping_pkt_loss . "'" .
                     ",'" . $m7p_ping_min_time . "'" .
@@ -528,8 +486,8 @@ sub loadXMLResults {
             # Flatten the ping SQL array and prepare the query string
             my $m7p_ping_sql_values		= join(", ", @m7p_ping_sql);
             my $m7p_ping_sql_query		= "INSERT INTO " . $m7p->config->get('db_name') . "." . $m7p->test_host->{name} . "_net_ping(" . 
-                    				      "plan_id, source_ip, source_region, source_lat, source_lon, " . 
-                    				      "dest_ip, dest_region, dest_lat, dest_lon, run_time, pkt_loss, min_time, avg_time, max_time, avg_dev) " .
+                    				      "plan_id, source_ip, " . 
+                    				      "dest_ip, run_time, pkt_loss, min_time, avg_time, max_time, avg_dev) " .
                     					  "VALUES " . $m7p_ping_sql_values . ";";
                     
             # Create the table rows for the ping test
@@ -544,12 +502,6 @@ sub loadXMLResults {
             for my $m7p_troute_host_name_tree ($m7p->results_xtree->findnodes('plan/test[@id="' . $m7p_test_id . '"]/host')) {
             	my $m7p_troute_host			= $m7p_troute_host_name_tree->findvalue('@name');
                 my $m7p_troute_dest_ip		= $m7p->getXMLText('plan/test[@id="' . $m7p_test_id . '"]/host[@name="' . $m7p_troute_host . '"]/@ip');
-                    	
-                # Get the target node geolocation
-                my $m7p_troute_dest_geo		= $m7p->geoip->record_by_addr($m7p_troute_dest_ip);
-                my $m7p_troute_dest_lat		= $m7p_troute_dest_geo->latitude;
-                my $m7p_troute_dest_lon		= $m7p_troute_dest_geo->longitude;
-                my $m7p_troute_dest_region  = $m7p_troute_dest_geo->country_code;
                     	
                 # Process the hop definitions
                 for my $m7p_troute_hops_tree ($m7p->results_xtree->findnodes('plan/test[@id="' . $m7p_test_id . '"]/host[@name="' . $m7p_troute_host . '"]/hops/hop')) {
@@ -576,13 +528,7 @@ sub loadXMLResults {
                     # Define the SQL insert string
 	                my $m7p_troute_sql_string = "('" . $m7p->plan_id . "'" .
 	                	",'" . $m7p->test_host->{ip} . "'" .
-                    	",'" . $m7p->test_host->{region} . "'" .
-                    	",'" . $m7p->test_host->{lat} . "'" .
-                    	",'" . $m7p->test_host->{lon} . "'" .
 	                    ",'" . $m7p_troute_dest_ip . "'" .
-	                    ",'" . $m7p_troute_dest_region . "'" .
-	                    ",'" . $m7p_troute_dest_lat . "'" .
-	                    ",'" . $m7p_troute_dest_lon . "'" .
 	                    ",'" . $m7p->runtime . "'" .
 	                    ",'" . $m7p_troute_hop . "'" .
 	                    ",'" . $m7p_troute_try . "'" .
@@ -599,8 +545,8 @@ sub loadXMLResults {
             # Flatten the traceroute SQL array and prepare the query string
             my $m7p_troute_sql_values		= join(", ", @m7p_troute_sql);
             my $m7p_troute_sql_query		= "INSERT INTO " . $m7p->config->get('db_name') . "." . $m7p->test_host->{name} . "_net_traceroute(" . 
-                    						  "plan_id, source_ip, source_region, source_lat, source_lon, " . 
-                    						  "dest_ip, dest_region, dest_lat, dest_lon, run_time, hop, try, ip, ip_lat, ip_lon, time) " .
+                    						  "plan_id, source_ip, " . 
+                    						  "dest_ip, run_time, hop, try, ip, ip_lat, ip_lon, time) " .
                     						  "VALUES " . $m7p_troute_sql_values . ";";
                     
             # Create the table rows for the traceroute test
@@ -615,12 +561,6 @@ sub loadXMLResults {
             for my $m7p_mtr_host_name_tree ($m7p->results_xtree->findnodes('plan/test[@id="' . $m7p_test_id . '"]/host')) {
             	my $m7p_mtr_host			= $m7p_mtr_host_name_tree->findvalue('@name');
                 my $m7p_mtr_dest_ip			= $m7p->getXMLText('plan/test[@id="' . $m7p_test_id . '"]/host[@name="' . $m7p_mtr_host . '"]/@ip');
-                    	
-                # Get the target node geolocation
-                my $m7p_mtr_dest_geo			= $m7p->geoip->record_by_addr($m7p_mtr_dest_ip);
-                my $m7p_mtr_dest_lat			= $m7p_mtr_dest_geo->latitude;
-                my $m7p_mtr_dest_lon			= $m7p_mtr_dest_geo->longitude;
-                my $m7p_mtr_dest_region			= $m7p_mtr_dest_geo->country_code;
                     	
                 # Process the hop definitions
                 for my $m7p_mtr_hops_tree ($m7p->results_xtree->findnodes('plan/test[@id="' . $m7p_test_id . '"]/host[@name="' . $m7p_mtr_host . '"]/hops/hop')) {
@@ -663,13 +603,7 @@ sub loadXMLResults {
                     # Define the SQL insert string
 	                my $m7p_mtr_sql_string = "('" . $m7p->plan_id . "'" .
 	                	",'" . $m7p->test_host->{ip} . "'" .
-                    	",'" . $m7p->test_host->{region} . "'" .
-                    	",'" . $m7p->test_host->{lat} . "'" .
-                    	",'" . $m7p->test_host->{lon} . "'" .
 	                    ",'" . $m7p_mtr_dest_ip . "'" .
-	                    ",'" . $m7p_mtr_dest_region . "'" .
-	                    ",'" . $m7p_mtr_dest_lat . "'" .
-	                    ",'" . $m7p_mtr_dest_lon . "'" .
 	                    ",'" . $m7p->runtime . "'" .
 	                    ",'" . $m7p_mtr_hop . "'" .
 	                    ",'" . $m7p_mtr_ip_list . "'" .
@@ -688,8 +622,8 @@ sub loadXMLResults {
             # Flatten the mtr SQL array and prepare the query
             my $m7p_mtr_sql_values	= join(", ", @m7p_mtr_sql);
             my $m7p_mtr_sql_query	= "INSERT INTO " . $m7p->config->get('db_name') . "." . $m7p->test_host->{name} . "_net_mtr(" . 
-                    				  "plan_id, source_ip, source_region, source_lat, source_lon, " . 
-                    				  "dest_ip, dest_region, dest_lat, dest_lon, run_time, hop, ips, ips_gps, pkt_loss, min_time, avg_time, max_time, avg_dev) " .
+                    				  "plan_id, source_ip, " . 
+                    				  "dest_ip, run_time, hop, ips, ips_gps, pkt_loss, min_time, avg_time, max_time, avg_dev) " .
                     				  "VALUES " . $m7p_mtr_sql_values . ";";
                     
             # Create the table rows for the mtr test
