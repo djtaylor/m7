@@ -1086,7 +1086,6 @@ sub testExec {
 	}
 	
 	# Run the test based on category
-	$m7->{_node} = $m7->local->{name};
 	$m7->updateNodeStatus('active');
 	given ($m7->plan_cat) {
 		
