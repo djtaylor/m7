@@ -26,7 +26,6 @@ BEGIN {
 	use List::Util qw(sum);
 	use lib $ENV{HOME} . '/lib/perl/modules';
 	use M7Config;
-	use Data::Dumper;
 }
 
 # \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\ #
@@ -1037,6 +1036,7 @@ sub testDist {
 				} elsif ($m7_wm_pid == 0) {
 					$m7->log->info('Launching fork process for worker lock ' . $m7_host{name});
 					$m7->{_node} = $m7_host{name};
+					$m7->updateNodeStatus('active');
 					$m7->workerLock();
 		
 				# Fork error
@@ -1054,6 +1054,7 @@ sub testExec {
 	use feature 'switch';
 	if($m7->is_dir) {
 		mkpath($ENV{HOME} . '/results/' . $m7->plan_id, 0, 0755);
+		$m7->updateNodeStatus('active');
 	}
 	
 	# Get all the test IDs
@@ -1064,7 +1065,6 @@ sub testExec {
 	
 	# Run the test based on category
 	$m7->{_node} = $m7->local->{name};
-	$m7->updateNodeStatus('active');
 	given ($m7->plan_cat) {
 		
 		# DNS testing
@@ -1321,7 +1321,6 @@ sub mergeLocal {
 		
 		# Delete the output directory
 		rmtree($m7->out_dir);
-		$m7->updateNodeStatus('idle');
 	} else {
 		
 		# Copy the results file to the final directory and delete the output path
@@ -1440,8 +1439,6 @@ sub getStatusJSON {
 			# Append to the cluster node hash
 			$m7_cluster_node_hash->{plans} = $m7_plan_status_hash;
 		}
-		
-		print Dumper($m7_cluster_node_hash);
 		
 		# Append to the main status hash
 		$m7_cluster_status->{cluster}->{nodes}->{$m7_host{name}} = $m7_cluster_node_hash;
