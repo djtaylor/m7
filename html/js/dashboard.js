@@ -3,6 +3,11 @@ function position_details() {
 	var test_details_left	= ($(window).width() / 2) - ($('.m7_test_details_content').width() / 2);
 	$('.m7_test_details_content').css('top',test_details_top+'px');
 	$('.m7_test_details_content').css('left',test_details_left+'px');
+	var host_details_top	= ($(window).height() / 2) - ($('.m7_map_host_details_content').height() / 2);
+	var host_details_left	= ($(window).width() / 2) - ($('.m7_map_host_details_content').width() / 2);
+	$('.m7_map_host_details_content').css('top',host_details_top+'px');
+	$('.m7_map_host_details_content').css('left',host_details_left+'px');
+
 }
 
 function position_key() {
@@ -24,6 +29,20 @@ $(document).ready(function() {
 	});
 	$('.m7_configure').click(function() {
 		window.location.href = '/configure.php';
+	});
+	
+	$('.m7_map_host').click(function(event) {
+		var clicked_id = event.target.id;
+		var clicked_host = clicked_id.match(/^map_host_(.*$)/)[1];
+		var host_details = "map_host_details_"+clicked_host;
+		$('.m7_map_host_details').fadeIn("fast", function() {
+			$(host_details).fadeIn("fast");
+		});
+	});
+	$(".m7_map_host_details_bg").click(function() {
+		$(".m7_map_host_details_info").fadeOut("fast", function() {
+			$(".m7_map_host_details").fadeOut("fast");
+		});
 	});
 	
 	if (test_details_render === true) {

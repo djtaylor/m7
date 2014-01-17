@@ -149,11 +149,11 @@ class Core {
 		$this->m7_plan[$plan_id][$shost][$cat][$destip] = array();
 		
 		// Get the destination IP properties
-		$m7_plan_destip_query = $this->m7_db->query( "SELECT DISTINCT dest_lat,dest_lon,dest_region FROM " . $this->m7_active['db_prefix'] . "_" . $cat . "_" . $type . " WHERE dest_ip='" . $destip . "'" );
+		$m7_plan_destip_query = $this->m7_db->query( "SELECT latitude,longitude,region FROM destips WHERE ip='" . $destip . "'" );
 		$m7_plan_destip_result = $m7_plan_destip_query->fetch_assoc();
-		$this->m7_plan[$plan_id][$shost][$cat][$destip]['lat'] = $m7_plan_destip_result['dest_lat'];
-		$this->m7_plan[$plan_id][$shost][$cat][$destip]['lon'] = $m7_plan_destip_result['dest_lon'];
-		$this->m7_plan[$plan_id][$shost][$cat][$destip]['region'] = $m7_plan_destip_result['dest_region'];
+		$this->m7_plan[$plan_id][$shost][$cat][$destip]['lat'] = $m7_plan_destip_result['latitude'];
+		$this->m7_plan[$plan_id][$shost][$cat][$destip]['lon'] = $m7_plan_destip_result['longitude'];
+		$this->m7_plan[$plan_id][$shost][$cat][$destip]['region'] = $m7_plan_destip_result['region'];
 		
 		// If loading a specific test type
 		if (isset($type)) {
@@ -180,7 +180,6 @@ class Core {
 				
 				// Query all run times between the start and stop time
 				$m7_runtimes_query = $this->m7_db->query( "SELECT DISTINCT run_time FROM " . $this->m7_active['db_prefix'] . "_" . $cat . "_" . $type . " WHERE dest_ip='" . $destip . "' AND run_time BETWEEN '" . $start . "' AND '" . $stop . "' ORDER BY run_time ASC" );
-				$m7_runtimes_result = $m7_runtimes_query->fetch_assoc();
 				while ($m7_runtimes_row = $m7_runtimes_query->fetch_assoc() ) {
 					array_push($m7_runtimes, $m7_runtimes_row['run_time']);
 				}

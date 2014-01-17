@@ -41,6 +41,11 @@ given ($ARGV[0]) {
 		$m7->gitSync();
 	}
 	
+	# Generate cluster status JSON object
+	when('status-json') {
+		$m7->getStatusJSON();
+	}
+	
 	# Invalid argument
 	default {
 		$m7->log->logdie('Invalid argument supplied: ' . $ARGV[0]);

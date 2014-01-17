@@ -47,6 +47,79 @@ html,body {
 	background-color: green;
 }
 
+.ui-tooltip {
+	z-index: 10000;
+	position: absolute;
+}
+
+.m7_tooltip_entry {
+	overflow: auto;
+	padding: 0 0 5px 0;
+	font-family: Arial, sans-serif;
+	font-size: 12px;
+}
+
+.m7_tooltip_left,
+.m7_tooltip_right {
+	float: left;
+}
+
+.m7_tooltip_left { 
+	width: 80px;
+	font-weight: bold; 
+	padding: 0 5px 0 0;
+}
+
+.m7_tooltip_click_info {
+	margin: 5px 0 0 0;
+	padding: 5px 0 0 0;
+	border-top: solid 1px #ffffff;
+	font-family: Arial, sans-serif;
+	text-align: center;
+	font-size: 12px;
+}
+
+.m7_map_tooltip {
+	width: 250px;
+	height: auto;
+	padding: 10px;
+	margin: 5px;
+	background-color: #f4f4f4;
+	-webkit-border-radius: 5px;
+	-moz-border-radius: 5px;
+	border-radius: 5px;
+	-webkit-box-shadow: 0px 0px 15px 0px rgba(50, 50, 50, 0.55);
+	-moz-box-shadow:    0px 0px 15px 0px rgba(50, 50, 50, 0.55);
+	box-shadow:         0px 0px 15px 0px rgba(50, 50, 50, 0.55);
+}
+
+.m7_map_host {
+	position: fixed;
+	opacity: 0.7;
+	width: 10px;
+	height: 10px;
+	-webkit-border-radius: 10px;
+	-moz-border-radius: 10px;
+	border: solid 5px #10BD00;
+	border-radius: 10px;
+	background-color: #f4f4f4;
+	-webkit-box-shadow: 0px 0px 15px 0px rgba(50, 50, 50, 0.55);
+	-moz-box-shadow:    0px 0px 15px 0px rgba(50, 50, 50, 0.55);
+	box-shadow:         0px 0px 15px 0px rgba(50, 50, 50, 0.55);
+}
+
+.m7_map_host_director {
+	border: solid 5px #0087BD !important;
+}
+
+.m7_map_host:hover {
+	opacity: 1.0;
+	cursor: pointer;
+	-webkit-box-shadow: 0px 0px 15px 0px rgba(50, 50, 50, 0.75);
+	-moz-box-shadow:    0px 0px 15px 0px rgba(50, 50, 50, 0.75);
+	box-shadow:         0px 0px 15px 0px rgba(50, 50, 50, 0.75);
+}
+
 .axis path,.axis line {
 	fill: none;
 	stroke: #000;
@@ -59,7 +132,12 @@ html,body {
 	stroke-width: 1.5px;
 }
 
-.m7_test_details {
+.m7_map_host_details_info {
+	display: none;
+}
+
+.m7_test_details,
+.m7_map_host_details {
 	position: fixed;
 	z-index: 100;
 	width: 100%;
@@ -69,7 +147,8 @@ html,body {
 	display: none;
 }
 
-.m7_test_details_bg {
+.m7_test_details_bg, 
+.m7_map_host_details_bg {
 	width: 100%;
 	height: 100%;
 	z-index: 101;
@@ -80,7 +159,8 @@ html,body {
 	opacity: 0.3;
 }
 
-.m7_test_details_content {
+.m7_test_details_content,
+.m7_map_host_details_content {
 	position: absolute;
 	z-index: 102;
 	width: 800px;

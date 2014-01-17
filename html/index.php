@@ -20,7 +20,10 @@ $render->varCheck();
 		<script src="js/d3.v3.min.js"></script>
 		<script src="js/topojson.v1.min.js"></script>
 		<script src="js/jquery-1.10.2.min.js"></script>
+		<script src="js/jquery-ui-1.10.3.min.js"></script>
+		<script src="js/socket.io.min.js"></script>
 		<script src="js/dashboard.js"></script>
+		<script src="js/m7.listener.js"></script>
 		<link rel="stylesheet" type="text/css" href="css/dashboard.css">
 	</head>
 	<body>
@@ -34,6 +37,7 @@ $render->varCheck();
 			</form>
 		</div>
     	<?php echo $render->mapKey(); ?>
+    	<?php echo $render->mapHostDetails(); ?>
     	<div id="map_container"></div>
 		<script>
 
@@ -61,7 +65,11 @@ svg.append("path")
     .attr("class", "graticule")
     .attr("d", path);
 
-<?php if ($render->m7_ready) { echo $render->mapPaths(); } ?>
+
+<?php 
+echo $render->mapHosts();
+if ($render->m7_ready) { echo $render->mapPaths(); } 
+?>
 
 d3.json("/json/world-50m.json", function(error, world) {
 	svg.insert("path", ".graticule")
@@ -77,5 +85,6 @@ d3.json("/json/world-50m.json", function(error, world) {
 
 d3.select(self.frameElement).style("height", height + "px");
     	</script>
+    	<div style="display:none;" id="m7_auto_script"></div>
 	</body>
 </html>

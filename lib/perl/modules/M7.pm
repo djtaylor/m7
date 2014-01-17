@@ -17,6 +17,7 @@ BEGIN {
 	use XML::XPath;
 	use XML::Simple;
 	use XML::Merge;
+	use JSON;
 	use DateTime;
 	use Net::OpenSSH;
 	use Net::Nslookup;
@@ -41,6 +42,7 @@ sub new {
 		_is_dir			=> undef,
 		_workers		=> undef,
 		_nodes			=> undef,
+		_node			=> undef,
 		_local			=> undef,
 		_wm_forks		=> undef,
 		_tm_forks		=> undef,
@@ -78,6 +80,7 @@ sub dir			 { return shift->{_dir};	 	  }
 sub is_dir	     { return shift->{_is_dir};       }
 sub workers      { return shift->{_workers};      }
 sub nodes		 { return shift->{_nodes};        }
+sub node		 { return shift->{_node};         }
 sub local		 { return shift->{_local}[0];	  }
 sub wm_forks	 { return shift->{_wm_forks}; 	  }
 sub tm_forks     { return shift->{_tm_forks};     }
@@ -241,13 +244,39 @@ sub buildXpath {
 	return $m7->{_plan_xpath};
 }
 
+# Update Node Plan Run Status \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\ #
+sub updateNodeStatus {
+	my $m7 = shift;
+	my ($m7_status) = @_;
+	
+	# Check if the node status row exists
+	my $m7_nsr_check = $m7->db->selectcol_arrayref("SELECT * FROM nodes_status WHERE name='" . $m7->node . "' AND plan_id='" . $m7->plan_id . "'");
+	
+	# Update the row if it exists
+	if (@{$m7_nsr_check}) {
+		$m7->log->info('Updating database entry node plan status: Node=' . $m7->node . ', ID=' . $m7->plan_id . ', Last Runtime=' . $m7->plan_runtime . ', Status=' . $m7_status);
+		my $m7_nsr_update = "UPDATE `" . $m7->config->get('db_name') . "`.`nodes_status` SET last_run='" . $m7->plan_runtime . "', status='" . $m7_status . "' WHERE plan_id='" . $m7->plan_id . "' AND name='" . $m7->node . "'";
+		$m7->db->do($m7_nsr_update)
+			or $m7p->log->logdie('Failed to update database entry');
+			
+	# Create the row if it doesn't exist
+	} else {
+		$m7->log->info('Creating database entry node plan status: Node=' . $m7->node . ', ID=' . $m7p->plan_id . ', Last Runtime=' . $m7->plan_runtime . ', Status=' . $m7_status);
+		my $m7_nsr_create = "INSERT INTO `" . $m7->config->get('db_name') . "`.`nodes_status`(" .
+							"`name`, `type`, `plan_id`, `status`, `last_run`) VALUES(" . 
+						    "'" . $m7->node . "','" . $m7->getNode($m7->node, 'type') . "','" . $m7->plan_id . "','" . $m7_status . "','" . $m7->plan_runtime . "')";
+		$m7->db->do($m7_nsr_create)
+			or $m7->log->logdie('Failed to create database entry');
+	}
+}
+
 # Worker Lock \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\ #
 sub workerLock {
 	my $m7 = shift;
-	my ($m7_worker) = @_;
-	my $m7_worker_results = $ENV{HOME} . '/results/' . $m7->plan_id . '/' . $m7_worker . '.xml';
+	my $m7_worker_results = $ENV{HOME} . '/results/' . $m7->plan_id . '/' . $m7->node . '.xml';
 	sleep 1 while not -e $m7_worker_results;
 	$m7->log->info($$  . ': Worker results file received: ' . $m7_worker_results . ' - closing monitor');
+	$m7->updateNodeStatus('idle');
 	exit 1;
 }
 
@@ -998,7 +1027,9 @@ sub testDist {
 				# Child process
 				} elsif ($m7_wm_pid == 0) {
 					$m7->log->info('Launching fork process for worker lock ' . $m7_host{name});
-					$m7->workerLock($m7_host{name});
+					$m7->{_node} = $m7_host{name};
+					$m7->updateNodeStatus('active');
+					$m7->workerLock();
 		
 				# Fork error
 				} else {
@@ -1327,6 +1358,87 @@ sub monitor {
 		rmtree($m7_results_dir)
 			or $m7->log->warn('Failed to clear XML results directory: ' . $m7_results_dir);
 	}
+}
+
+# Get Status JSON Response \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\ #
+sub getStatusJSON {
+	my $m7 = shift;
+	$m7->log->info('Constructing cluster status JSON object');
+	
+	# Initialize the status hash
+	$m7_cluster_status = {
+		'cluster' => {
+			'server' => {},
+			'nodes' => {}
+		}
+	};
+	
+	# If the node is the director
+	if ($m7->is_dir) {
+		
+		# Check if the server is running
+		system('service m7d status &> /dev/null');
+		my $m7_server_code = $? >> 8;
+		
+		# If the server is running
+		my $m7_server_status;
+		if ($m7_server_code == 0) {
+			$m7_server_status = {
+				'host'   => $m7->local->{name},
+				'status' => 'running'
+			};
+		} else {
+			$m7_server_status = {
+				'host'   => $m7->local->{name},
+				'status' => 'stopped'
+			};
+		}
+		
+		# Append the hash
+		$m7_cluster_status{cluster}{server} = $m7_server_status;
+	}
+	
+	# Process each cluster node
+	for(@{$m7->nodes}) {
+		my %m7_host	= %{$_};
+					
+		# Construct the cluster node hash
+		my $m7_cluster_node_hash = {
+				$m7_host{name} => {
+					'plans' => {}
+				}
+		};
+					
+		# Prepare the nodes status query
+		my $m7_node_status_query = "SELECT * FROM nodes_status WHERE name='" . $m7_host{name} . "'";
+		my $m7_node_status_qh	 = $m7->db->prepare($m7_node_status_query)
+			or $m7->log->logdie("Failed to prepare MySQL statement: '" . DBI->errstr . "'");
+	
+		# Execute the worker nodes query
+		$m7_node_status_qh->execute()
+			or $m7->log->logdie("failed to execute MySQL statement: '" . DBI->errstr . "'");
+		while ($m7_node_status_row = $m7_node_status_qh->fetchrow_hashref()) {
+		
+			# Construct the nested hash
+			my $m7_plan_status_hash = {
+				$m7_node_status_row{plan_id} => {
+					'status'   => $m7_node_status_row{status},
+					'last_run' => $m7_node_status_row{last_run}
+				}
+			};
+
+			# Append to the cluster node hash
+			$m7_cluster_node_hash{$m7_host{name}}{plans} = $m7_plan_status_hash;
+
+		}
+		
+		# Append to the main status hash
+		$my_cluster_status{cluster}{nodes} = $m7_cluster_node_hash;
+	}
+	
+	# Dump the JSON object
+	my $m7_status_json = encode $m7_cluster_status;
+	print $m7_status_json;
 }
 
 1;

@@ -14,6 +14,114 @@ class Render extends D3JS {
 	}
 	
 	/**
+	 * Render Test Host Map Points
+	 */
+	public function mapHosts() {
+		$map_hosts_js = null;
+		
+		// Find the director latitude and longitude
+		$m7_cluster_dir_query = $this->m7_db->query( "SELECT * FROM hosts WHERE type='director'" );
+		$m7_cluster_dir_row   = $m7_cluster_dir_query->fetch_assoc();
+		$m7_cluster_dir_lat   = $m7_cluster_dir_row['latitude'];
+		$m7_cluster_dir_lon   = $m7_cluster_dir_row['longitude'];
+		
+		// Build the map points and node interconnects
+		$m7_cluster_hosts_query = $this->m7_db->query( "SELECT * FROM hosts" );
+		while ($m7_cluster_hosts_row = $m7_cluster_hosts_query->fetch_assoc()) {
+			$m7_host_alias = $m7_cluster_hosts_row['name'];
+			$m7_host_alias = preg_replace( "/-/", "_", $m7_host_alias);
+			$m7_host_lat   = $m7_cluster_hosts_row['latitude'];
+			$m7_host_lon   = $m7_cluster_hosts_row['longitude'];
+			
+			// Define the director node class
+			$m7_dir_class = null;
+			if ($m7_cluster_hosts_row['type'] == 'director') {
+				$m7_dir_class = ' m7_map_host_director';
+			
+			// If not director, draw a path to the director node
+			} else {
+				if ($this->m7_ready === false) {
+					$map_hosts_js .= 'svg.append("path")' . "\n";
+					$map_hosts_js .= '.datum({type: "LineString", coordinates: [["' . $m7_cluster_dir_lon . '","' . $m7_cluster_dir_lat . '"],["' . $m7_cluster_hosts_row['longitude'] . '","' . $m7_cluster_hosts_row['latitude'] . '"]]})';
+					$map_hosts_js .= '.style("stroke", "#0087BD")';
+					$map_hosts_js .= '.style("fill", "none")';
+					$map_hosts_js .= '.style("stroke-width", "2px")';
+					$map_hosts_js .= '.attr("d", path);';
+				}
+			}
+				
+			// Define the JS block
+			$map_hosts_js .= 'var coords_' . $m7_host_alias . ' = projection(["' . $m7_host_lon . '","' . $m7_host_lat . '"]);';
+			$map_hosts_js .= 'var x_' . $m7_host_alias . ' = coords_' . $m7_host_alias . '[0] - 10;';
+			$map_hosts_js .= 'var y_' . $m7_host_alias . ' = coords_' . $m7_host_alias . '[1] - 10;';
+			$map_hosts_js .= 'svg.append("foreignObject").attr("height", "100%").attr("width", "100%")';
+			$map_hosts_js .= '.append("xhtml:body").append("div")';
+			$map_hosts_js .= '.style("left", x_' . $m7_host_alias . '+"px")';
+			$map_hosts_js .= '.style("top", y_' . $m7_host_alias . '+"px")';
+			$map_hosts_js .= '.attr("class", "m7_map_host' . $m7_dir_class . '").attr("id", "map_host_' . $m7_host_alias . '").attr("host_tooltip_' . $m7_host_alias . '", " ");' . "\n";
+		}
+		return $map_hosts_js;
+	}
+	
+	/**
+	 * Render Test Host Details
+	 */
+	public function mapHostDetails() {
+		$m7_cluster_hosts_query = $this->m7_db->query( "SELECT * FROM hosts" );
+		
+		$map_hosts_html = '<div class="m7_map_host_details">';
+		$map_hosts_html .= '<div class="m7_map_host_details_bg"></div>';
+		$map_hosts_html .= '<div class="m7_map_host_details_content">';
+		
+		// Initialize the tooltip items array and popup code
+		$map_hosts_tooltip_items = array();
+		$map_hosts_tooltip_popups = null;
+		
+		while ($m7_cluster_hosts_row = $m7_cluster_hosts_query->fetch_assoc() ) {
+			$m7_host_alias = $m7_cluster_hosts_row['name'];
+			$m7_host_alias = preg_replace( "/-/", "_", $m7_host_alias);
+			$map_hosts_html .= '<div class="m7_map_host_details_info" id="map_host_details_' . $m7_host_alias . '">';
+			$map_hosts_html .= $m7_cluster_hosts_row;
+			$map_hosts_html .= '</div>';
+			
+			// Push to the tooltip items array
+			array_push($map_hosts_tooltip_items, 'host_tooltip_' . $m7_host_alias);
+			
+			// Define the tooltip popup
+			$map_hosts_tooltip_popup = "\t\t\tif (element.is('[host_tooltip_" . $m7_host_alias . "]')) {\n";
+			$map_hosts_tooltip_popup .= "\t\t\t\treturn \"<div class='m7_map_tooltip'>";
+			$map_hosts_tooltip_popup .= "<div class='m7_tooltip_entry'><div class='m7_tooltip_left'>Name:</div><div class='m7_tooltip_right'>" . $m7_host_alias . "</div></div>";
+			$map_hosts_tooltip_popup .= "<div class='m7_tooltip_entry'><div class='m7_tooltip_left'>IP:</div><div class='m7_tooltip_right'>" . $m7_cluster_hosts_row['ipaddr'] . "</div></div>";
+			$map_hosts_tooltip_popup .= "<div class='m7_tooltip_entry'><div class='m7_tooltip_left'>Region:</div><div class='m7_tooltip_right'>" . $m7_cluster_hosts_row['region'] . "</div></div>";
+			$map_hosts_tooltip_popup .= "<div class='m7_tooltip_entry'><div class='m7_tooltip_left'>Type:</div><div class='m7_tooltip_right'>" . $m7_cluster_hosts_row['type'] . "</div></div>";
+			$map_hosts_tooltip_popup .= "<div class='m7_tooltip_entry'><div class='m7_tooltip_left'>Description:</div><div class='m7_tooltip_right'>" . $m7_cluster_hosts_row['desc'] . "</div></div>";
+			$map_hosts_tooltip_popup .= "<div class='m7_tooltip_click_info'>Click icon to view host details</div>";
+			$map_hosts_tooltip_popup .= "</div>\"\n";
+			$map_hosts_tooltip_popup .= "\t\t\t}\n";
+			
+			// Append to the popups string
+			$map_hosts_tooltip_popups .= $map_hosts_tooltip_popup;
+		}
+		
+		// Flatten the items array
+		$map_hosts_tooltip_item_string = implode('],[', $map_hosts_tooltip_items);
+		
+		// Define the tooltips JS block
+		$map_hosts_tooltip_js = "<script>\n";
+		$map_hosts_tooltip_js .= "$(document).ready(function() {\n";
+		$map_hosts_tooltip_js .= "\t$(document).tooltip({\n";
+		$map_hosts_tooltip_js .= "\t\titems: '[" . $map_hosts_tooltip_item_string . "]',\n";
+		$map_hosts_tooltip_js .= "\t\tcontent: function() {\n";
+		$map_hosts_tooltip_js .= "\t\t\tvar element = $(this);\n";
+		$map_hosts_tooltip_js .= $map_hosts_tooltip_popups;
+		$map_hosts_tooltip_js .= "\t\t}\n\t});\n});</script>";
+		
+		// Return the HTML and JS blocks
+		$map_hosts_html .= '</div></div>' . $map_hosts_tooltip_js;
+		return $map_hosts_html;
+	}
+	
+	/**
 	 * Render Map Paths D3JS
 	 *
 	 * Render the JavaScript required to plot the map paths for the test on the world map. This

@@ -1,0 +1,14 @@
+var io     = require("socket.io-client");
+var client = io.connect("http://110.34.221.34:61000");
+
+var message = {
+  'packet': [{
+    'event': 'test-start',
+    'host': 'm7'
+  }]
+};
+
+client.on('connect', function() {
+  client.emit('web_transmit', message);
+  client.disconnect();
+});
