@@ -233,7 +233,14 @@ sub checkDirector {
 
 # Git Synchronization \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\ #
 sub gitSync {
-	system('sh ' . $ENV{HOME} . '/lib/bash/gitsync.sh');
+	my $m7 = shift;
+	my ($m7_git_branch) = @_;
+	
+	# Make sure a target branch is defined
+	if (not defined()) {
+		$m7->log->logdie('You must specify a target branch to run the Git sync command');
+	}
+	system('sh ' . $ENV{HOME} . '/lib/bash/gitsync.sh "' . $m7_git_branch . '"');
 }
 
 # Build Xpath Object \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\ #

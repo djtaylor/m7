@@ -4,11 +4,14 @@
 SELINUX_ENABLED="$(sestatus | grep -i 'enabled')"
 APACHE_INSTALLED="$(rpm -qa | grep -e "^httpd-[0-9].*$")"
 
+# Get the target branch
+GIT_BRANCH="$1"
+
 # Change to a temporary working directory
 mkdir /tmp/m7; cd /tmp/m7
 
 # Clone the Git repository
-git clone https://github.com/djtaylor/m7.git
+git clone -b $GIT_BRANCH https://github.com/djtaylor/m7.git
 
 # Make sure the git clone was successfull
 if [ "$?" != "0" ]; then

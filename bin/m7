@@ -38,7 +38,7 @@ given ($ARGV[0]) {
 	
 	# Git synchronization
 	when('gitsync') {
-		$m7->gitSync();
+		$m7->gitSync($ARGV[1]);
 	}
 	
 	# Generate cluster status JSON object
