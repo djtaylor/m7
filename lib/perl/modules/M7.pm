@@ -26,6 +26,7 @@ BEGIN {
 	use List::Util qw(sum);
 	use lib $ENV{HOME} . '/lib/perl/modules';
 	use M7Config;
+	use Data::Dumper;
 }
 
 # \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\ #
@@ -138,6 +139,7 @@ sub dbInit {
 		PrintError => 0,
 		RaiseError => 1
 	}) or $m7->log->logdie("Failed to connect to database: '" . DBI->errstr . "'");
+	$m7_dbh->{mysql_auto_reconnect} = 1;
 	$m7->{_db} = $m7_dbh;
 	return $m7->{_db};
 }
@@ -268,7 +270,7 @@ sub updateNodeStatus {
 			
 	# Create the row if it doesn't exist
 	} else {
-		$m7->log->info('Creating database entry node plan status: Node=' . $m7->node . ', ID=' . $m7p->plan_id . ', Last Runtime=' . $m7->plan_runtime . ', Status=' . $m7_status);
+		$m7->log->info('Creating database entry node plan status: Node=' . $m7->node . ', ID=' . $m7->plan_id . ', Last Runtime=' . $m7->plan_runtime . ', Status=' . $m7_status);
 		my $m7_nsr_create = "INSERT INTO `" . $m7->config->get('db_name') . "`.`nodes_status`(" .
 							"`name`, `type`, `plan_id`, `status`, `last_run`) VALUES(" . 
 						    "'" . $m7->node . "','" . $m7->getNode($m7->node, 'type') . "','" . $m7->plan_id . "','" . $m7_status . "','" . $m7->plan_runtime . "')";
@@ -1035,7 +1037,6 @@ sub testDist {
 				} elsif ($m7_wm_pid == 0) {
 					$m7->log->info('Launching fork process for worker lock ' . $m7_host{name});
 					$m7->{_node} = $m7_host{name};
-					$m7->updateNodeStatus('active');
 					$m7->workerLock();
 		
 				# Fork error
@@ -1062,6 +1063,8 @@ sub testExec {
 	}
 	
 	# Run the test based on category
+	$m7->{_node} = $m7->local->{name};
+	$m7->updateNodeStatus('active');
 	given ($m7->plan_cat) {
 		
 		# DNS testing
@@ -1318,6 +1321,7 @@ sub mergeLocal {
 		
 		# Delete the output directory
 		rmtree($m7->out_dir);
+		$m7->updateNodeStatus('idle');
 	} else {
 		
 		# Copy the results file to the final directory and delete the output path
@@ -1347,6 +1351,7 @@ sub monitor {
 		# Wait for worker result files
 		if ($m7->wm_forks) {
 			$m7->log->info('Waiting for worker result files');
+			$m7->updateNodeStatus('waiting');
 			foreach(@{$m7->wm_forks}) {
 				waitpid ($_, 0);
 				$m7->log->info('Worker monitor PID ' . $_ . ' complete');
@@ -1358,12 +1363,14 @@ sub monitor {
 		
 		# Parse the XML results into the database
 		$m7->log->info('Parsing XML results into M7 database');
+		$m7->updateNodeStatus('parsing');
 		system('m7p "' . $m7->plan_id . '" "' . $m7->plan_runtime . '"');
 		
 		# Flush the results directory after parsing
 		my $m7_results_dir = $m7->config->home . '/results/' . $m7->plan_id;
 		rmtree($m7_results_dir)
 			or $m7->log->warn('Failed to clear XML results directory: ' . $m7_results_dir);
+		$m7->updateNodeStatus('idle');
 	}
 }
 
@@ -1402,7 +1409,7 @@ sub getStatusJSON {
 		}
 		
 		# Append the hash
-		$m7_cluster_status{cluster}{server} = $m7_server_status;
+		$m7_cluster_status->{cluster}->{server} = $m7_server_status;
 	}
 	
 	# Process each cluster node
@@ -1410,11 +1417,7 @@ sub getStatusJSON {
 		my %m7_host	= %{$_};
 					
 		# Construct the cluster node hash
-		my $m7_cluster_node_hash = {
-				$m7_host{name} => {
-					'plans' => {}
-				}
-		};
+		my $m7_cluster_node_hash = { 'plans' => {} };
 					
 		# Prepare the nodes status query
 		my $m7_node_status_query = "SELECT * FROM nodes_status WHERE name='" . $m7_host{name} . "'";
@@ -1424,27 +1427,28 @@ sub getStatusJSON {
 		# Execute the worker nodes query
 		$m7_node_status_qh->execute()
 			or $m7->log->logdie("failed to execute MySQL statement: '" . DBI->errstr . "'");
-		while ($m7_node_status_row = $m7_node_status_qh->fetchrow_hashref()) {
+		while (my $m7_node_status_row = $m7_node_status_qh->fetchrow_hashref()) {
 		
 			# Construct the nested hash
 			my $m7_plan_status_hash = {
-				$m7_node_status_row{plan_id} => {
-					'status'   => $m7_node_status_row{status},
-					'last_run' => $m7_node_status_row{last_run}
+				$m7_node_status_row->{plan_id} => {
+					'status'   => $m7_node_status_row->{status},
+					'last_run' => $m7_node_status_row->{last_run}
 				}
 			};
 
 			# Append to the cluster node hash
-			$m7_cluster_node_hash{$m7_host{name}}{plans} = $m7_plan_status_hash;
-
+			$m7_cluster_node_hash->{plans} = $m7_plan_status_hash;
 		}
 		
+		print Dumper($m7_cluster_node_hash);
+		
 		# Append to the main status hash
-		$my_cluster_status{cluster}{nodes} = $m7_cluster_node_hash;
+		$m7_cluster_status->{cluster}->{nodes}->{$m7_host{name}} = $m7_cluster_node_hash;
 	}
 	
 	# Dump the JSON object
-	my $m7_status_json = encode $m7_cluster_status;
+	my $m7_status_json = encode_json $m7_cluster_status;
 	print $m7_status_json;
 }
 
