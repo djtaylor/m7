@@ -256,10 +256,11 @@ sub buildXpath {
 sub updateNodeStatus {
 	my $m7 = shift;
 	my ($m7_status, $m7_node) = @_;
+	my $m7_target_node;
 	if (defined($m7_node)) {
 		$m7_target_node = $m7_node;
 	} else {
-		$m7_target_node = $m7->node;
+		$m7_target_node = $m7->local->{name};
 	}
 	
 	# Check if the node status row exists
@@ -271,7 +272,7 @@ sub updateNodeStatus {
 		# If setting to an active state
 		if ($m7_status eq 'active') {
 			$m7->log->info('Updating database entry node plan status: Node=' . $m7_target_node . ', ID=' . $m7->plan_id . ', Last Runtime=' . $m7->plan_runtime . ', Status=' . $m7_status);
-			my $m7_nsr_update = "UPDATE `" . $m7->config->get('db_name') . "`.`nodes_status` SET last_run='" . $m7->plan_runtime . "', run_count=run_count+1, status='" . $m7_status . "' WHERE plan_id='" . $m7->plan_id . "' AND name='" . $m7->node . "'";
+			my $m7_nsr_update = "UPDATE `" . $m7->config->get('db_name') . "`.`nodes_status` SET last_run='" . $m7->plan_runtime . "', run_count=run_count+1, status='" . $m7_status . "' WHERE plan_id='" . $m7->plan_id . "' AND name='" . $m7_target_node . "'";
 			$m7->db->do($m7_nsr_update)
 				or $m7p->log->logdie('Failed to update database entry');	
 		} else {
@@ -286,7 +287,7 @@ sub updateNodeStatus {
 		$m7->log->info('Creating database entry node plan status: Node=' . $m7_target_node . ', ID=' . $m7->plan_id . ', Last Runtime=' . $m7->plan_runtime . ', Status=' . $m7_status);
 		my $m7_nsr_create = "INSERT INTO `" . $m7->config->get('db_name') . "`.`nodes_status`(" .
 							"`name`, `type`, `plan_id`, `status`, `last_run`, `run_count`) VALUES(" . 
-						    "'" . $m7_target_node . "','" . $m7->getNode($m7_target_node, 'type') . "','" . $m7->plan_id . "','" . $m7_status . "','" . $m7->plan_runtime . "', 1)";
+						    "'" . $m7_target_node . "','" . $m7->local->{type} . "','" . $m7->plan_id . "','" . $m7_status . "','" . $m7->plan_runtime . "', 1)";
 		$m7->db->do($m7_nsr_create)
 			or $m7->log->logdie('Failed to create database entry');
 	}
