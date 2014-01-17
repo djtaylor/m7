@@ -267,10 +267,19 @@ sub updateNodeStatus {
 	
 	# Update the row if it exists
 	if (@{$m7_nsr_check}) {
-		$m7->log->info('Updating database entry node plan status: Node=' . $m7_target_node . ', ID=' . $m7->plan_id . ', Last Runtime=' . $m7->plan_runtime . ', Status=' . $m7_status);
-		my $m7_nsr_update = "UPDATE `" . $m7->config->get('db_name') . "`.`nodes_status` SET last_run='" . $m7->plan_runtime . "', run_count=run_count+1, status='" . $m7_status . "' WHERE plan_id='" . $m7->plan_id . "' AND name='" . $m7->node . "'";
-		$m7->db->do($m7_nsr_update)
-			or $m7p->log->logdie('Failed to update database entry');
+		
+		# If setting to an active state
+		if ($m7_status eq 'active') {
+			$m7->log->info('Updating database entry node plan status: Node=' . $m7_target_node . ', ID=' . $m7->plan_id . ', Last Runtime=' . $m7->plan_runtime . ', Status=' . $m7_status);
+			my $m7_nsr_update = "UPDATE `" . $m7->config->get('db_name') . "`.`nodes_status` SET last_run='" . $m7->plan_runtime . "', run_count=run_count+1, status='" . $m7_status . "' WHERE plan_id='" . $m7->plan_id . "' AND name='" . $m7->node . "'";
+			$m7->db->do($m7_nsr_update)
+				or $m7p->log->logdie('Failed to update database entry');	
+		} else {
+			$m7->log->info('Updating database entry node plan status: Node=' . $m7_target_node . ', ID=' . $m7->plan_id . ', Status=' . $m7_status);
+			my $m7_nsr_update = "UPDATE `" . $m7->config->get('db_name') . "`.`nodes_status` SET status='" . $m7_status . "' WHERE plan_id='" . $m7->plan_id . "' AND name='" . $m7_target_node . "'";
+			$m7->db->do($m7_nsr_update)
+				or $m7p->log->logdie('Failed to update database entry');
+		}
 			
 	# Create the row if it doesn't exist
 	} else {
