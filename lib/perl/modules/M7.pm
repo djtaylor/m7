@@ -975,6 +975,9 @@ sub testInit {
 	$m7->logInit($m7_client_log);
 	$m7->log->info('Initializing test run for plan ID: ' . $m7->plan_id);
 	
+	# If being passed the runtime from the director node
+	if($m7_init_args{runtime}) { $m7->{_plan_runtime} = $m7_init_args{runtime}; }
+	
 	# Perform director tasks
 	if($m7->is_dir) {
 		
@@ -1021,7 +1024,7 @@ sub testDist {
 				$m7->log->info('Copied test plan ' . $m7->plan_file . ' to: ' . $m7_host{name});
 				
 				# Run the test plan on the worker nodes
-				$m7_ssh->pipe_out("bash -c -l 'm7 run ~/plans/" . $m7->plan_id . ".xml' > /dev/null 2>&1 &")
+				$m7_ssh->pipe_out("bash -c -l 'm7 run ~/plans/" . $m7->plan_id . ".xml \"" . $m7->plan_runtime . "\"' > /dev/null 2>&1 &")
 					or $m7->log->logdie('Failed to execute command on worker node: ' . $m7_host{name});
 					
 				# Create a fork to monitor each worker node from the director
@@ -1036,7 +1039,6 @@ sub testDist {
 				} elsif ($m7_wm_pid == 0) {
 					$m7->log->info('Launching fork process for worker lock ' . $m7_host{name});
 					$m7->{_node} = $m7_host{name};
-					$m7->updateNodeStatus('active');
 					$m7->workerLock();
 		
 				# Fork error
@@ -1054,7 +1056,6 @@ sub testExec {
 	use feature 'switch';
 	if($m7->is_dir) {
 		mkpath($ENV{HOME} . '/results/' . $m7->plan_id, 0, 0755);
-		$m7->updateNodeStatus('active');
 	}
 	
 	# Get all the test IDs
@@ -1065,6 +1066,7 @@ sub testExec {
 	
 	# Run the test based on category
 	$m7->{_node} = $m7->local->{name};
+	$m7->updateNodeStatus('active');
 	given ($m7->plan_cat) {
 		
 		# DNS testing
@@ -1321,6 +1323,7 @@ sub mergeLocal {
 		
 		# Delete the output directory
 		rmtree($m7->out_dir);
+		$m7->updateNodeStatus('idle');
 	} else {
 		
 		# Copy the results file to the final directory and delete the output path

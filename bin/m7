@@ -23,7 +23,8 @@ given ($ARGV[0]) {
 		
 		# Initialize testing properties
 		$m7->testInit(
-			'plan' => $ARGV[1]
+			'plan'		=> $ARGV[1],
+			'runtime'   => $ARGV[2]
 		);
 		
 		# Test distribution and rmeote execution
