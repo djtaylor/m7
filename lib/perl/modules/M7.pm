@@ -255,24 +255,29 @@ sub buildXpath {
 # Update Node Plan Run Status \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\ #
 sub updateNodeStatus {
 	my $m7 = shift;
-	my ($m7_status) = @_;
+	my ($m7_status, $m7_node) = @_;
+	if (defined($m7_node)) {
+		$m7_target_node = $m7_node;
+	} else {
+		$m7_target_node = $m7->node;
+	}
 	
 	# Check if the node status row exists
-	my $m7_nsr_check = $m7->db->selectcol_arrayref("SELECT * FROM nodes_status WHERE name='" . $m7->node . "' AND plan_id='" . $m7->plan_id . "'");
+	my $m7_nsr_check = $m7->db->selectcol_arrayref("SELECT * FROM nodes_status WHERE name='" . $m7_target_node . "' AND plan_id='" . $m7->plan_id . "'");
 	
 	# Update the row if it exists
 	if (@{$m7_nsr_check}) {
-		$m7->log->info('Updating database entry node plan status: Node=' . $m7->node . ', ID=' . $m7->plan_id . ', Last Runtime=' . $m7->plan_runtime . ', Status=' . $m7_status);
+		$m7->log->info('Updating database entry node plan status: Node=' . $m7_target_node . ', ID=' . $m7->plan_id . ', Last Runtime=' . $m7->plan_runtime . ', Status=' . $m7_status);
 		my $m7_nsr_update = "UPDATE `" . $m7->config->get('db_name') . "`.`nodes_status` SET last_run='" . $m7->plan_runtime . "', run_count=run_count+1, status='" . $m7_status . "' WHERE plan_id='" . $m7->plan_id . "' AND name='" . $m7->node . "'";
 		$m7->db->do($m7_nsr_update)
 			or $m7p->log->logdie('Failed to update database entry');
 			
 	# Create the row if it doesn't exist
 	} else {
-		$m7->log->info('Creating database entry node plan status: Node=' . $m7->node . ', ID=' . $m7->plan_id . ', Last Runtime=' . $m7->plan_runtime . ', Status=' . $m7_status);
+		$m7->log->info('Creating database entry node plan status: Node=' . $m7_target_node . ', ID=' . $m7->plan_id . ', Last Runtime=' . $m7->plan_runtime . ', Status=' . $m7_status);
 		my $m7_nsr_create = "INSERT INTO `" . $m7->config->get('db_name') . "`.`nodes_status`(" .
 							"`name`, `type`, `plan_id`, `status`, `last_run`, `run_count`) VALUES(" . 
-						    "'" . $m7->node . "','" . $m7->getNode($m7->node, 'type') . "','" . $m7->plan_id . "','" . $m7_status . "','" . $m7->plan_runtime . "', 1)";
+						    "'" . $m7_target_node . "','" . $m7->getNode($m7_target_node, 'type') . "','" . $m7->plan_id . "','" . $m7_status . "','" . $m7->plan_runtime . "', 1)";
 		$m7->db->do($m7_nsr_create)
 			or $m7->log->logdie('Failed to create database entry');
 	}
@@ -997,6 +1002,12 @@ sub testInit {
 }
 
 # Distribute Test Plan \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\ #
+sub testDistFail {
+	my $m7 = shift;
+	my ($m7_dist_fail_node, $m7_dist_fail_msg) = @_;
+	$m7->updateNodeStatus('error', $m7_dist_fail_node);
+	$m7->log->error($m7_dist_fail_msg);
+}
 sub testDist {
 	my $m7 = shift;
 	if($m7->is_dir) {
@@ -1015,17 +1026,17 @@ sub testDist {
 							-i => $ENV{HOME} . '/.ssh/m7.key'
 						],
 					)
-				) or $m7->log->logdie('Failed to establish SSH connection with worker - ' . $m7_host{name} . ':' . $m7_host{user} . '@' . $m7_host{ipaddr});
+				) or $m7->testDistFail($m7_host{name}, 'Failed to establish SSH connection with worker - ' . $m7_host{name} . ':' . $m7_host{user} . '@' . $m7_host{ipaddr});
 				$m7->log->info('Successfully established SSH connection with worker - ' . $m7_host{name} . ':' . $m7_host{user} . '@' . $m7_host{ipaddr});
 				
 				# Copy the test plan to the worker nodes
 				$m7_ssh->scp_put($m7->plan_file, "plans/" . $m7->plan_id . ".xml")
-					or $m7->log->logdie('Failed to copy test plan to: ' . $m7_host{name});
+					or $m7->testDistFail($m7_host{name}, 'Failed to copy test plan to: ' . $m7_host{name});
 				$m7->log->info('Copied test plan ' . $m7->plan_file . ' to: ' . $m7_host{name});
 				
 				# Run the test plan on the worker nodes
 				$m7_ssh->pipe_out("bash -c -l 'm7 run ~/plans/" . $m7->plan_id . ".xml \"" . $m7->plan_runtime . "\"' > /dev/null 2>&1 &")
-					or $m7->log->logdie('Failed to execute command on worker node: ' . $m7_host{name});
+					or $m7->testDistFail($m7_host{name}, 'Failed to execute command on worker node: ' . $m7_host{name});
 					
 				# Create a fork to monitor each worker node from the director
 				my $m7_wm_pid = fork();
