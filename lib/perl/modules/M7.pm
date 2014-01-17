@@ -237,7 +237,7 @@ sub gitSync {
 	my ($m7_git_branch) = @_;
 	
 	# Make sure a target branch is defined
-	if (not defined()) {
+	if (not defined($m7_git_branch)) {
 		$m7->log->logdie('You must specify a target branch to run the Git sync command');
 	}
 	system('sh ' . $ENV{HOME} . '/lib/bash/gitsync.sh "' . $m7_git_branch . '"');

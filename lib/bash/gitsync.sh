@@ -4,69 +4,86 @@
 SELINUX_ENABLED="$(sestatus | grep -i 'enabled')"
 APACHE_INSTALLED="$(rpm -qa | grep -e "^httpd-[0-9].*$")"
 
-# Get the target branch
+# Get the target branch and set the temporary directory and M7 home
 GIT_BRANCH="$1"
+TMP_DIR=/tmp/m7-$GIT_BRANCH
 
 # Change to a temporary working directory
-mkdir /tmp/m7; cd /tmp/m7
+mkdir $TMP_DIR; cd $TMP_DIR
+if [ -z $TMP_DIR ]; then
+	echo -e "Failed to set the TMP_DIR variable..."
+	exit 1;
+fi
+
+# Set the M7 home director
+if [ $GIT_BRANCH = "dev" ]; then
+	M7_HOME="/opt/vpls/m7-dev"
+else
+	M7_HOME="/opt/vpls/m7"
+fi
+
+# Show the directories
+echo -e "Git Branch: '$GIT_BRANCH'"
+echo -e "Temporary Director: '$TMP_DIR'"
+echo -e "M7 Home: '$M7_HOME'"
 
 # Clone the Git repository
 git clone -b $GIT_BRANCH https://github.com/djtaylor/m7.git
 
 # Make sure the git clone was successfull
 if [ "$?" != "0" ]; then
-        echo -e "Git clone failed, please verify your network settings..."
-        rm -rf /tmp/m7
-        exit 1;
+	echo -e "Git clone failed, please verify your network settings..."
+    rm -rf $TMP_DIR
+    exit 1;
 fi
 
 # Preserve configuration files
-cp ~/lib/perl/modules/M7Config.pm /tmp/m7/.
-if [ -f ~/html/lib/config.ini ]; then
-        cp ~/html/lib/config.ini /tmp/m7/.
+cp $M7_HOME/lib/perl/modules/M7Config.pm $TMP_DIR/.
+if [ -f $M7_HOME/html/lib/config.ini ]; then
+	cp $M7_HOME/html/lib/config.ini $TMP_DIR/.
 fi
 
 # Rsync the directories
-rsync -a /tmp/m7/m7/ /opt/vpls/m7/.
+rsync -a $TMP_DIR/m7/ $M7_HOME/.
 
 # Restore configuration files
-mv -f /tmp/m7/M7Config.pm ~/lib/perl/modules/.
-if [ -f ~/html/lib/config.ini ]; then
-        mv -f /tmp/m7/config.ini ~/html/lib/.
+mv -f $TMP_DIR/M7Config.pm $M7_HOME/lib/perl/modules/.
+if [ -f $M7_HOME/html/lib/config.ini ]; then
+	mv -f $TMP_DIR/config.ini $M7_HOME/html/lib/.
 fi
 
 # Leave the working directory and delete it
-cd && rm -rf /tmp/m7
+cd && rm -rf $TMP_DIR
 
 # Delete the local '.git' directory
-rm -rf ~/.git
+rm -rf $M7_HOME/.git
 
 # Delete the '.gitignore' files
-rm -f ~/output/.gitignore
-rm -f ~/log/.gitignore
-rm -f ~/plans/.gitignore
-rm -f ~/lock/subsys/.gitignore
+rm -f $M7_HOME/output/.gitignore
+rm -f $M7_HOME/log/.gitignore
+rm -f $M7_HOME/plans/.gitignore
+rm -f $M7_HOME/lock/subsys/.gitignore
 
 # Update folder permissions
-chmod 755 $HOME
-find $HOME -type d -exec chmod 755 {} \;
-find $HOME -type f -exec chmod 644 {} \;
+chmod 755 $M7_HOME
+find $M7_HOME -type d -exec chmod 755 {} \;
+find $M7_HOME -type f -exec chmod 644 {} \;
 
 # Make sure required files are executable
-chmod +x $HOME/bin/*
-chmod +x $HOME/lib/init.d/m7d
-find $HOME/lib/perl -type f -exec chmod +x {} \;
+chmod +x $M7_HOME/bin/*
+chmod +x $M7_HOME/lib/init.d/m7d
+find $M7_HOME/lib/perl -type f -exec chmod +x {} \;
 
 # Set SSH directory permissions
-chmod 700 $HOME/.ssh
-chmod 600 $HOME/.ssh/m7.key
+chmod 700 $M7_HOME/.ssh
+chmod 600 $M7_HOME/.ssh/m7.key
 
 # Set SELinux contexts if enabled
 if [ ! -z "$SELINUX_ENABLED" ]; then
-        chcon -R system_u:object_r:ssh_home_t:s0 ~/.ssh
+	chcon -R system_u:object_r:ssh_home_t:s0 $M7_HOME/.ssh
         
-        # If Apache server is installed
-        if [ ! -z "$APACHE_INSTALLED" ]; then
-                chcon -R system_u:object_r:httpd_sys_content_t:s0 ~/html
-        fi
+	# If Apache server is installed
+	if [ ! -z "$APACHE_INSTALLED" ]; then
+    	chcon -R system_u:object_r:httpd_sys_content_t:s0 $M7_HOME/html
+    fi
 fi
