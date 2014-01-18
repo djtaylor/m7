@@ -1,8 +1,6 @@
 <?php
+
 class Core {
-	
-	// Configuration values
-	private $m7_config;
 	
 	// Database object
 	public $m7_db;
@@ -18,12 +16,14 @@ class Core {
 	
 	// Class constructor
 	public function __construct() {
-		$this->m7_config = parse_ini_file('config.ini');
-		$this->m7_db = new mysqli(	
-			$this->m7_config['db_host'], 
-			$this->m7_config['db_name'], 
-			$this->m7_config['db_pass'], 
-			$this->m7_config['db_user'] 
+		parent::__construct();
+		
+		// Initialize the database connection
+		$this->m7_db = new mysqli(
+				$this->m7_config['db_host'],
+				$this->m7_config['db_name'],
+				$this->m7_config['db_pass'],
+				$this->m7_config['db_user']
 		);
 		
 		// Load up all the plan IDs
@@ -42,6 +42,20 @@ class Core {
 					'desc' => $m7_hosts_row['desc'] 
 			);
 		}
+	}
+	
+	/**
+	 * Load Cluster State
+	 * 
+	 * Run the 'my status-json' command on the director node to build a JSON object with the current state
+	 * of all nodes in the cluster.
+	 */
+	public function loadClusterState() {
+		exec('bash -c -l "~/bin/m7 status-json 2>&1"', $m7_status_json, $ret);
+		$m7_status_js = '<script>';
+		$m7_status_js .= 'var cluster_status = ' . $m7_status_json[0] . ';';
+		$m7_status_js .= '</script>';
+		return $m7_status_js;
 	}
 	
 	/**
@@ -405,5 +419,3 @@ class Core {
 		}
 	}
 }
-
-?>

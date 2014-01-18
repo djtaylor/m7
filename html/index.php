@@ -3,10 +3,11 @@
 <?php
 
 // Load Class Libraries
-require_once ('lib/core.php');
-require_once ('lib/d3js.php');
-require_once ('lib/render.php');
-$render = new Render ();
+require_once('lib/m7/config.php');
+require_once('lib/m7/core.php');
+require_once('lib/m7/d3js.php');
+require_once('lib/m7/render.php');
+$render = new Render();
 
 // Make sure enough variables are set before rendering
 $render->varCheck();
@@ -16,14 +17,14 @@ $render->varCheck();
 	<head>
 		<title>M7 Dashboard</title>
 		<meta charset="utf-8">
-		<script><?php echo 'var test_details_render = ',($render->m7_ready === true ? 'true' : 'false'); ?></script>
+		<?php echo $render->loadClusterState(); ?>
+		<script><?php echo 'var test_details_render = ',($render->m7_ready === true ? 'true;' : 'false;'); ?></script>
 		<script src="js/d3.v3.min.js"></script>
 		<script src="js/topojson.v1.min.js"></script>
 		<script src="js/jquery-1.10.2.min.js"></script>
 		<script src="js/jquery-ui-1.10.3.min.js"></script>
 		<script src="js/socket.io.min.js"></script>
 		<script src="js/dashboard.js"></script>
-		<script src="js/m7.listener.js"></script>
 		<link rel="stylesheet" type="text/css" href="css/dashboard.css">
 	</head>
 	<body>
@@ -86,5 +87,6 @@ d3.json("/json/world-50m.json", function(error, world) {
 d3.select(self.frameElement).style("height", height + "px");
     	</script>
     	<div style="display:none;" id="m7_auto_script"></div>
+    	<script src="js/m7.listener.js"></script>
 	</body>
 </html>

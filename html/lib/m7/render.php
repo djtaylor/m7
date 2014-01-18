@@ -9,8 +9,8 @@ class Render extends D3JS {
 	
 	// Class constructor
 	public function __construct() {
-		parent::__construct ();
-		$this->planInit ();
+		parent::__construct();
+		$this->planInit();
 	}
 	
 	/**

@@ -46,10 +46,30 @@ function M7Client(server) {
 				console.log('Invalid test animation action: ' + action);
 		}
 	};
+	
+	// Render initial page state
+	this.render_page = render_page;
+	function render_page(json) {
+		for (var node in json.cluster.nodes) {
+			var node_plans = json.cluster.nodes[node].plans;
+			var node_tag = node.replace('-','_');
+			for (var plan_id in node_plans) {
+				if (node_plans[plan_id].status == 'active') {
+					this.test_animate('start', node_tag);
+				}
+				if (node_plans[plan_id].status == 'idle') {
+					this.test_animate('stop', node_tag);
+				}
+			}
+		}
+	};
 };
 
 // Initialize the object
 var m7 = new M7Client('http://110.34.221.34:61000');
+
+// Render the initial page state
+m7.render_page(cluster_status);
 
 // Handle incoming socket.io connections
 m7.io_client.on('connect', function() {
