@@ -2,11 +2,18 @@
 <!DOCTYPE HTML>
 <?php
 
+/**
+ * M7 Dashboard - In order for this portal to work you need to make sure
+ * you install and run Composer in the 'html/lib' directory to pull any
+ * required PHP dependencies.
+ */
+
 // Load Class Libraries
 require_once('lib/m7/config.php');
 require_once('lib/m7/core.php');
 require_once('lib/m7/d3js.php');
 require_once('lib/m7/render.php');
+require_once('lib/vendor/autoload.php');
 $render = new Render();
 
 // Make sure enough variables are set before rendering
