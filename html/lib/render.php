@@ -689,6 +689,66 @@ class Render extends D3JS {
 		return $test_details_html;
 	}
 	
+	/**
+	 * Render World Map
+	 */
+	public function renderWorldMap($map_json) {
+		
+		// Construct the world map code
+		$world_map = $this->mapHostDetails();
+		$world_map .=  $this->mapKey(); 
+		$world_map .= '<div id="map_container"></div>';
+		$world_map .= '<script>';
+	
+		// Window dimensions
+		$world_map .= 'var width = window.innerWidth;';
+		$world_map .= 'var height = window.innerHeight;';
+		
+		// Map projection
+		$world_map .= 'var projection = d3.geo.mercator()';
+		$world_map .= '.scale((width + 1) / 2 / Math.PI)';
+		$world_map .= '.translate([width / 2, height / 2])';
+		$world_map .= '.precision(.1);';
+		
+		// Map path, color scale, and graticule
+		$world_map .= 'var path = d3.geo.path()';
+		$world_map .= '.projection(projection);';
+		$world_map .= 'var color = d3.scale.category20();';
+		$world_map .= 'var graticule = d3.geo.graticule();';
+		
+		// Initialize the map SVG
+		$world_map .= 'var svg = d3.select("#map_container").append("svg")';
+		$world_map .= '.attr("width", width)';
+		$world_map .= '.attr("height", height);';
+		$world_map .= 'svg.append("path")';
+		$world_map .= '.datum(graticule)';
+		$world_map .= '.attr("class", "graticule")';
+		$world_map .= '.attr("d", path);';
+		
+		// Render the cluster node map points
+		$world_map .= $this->mapHosts();;
+		
+		// Render testing map paths if global rendering is true
+		if($this->m7_ready) {
+			$world_map .= $this->mapPaths();
+		}
+		
+		// Construct the world map
+		$world_map .= 'd3.json("' . $map_json . '", function(error, world) {';
+		$world_map .= 'svg.insert("path", ".graticule")';
+		$world_map .= '.datum(topojson.feature(world, world.objects.land))';
+		$world_map .= '.attr("class", "land")';
+		$world_map .= '.attr("d", path);';
+		$world_map .= 'svg.insert("path", ".graticule")';
+		$world_map .= '.datum(topojson.mesh(world, world.objects.countries, function(a, b) { return a !== b; }))';
+		$world_map .= '.attr("class", "boundary")';
+		$world_map .= '.attr("d", path);';
+		$world_map .= '});';
+		$world_map .= 'd3.select(self.frameElement).style("height", height + "px");';
+		$world_map .= '</script>';
+		return $world_map;
+	}
+	
 	// Render the map key
 	public function mapKey() {
 		if ($this->m7_ready) {

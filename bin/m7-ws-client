@@ -1,14 +1,30 @@
-var io     = require("socket.io-client");
-var client = io.connect("http://110.34.221.34:61000");
-
-var message = {
-  'packet': [{
-    'event': 'test-start',
-    'host': 'm7'
-  }]
+var io  = require("socket.io-client");
+data = {
+	host: process.argv[3],
+	port: process.argv[2],
+	type: process.argv[4],
+	json: process.argv[5],
+	validate: function() {
+		if (this.host == null || this.host == undefined) {
+			return false;
+		} else if (this.port == null || this.port == undefined) {
+			return false;
+		} else if (this.type == null || this.type == undefined) {
+			return false;
+		} else if (this.json == null || this.json == undefined) {
+			return false;
+		} else {
+			return true;
+		}
+	}
 };
 
-client.on('connect', function() {
-  client.emit('web_transmit', message);
-  client.disconnect();
-});
+if (!data.validate()) {
+	console.log('Must define target host, port, data type, and JSON string');
+} else {
+	var client = io.connect("http://" + data.host . ":" + data.port);
+	client.on('connect', function() {
+		client.emit(data.type, data.json);
+		client.disconnect;
+	});
+}

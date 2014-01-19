@@ -1,17 +1,31 @@
-var io          = require('socket.io').listen(61000, '110.34.221.34');
-var web_clients = [];
+server = {
+	ip:   process.argv[3],
+	port: process.argv[2],
+	validate: function() {
+		if (this.ip == null || this.ip == undefined) {
+			return false;
+		} else if (this.port == null || this.port == undefined) {
+			return false;
+		} else {
+			return true;
+		}
+	}
+};
 
-io.sockets.on('connection', function(socket) {
-  console.log('Client connected')
-  socket.on('web_transmit', function(web_data) {
-    console.log('Received web data: ' + web_data);
-    io.sockets.clients().forEach(function (web_socket) {
-      console.log('Transmitting to: ' + web_socket.id);
-      console.log('Transmitting data: ' + web_data);
-      web_socket.emit('web_receive', web_data);
-    });
-  });
-  socket.on('web_connect', function(data) {
-    console.log(data);
-  });
-});
+if (!server.validate()) {
+	console.log('Must define server IP and port to run');
+} else {
+	var io = require('socket.io').listen(server.port, server.ip);
+	var web_clients = [];
+	io.sockets.on('connection', function(socket) {
+		socket.on('web_transmit', function(json) {
+		    io.sockets.clients().forEach(function (web_socket) {
+		    	var socket_id = web_socket.id;
+		    	web_socket.emit('web_receive', json);
+		    });
+		});
+		socket.on('web_connect', function() {
+			console.log(data);
+		});
+	});
+}

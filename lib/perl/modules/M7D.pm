@@ -9,8 +9,11 @@ BEGIN {
 	use warnings;
 	use Log::Log4perl;
 	use File::Slurp;
+	use File::Path;
 	use DBI;
 	use DBD::mysql;
+	use DateTime;
+	use DateTime::Duration;
 	use lib $ENV{HOME} . '/lib/perl/modules';
 	use M7Config;
 }
@@ -98,6 +101,73 @@ sub planConfig {
 
 # Fork Child Test Process \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\ #
 sub forkTest {
+	sub get_delay {
+		my ($m7d_id, $m7d_int) = @_;
+		sub set_next_run {
+			my ($m7d_int, $m7d_next_run_marker) = @_;
+			my $m7d_datetime = DateTime->now();
+			
+			# Find the next runtime
+			$m7d_datetime->add(seconds => $m7d_int);
+			my $m7d_next_date     = $m7d_datetime->ymd;
+			my $m7d_next_time     = $m7d_datetime->hms;
+			my $m7d_next_run      = $m7d_next_date . ' ' . $m7d_next_time;
+		
+			# Initialize the runtime marker with the current time
+			open(my $m7d_next_run_fh, '>', $m7d_next_run_marker);
+			print $m7d_next_run_fh $m7d_next_run;
+			close($m7d_next_run_fh);
+		}
+		
+		# Generate the next runtime marker directory
+		my $m7d_next_run_dir = $ENV{HOME} . '/run/plan'
+		my $m7d_next_run_marker = $m7d_next_run_dir . '/' . $m7d_id;
+		mkpath($m7d_next_run_dir, 0, 0755);
+		
+		# If clearing the runtime marker
+		if (not defined($m7d_id)) {
+			unlink($m7d_next_run_marker);
+		} else {
+			
+			# Initialize the datetime object and delay variable
+			my $m7d_datetime = DateTime->now();
+			my $m7d_delay;
+			
+			# Get the current datetime
+			my $m7d_this_date     = $m7d_datetime->ymd;
+			my $m7d_this_time     = $m7d_datetime->hms;
+			my $m7d_this_run      = $m7d_this_date . ' ' . $m7d_this_time;
+			
+			# If the runtime marker already exists
+			if (-e $m7d_next_run_marker) {
+				
+				# Read the file into memory
+				open(my $m7d_next_run_fh, '<', $m7d_next_run_marker);
+				my $m7d_next_run = <$m7d_next_run_fh>;
+				close($m7d_next_run_fh);
+				
+				# Calculate the delay in seconds until next run
+				my $m7d_time_one = Time::Piece->strptime($m7d_this_run, '%Y-%m-%d %H:%M:%S');
+				my $m7d_time_two = Time::Piece->strptime($m7d_next_run, '%Y-%m-%d %H:%M:%S');
+				my $m7d_delay = $m7d_time_two - $m7d_time_one;
+				
+				# If the delay is negative (next run date already passed)
+				if ($m7d_delay != abs($m7d_delay)) {
+					
+					# Set the next runtime and delay
+					set_next_run($m7d_int, $m7d_next_run_marker);
+					$m7d_delay = 0;
+				}
+				
+			} else {
+				
+				# Set the next runtime and delay
+				set_next_run($m7d_int, $m7d_next_run_marker);
+				$m7d_delay = 0;
+			}
+			return $m7d_delay;	
+		}
+	}
 	
 	# Retrieve arguments and set the run log variables
 	my $m7d = shift;
@@ -122,6 +192,10 @@ sub forkTest {
 		
 		# Start the server process
 		do {
+			$m7d_delay = get_delay($m7d_id, $m7d_int);
+			
+			# Delay the run if restarting the server
+			sleep($m7d_delay);
 			
 			# Run the fork command
 			$m7d->log->info($$ . ': Starting ' . $m7d_run_type . '[' . $m7d_run_count . '] test run interval for ID: ' . $m7d_id);
@@ -136,6 +210,10 @@ sub forkTest {
 			$m7d->log->info($$ . ': Test plan execution complete - next run in ' . $m7d_int . ' seconds');
 			$m7d_run_count ++;
 			sleep($m7d_int);
+			
+			# Clear the next runtime marker
+			get_delay(undef);
+			
 		} while(1);	
 	}
 }

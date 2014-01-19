@@ -39,18 +39,14 @@ fi
 
 # Preserve configuration files
 cp $M7_HOME/lib/perl/modules/M7Config.pm $TMP_DIR/.
-if [ -f $M7_HOME/html/lib/config.ini ]; then
-	cp $M7_HOME/html/lib/config.ini $TMP_DIR/.
-fi
+cp $M7_HOME/html/lib/config.ini $TMP_DIR/.
 
 # Rsync the directories
 rsync -a $TMP_DIR/m7/ $M7_HOME/.
 
 # Restore configuration files
 mv -f $TMP_DIR/M7Config.pm $M7_HOME/lib/perl/modules/.
-if [ -f $M7_HOME/html/lib/config.ini ]; then
-	mv -f $TMP_DIR/config.ini $M7_HOME/html/lib/.
-fi
+mv -f $TMP_DIR/config.php $M7_HOME/html/lib/.
 
 # Leave the working directory and delete it
 cd && rm -rf $TMP_DIR

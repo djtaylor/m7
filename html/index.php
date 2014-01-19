@@ -2,30 +2,23 @@
 <!DOCTYPE HTML>
 <?php
 
-/**
- * M7 Dashboard - In order for this portal to work you need to make sure
- * you install and run Composer in the 'html/lib' directory to pull any
- * required PHP dependencies.
- */
-
 // Load Class Libraries
-require_once('lib/m7/config.php');
-require_once('lib/m7/core.php');
-require_once('lib/m7/d3js.php');
-require_once('lib/m7/render.php');
-require_once('lib/vendor/autoload.php');
-$render = new Render();
+require_once('lib/config.php');
+require_once('lib/core.php');
+require_once('lib/d3js.php');
+require_once('lib/render.php');
+$m7 = new Render();
 
 // Make sure enough variables are set before rendering
-$render->varCheck();
+$m7->varCheck();
 
 ?>
 <html>
 	<head>
 		<title>M7 Dashboard</title>
 		<meta charset="utf-8">
-		<?php echo $render->loadClusterState(); ?>
-		<script><?php echo 'var test_details_render = ',($render->m7_ready === true ? 'true;' : 'false;'); ?></script>
+		<?php echo $m7->loadClusterState(); ?>
+		<script><?php echo 'var test_details_render = ',($m7->m7_ready === true ? 'true;' : 'false;'); ?></script>
 		<script src="js/d3.v3.min.js"></script>
 		<script src="js/topojson.v1.min.js"></script>
 		<script src="js/jquery-1.10.2.min.js"></script>
@@ -40,59 +33,11 @@ $render->varCheck();
 				<div class="m7_dashboard_content">
 					<div class="m7_configure">Configure</div>
 					<div class="m7_test_submit">Submit</div>
-					<?php echo $render->planMenu(); ?>	
+					<?php echo $m7->planMenu(); ?>	
 	        	</div>
 			</form>
 		</div>
-    	<?php echo $render->mapKey(); ?>
-    	<?php echo $render->mapHostDetails(); ?>
-    	<div id="map_container"></div>
-		<script>
-
-var width = window.innerWidth;
-height = window.innerHeight;
-
-var projection = d3.geo.mercator()
-	.scale((width + 1) / 2 / Math.PI)
-	.translate([width / 2, height / 2])
-	.precision(.1);
-
-var path = d3.geo.path()
-    .projection(projection);
-
-var color = d3.scale.category20();
-    
-var graticule = d3.geo.graticule();
-
-var svg = d3.select("#map_container").append("svg")
-    .attr("width", width)
-    .attr("height", height);
-
-svg.append("path")
-    .datum(graticule)
-    .attr("class", "graticule")
-    .attr("d", path);
-
-
-<?php 
-echo $render->mapHosts();
-if ($render->m7_ready) { echo $render->mapPaths(); } 
-?>
-
-d3.json("/json/world-50m.json", function(error, world) {
-	svg.insert("path", ".graticule")
-		.datum(topojson.feature(world, world.objects.land))
-		.attr("class", "land")
-		.attr("d", path);
-
-	svg.insert("path", ".graticule")
-		.datum(topojson.mesh(world, world.objects.countries, function(a, b) { return a !== b; }))
-		.attr("class", "boundary")
-		.attr("d", path);
-});
-
-d3.select(self.frameElement).style("height", height + "px");
-    	</script>
+		<?php echo $m7->renderWorldMap('/json/world-50m.json'); ?>
     	<div style="display:none;" id="m7_auto_script"></div>
     	<script src="js/m7.listener.js"></script>
 	</body>

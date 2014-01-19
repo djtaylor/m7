@@ -1,6 +1,6 @@
 <?php
 
-class Core {
+class Core extends M7Config {
 	
 	// Database object
 	public $m7_db;
@@ -16,7 +16,6 @@ class Core {
 	
 	// Class constructor
 	public function __construct() {
-		parent::__construct();
 		
 		// Initialize the database connection
 		$this->m7_db = new mysqli(
