@@ -39,7 +39,7 @@ fi
 
 # Preserve configuration files
 cp $M7_HOME/lib/perl/modules/M7Config.pm $TMP_DIR/.
-cp $M7_HOME/html/lib/config.ini $TMP_DIR/.
+cp $M7_HOME/html/lib/config.php $TMP_DIR/.
 
 # Rsync the directories
 rsync -a $TMP_DIR/m7/ $M7_HOME/.
