@@ -20,13 +20,13 @@ class Render extends D3JS {
 		$map_hosts_js = null;
 		
 		// Find the director latitude and longitude
-		$m7_cluster_dir_query = $this->m7_db->query( "SELECT * FROM hosts WHERE type='director'" );
+		$m7_cluster_dir_query = $this->m7_db->query( "SELECT * FROM nodes WHERE type='director'" );
 		$m7_cluster_dir_row   = $m7_cluster_dir_query->fetch_assoc();
 		$m7_cluster_dir_lat   = $m7_cluster_dir_row['latitude'];
 		$m7_cluster_dir_lon   = $m7_cluster_dir_row['longitude'];
 		
 		// Build the map points and node interconnects
-		$m7_cluster_hosts_query = $this->m7_db->query( "SELECT * FROM hosts" );
+		$m7_cluster_hosts_query = $this->m7_db->query( "SELECT * FROM nodes" );
 		while ($m7_cluster_hosts_row = $m7_cluster_hosts_query->fetch_assoc()) {
 			$m7_host_alias = $m7_cluster_hosts_row['name'];
 			$m7_host_alias = preg_replace( "/-/", "_", $m7_host_alias);
@@ -67,7 +67,7 @@ class Render extends D3JS {
 	 * Render Test Host Details
 	 */
 	public function mapHostDetails() {
-		$m7_cluster_hosts_query = $this->m7_db->query( "SELECT * FROM hosts" );
+		$m7_cluster_hosts_query = $this->m7_db->query( "SELECT * FROM nodes" );
 		
 		$map_hosts_html = '<div class="m7_map_host_details">';
 		$map_hosts_html .= '<div class="m7_map_host_details_bg"></div>';

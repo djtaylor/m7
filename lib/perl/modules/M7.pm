@@ -173,7 +173,7 @@ sub checkDirector {
 	
 	# Prepare the director node query
 	$m7->log->info('Constructing director node object');
-	my $m7_dir_query = "SELECT * FROM hosts WHERE type='director'";
+	my $m7_dir_query = "SELECT * FROM nodes WHERE type='director'";
 	my $m7_dir_qh 	 = $m7->db->prepare($m7_dir_query)
 		or $m7->log->logdie("Failed to prepare MySQL statement: '" . DBI->errstr . "'");
 	
@@ -184,7 +184,7 @@ sub checkDirector {
 	
 	# Prepare the worker nodes query
 	$m7->log->info('Constructing worker nodes object');
-	my $m7_wrk_query = "SELECT * FROM hosts WHERE type='worker'";
+	my $m7_wrk_query = "SELECT * FROM nodes WHERE type='worker'";
 	my $m7_wrk_qh	 = $m7->db->prepare($m7_wrk_query)
 		or $m7->log->logdie("Failed to prepare MySQL statement: '" . DBI->errstr . "'");
 	
@@ -197,7 +197,7 @@ sub checkDirector {
 	
 	# Prepare the local node query
 	$m7->log->info('Constructing local node object');
-	my $m7_loc_query = "SELECT * FROM hosts WHERE name='" . $m7_host . "'";
+	my $m7_loc_query = "SELECT * FROM nodes WHERE name='" . $m7_host . "'";
 	my $m7_loc_qh	 = $m7->db->prepare($m7_loc_query)
 		or $m7->log->logdie("Failed to prepare MySQL statement: '" . DBI->errstr . "'");
 	
@@ -210,7 +210,7 @@ sub checkDirector {
 	
 	# Prepare the all nodes query
 	$m7->log->info('Constructing all nodes object');
-	my $m7_nodes_query = "SELECT * FROM hosts";
+	my $m7_nodes_query = "SELECT * FROM nodes";
 	my $m7_nodes_qh	   = $m7->db->prepare($m7_nodes_query)
 		or $m7->log->logdie("Failed to prepare MySQL statement: '" . DBI->errstr . "'");
 		

@@ -36,7 +36,7 @@ class Core extends M7Config {
 		}
 		
 		// Load up all the cluster hosts
-		$m7_hosts_query = $this->m7_db->query( "SELECT * FROM hosts" );
+		$m7_hosts_query = $this->m7_db->query( "SELECT * FROM nodes" );
 		while ($m7_hosts_row = $m7_hosts_query->fetch_assoc() ) {
 			$this->m7_hosts[$m7_hosts_row['name']] = array(
 					'desc' => $m7_hosts_row['desc'] 
@@ -233,7 +233,7 @@ class Core extends M7Config {
 	public function setSHP() {
 		
 		// Get the source host properties
-		$m7_plan_shost_query = $this->m7_db->query( "SELECT * FROM hosts WHERE name='" . $this->m7_active['host'] . "'" );
+		$m7_plan_shost_query = $this->m7_db->query( "SELECT * FROM nodes WHERE name='" . $this->m7_active['host'] . "'" );
 		$m7_plan_shost_result = $m7_plan_shost_query->fetch_assoc();
 		
 		// Set the active host properties
