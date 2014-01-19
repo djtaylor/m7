@@ -10,6 +10,53 @@ function position_details() {
 
 }
 
+function clock() {
+	
+	// Get the current time objects
+	var second = parseInt($("#second").text());
+	var minute = parseInt($("#minute").text());
+	var hour   = parseInt($("#hour").text());
+	
+	// Start the increment tests
+	var next_second = second + 1;
+	if (next_second > 59) {
+		next_second = '00';
+		$("#second").text(next_second);
+		var next_minute = minute + 1;
+		if (next_minute > 59) {
+			next_minute = '00';
+			$("#minute").text(next_minute);
+			var next_hour = hour + 1;
+			if (next_hour > 23) {
+				next_hour = '00';
+				$("#hour").text(next_hour);
+			} else {
+				if (next_hour < 10) {
+					next_hour = '0' + next_hour;
+					$("#hour").text(next_hour);
+				} else {
+					$("#hour").text(next_hour);
+				}
+			}
+		} else {
+			if (next_minute < 10) {
+				next_minute = '0' + next_minute;
+				$("#minute").text(next_minute);
+			} else {
+				$("#minute").text(next_minute);
+			}
+		}
+	} else {
+		if (next_second < 10) {
+			next_second = '0' + next_second;
+			$("#second").text(next_second);
+		} else {
+			$("#second").text(next_second);
+		}
+	}
+	setTimeout(clock, 1000);
+}
+
 function position_key() {
 	var map_key_top			= ($(window).height() / 2) - ($('.m7_map_key').height() / 2);
 	$('.m7_map_key').css('top', map_key_top+'px');
@@ -18,6 +65,7 @@ function position_key() {
 $(document).ready(function() {
 	position_details();
 	position_key();
+	clock();
     $('.m7_test_details_show').click(function() {
     	$('.m7_test_details').fadeIn('fast');
 	});

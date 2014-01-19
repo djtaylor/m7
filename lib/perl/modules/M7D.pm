@@ -10,6 +10,7 @@ BEGIN {
 	use Log::Log4perl;
 	use File::Slurp;
 	use File::Path;
+	use XML::LibXML;
 	use DBI;
 	use DBD::mysql;
 	use DateTime;
@@ -25,9 +26,11 @@ BEGIN {
 sub new {
 	my $m7d = {
 		_config		=> M7Config->new(),
+		_libxml		=> XML::LibXML->new(),
 		_log		=> undef,
 		_db			=> undef,
 		_plans		=> undef,
+		_plan_xtree => undef,
 		_forks		=> undef
 	};
 	bless $m7d, M7D;
@@ -39,11 +42,13 @@ sub new {
 }
 
 # Subroutine Shortcuts \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\ #
-sub config  { return shift->{_config}; }
-sub log		{ return shift->{_log};    }
-sub db		{ return shift->{_db};     }
-sub plans	{ return shift->{_plans};  }
-sub forks	{ return shift->{_forks};  }
+sub config     { return shift->{_config};     }
+sub libxml     { return shift->{_libxml};     }
+sub log		   { return shift->{_log};        }
+sub db		   { return shift->{_db};         }
+sub plans	   { return shift->{_plans};      }
+sub plan_xtree { return shift->{_plan_xtree}; }
+sub forks	   { return shift->{_forks};      }
 
 # Initialize Logger \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\ #
 sub logInit {
@@ -85,7 +90,7 @@ sub dbInit {
 	return $m7d->{_db};
 }
 
-# Plan Configuration Parameters Constructor \\\\\\\\\\\\\\\\\\\\\\\\\\\ #
+# Plan Configuration Parameters Constructor \\\\\\\\\\\\\\\\\\\\\\\\\\\\ #
 sub planConfig {
 	my $m7d = shift;
 	my $m7d_plans_query = 'SELECT * FROM config_m7d';

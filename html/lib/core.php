@@ -16,6 +16,7 @@ class Core extends M7Config {
 	
 	// Class constructor
 	public function __construct() {
+		date_default_timezone_set('Asia/Bangkok');
 		
 		// Initialize the database connection
 		$this->m7_db = new mysqli(

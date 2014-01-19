@@ -1,5 +1,5 @@
-/*
- * M7 Socket IO Object
+/**
+ * M7 Socket IO Listener
  * 
  *  This library is used to handle messages received from the socket.io server running
  *  on the M7 testing director. Right now communications are one way. The web client
@@ -7,11 +7,55 @@
  */
 
 function M7Client(server) {
+	this.secret = 'gsh9a875qnva7ontv75sn5it3qcae';	
+	
+	// Popup alert
+	this.alert_box_count = 1;
+	this.alert_box = alert_box; 
+	function alert_box(type, msg) {
+		switch(type) {
+			case 'fatal':
+				$("#alert_box_container").prepend("<div class='alert_box' id='alert_" + this.alert_box_count + "'><div class='alert_box_fatal'>Fatal:</div><div class='alert_box_msg'>" + msg + "</div></div>");
+				break;
+			case 'error':
+				$("#alert_box_container").prepend("<div class='alert_box' id='alert_" + this.alert_box_count + "'><div class='alert_box_error'>Error:</div><div class='alert_box_msg'>" + msg + "</div></div>");
+				break;
+			case 'warn':
+				$("#alert_box_container").prepend("<div class='alert_box' id='alert_" + this.alert_box_count + "'><div class='alert_box_warn'>Warn:</div><div class='alert_box_msg'>" + msg + "</div></div>");
+				break;
+			case 'info':
+				$("#alert_box_container").prepend("<div class='alert_box' id='alert_" + this.alert_box_count + "'><div class='alert_box_info'>Info:</div><div class='alert_box_msg'>" + msg + "</div></div>");
+				break;
+			default:
+				$("#alert_box_container").prepend("<div class='alert_box' id='alert_" + this.alert_box_count + "'>" + type + ": " + msg + "</div>");
+				break;
+		}
 		
+		
+		$("#alert_" + this.alert_box_count).delay(4000).fadeOut("fast");
+		this.alert_box_count++;
+	}
+	
+	// Initialize connection
+	this.io_connect = io_connect;
+	function io_connect(server) {
+		io_connection = io.connect(server, {secure: true, query: 'secret=' + this.secret});
+		console.log(io_connection);
+		io_connection.on('error', function(e) {
+			alert_box('error', 'Unhandled socket.io connection issue: ' + e);
+			return null;
+		});
+		io_connection.on('connect_failed', function(e) {
+			alert_box('error', 'Failed to connect to socket.io server: ' + e);
+			return null;
+		});
+		return io_connection;
+	}
+	
 	// Constructor
-	this.io_client		  = io.connect(server);
+	this.io_client		  = this.io_connect(server);
 	this.script_container = '#m7_auto_script';
-		
+	
 	// Icon pulse animation
 	this.icon_pulse = icon_pulse;
 	function icon_pulse(elem) {
@@ -66,7 +110,7 @@ function M7Client(server) {
 };
 
 // Initialize the object
-var m7 = new M7Client('http://110.34.221.34:61000');
+var m7 = new M7Client('https://110.34.221.34:61000');
 
 // Render the initial page state
 m7.render_page(cluster_status);

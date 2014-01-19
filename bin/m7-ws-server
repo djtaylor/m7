@@ -1,31 +1,87 @@
+/**
+ * M7 Socket.IO Server
+ * 
+ * This server is used to relay messages to the M7 dashboard from both the director
+ * node and worker nodes. Security is handled using SSL and a shared secret used to
+ * validate any incoming connections.
+ * 
+ * argv[2]: The IP address the server should listen on
+ * argv[3]: The port the server should bind to
+ * 
+ * This server should be handled using system upstart scripts, using the 'service'
+ * command to start, stop, and restart the server.
+ */
+
+// Define and validate server information
 server = {
-	ip:   process.argv[3],
-	port: process.argv[2],
-	validate: function() {
-		if (this.ip == null || this.ip == undefined) {
-			return false;
-		} else if (this.port == null || this.port == undefined) {
-			return false;
-		} else {
-			return true;
-		}
-	}
+	ip:  	process.argv[2],
+    port:	process.argv[3],
+    secret: 'gsh9a875qnva7ontv75sn5it3qcae',
+    validate: function() {
+    	
+    	// Make sure the IP address is specified
+    	if (this.ip == null || this.ip == undefined) { return false; } 
+    	
+    	// Make sure the port is specified
+    	else if (this.port == null || this.port == undefined) { return false; } 
+    	
+    	// All information supplied, return true
+    	else { return true; }
+    }
 };
 
+// Abort if the IP address and port are not defined
 if (!server.validate()) {
-	console.log('Must define server IP and port to run');
+    console.log('Must define server IP and port to run...');
 } else {
-	var io = require('socket.io').listen(server.port, server.ip);
-	var web_clients = [];
-	io.sockets.on('connection', function(socket) {
-		socket.on('web_transmit', function(json) {
-		    io.sockets.clients().forEach(function (web_socket) {
-		    	var socket_id = web_socket.id;
-		    	web_socket.emit('web_receive', json);
-		    });
-		});
-		socket.on('web_connect', function() {
-			console.log(data);
-		});
-	});
+
+    // Import the HTTPS and FS modules
+    var https = require('https').globalAgent.options.rejectUnauthorized = false;
+    var fs    = require('fs');
+
+    // Set the SSL options
+    var options = {
+    	key:    fs.readFileSync('/etc/pki/tls/private/m7.key'),
+    	cert:   fs.readFileSync('/etc/pki/tls/certs/m7.crt'),
+    	ca:		fs.readFileSync('/etc/pki/tls/private/m7.csr')
+    };
+
+    // Create the HTTPS server
+    var https = https.createServer(options);
+    var io = require('socket.io').listen(https);
+    https.listen(server.port, server.ip);
+
+    // Handle client authentication
+    io.configure(function() {
+    	io.set('authorization', function(authData, callback) {
+    		console.log(authData);
+        	console.log('Validating client secret: ' + authData.query.secret);
+        	if (authData.query.secret != server.secret) {
+    			console.log('Invalid client secret - disconnecting');
+    			callback(null, false);
+        	} else {
+        		console.log('Client secret is valid - connecting');
+        		callback(null, true);
+        	}
+        });
+    });
+    
+    // Handle client connections
+    io.sockets.on('connection', function(socket) {  
+    	console.log('Opened connection for client ' + socket.id);
+    	socket.on('init', function(client) {	
+			console.log('Received client data type: ' + client.type);
+			switch(client.type) {
+				case 'web_transmit':
+					io.sockets.clients('web').forEach(function (web_socket) {
+	    				var socket_id = web_socket.id;
+	                    web_socket.emit('web_receive', client.json);
+	                });
+					break;
+				default:
+					console.log('Unsupported client data type: ' + client.type);
+					break;
+			}
+        });
+    });
 }

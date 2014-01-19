@@ -1,30 +1,67 @@
+/**
+ * M7 Socket.IO Client
+ * 
+ * This client is used to connect from a worker node to the director node via the
+ * command line. This is currently being used to transmit messages to the dashboard
+ * when testing and node status is updated.
+ * 
+ * argv[2]: The IP address or hostname to connect to
+ * argv[3]: The port to connect to
+ * argv[4]: A supported data type string
+ * argv[5]: A JSON object to transmit. This will be interpreted by the dashboard
+ */
+
+// Import the socket.io-client libraries and enable self-signed SSL certificate validation
 var io  = require("socket.io-client");
+require('https').globalAgent.options.rejectUnauthorized = false;
+
+// Define client arguments and secret
 data = {
-	host: process.argv[3],
-	port: process.argv[2],
-	type: process.argv[4],
-	json: process.argv[5],
-	validate: function() {
-		if (this.host == null || this.host == undefined) {
-			return false;
-		} else if (this.port == null || this.port == undefined) {
-			return false;
-		} else if (this.type == null || this.type == undefined) {
-			return false;
-		} else if (this.json == null || this.json == undefined) {
-			return false;
-		} else {
-			return true;
-		}
-	}
+	host:   process.argv[2],
+    port:   process.argv[3],
+    type:   process.argv[4],
+    json:   process.argv[5],
+    secret: 'gsh9a875qnva7ontv75sn5it3qcae',
+    validate: function() {
+        
+    	// Make sure the target host/IP is defined
+    	if (this.host == null || this.host == undefined) { return false; }
+    	
+    	// Make sure the target port is defined
+    	else if (this.port == null || this.port == undefined) { return false; }
+    	
+    	// Make sure the data type is defined
+    	else if (this.type == null || this.type == undefined) { return false; }
+    	
+    	// Make sure a JSON object is defined
+    	else if (this.json == null || this.json == undefined) { return false; }
+    	
+    	// All properties defined, return true
+    	else { return true; }
+    }
 };
 
+// Make sure the required arguments are supplied before proceeding
 if (!data.validate()) {
-	console.log('Must define target host, port, data type, and JSON string');
+        console.log('ERROR: Must define target host, port, data type, and JSON string...');
 } else {
-	var client = io.connect("http://" + data.host . ":" + data.port);
-	client.on('connect', function() {
-		client.emit(data.type, data.json);
-		client.disconnect;
-	});
+
+        // Establish the connection with the server and send the secret
+        var client = io.connect("https://" + data.host + ":" + data.port, {secure: true, query: 'secret=' + data.secret});
+
+        // Construct the JSON object
+        var json = {
+                'type':   data.type,
+                'json':   data.json
+        };
+
+        // Transmit JSON object on connection
+        client.on('connect', function() {
+                client.emit('init', json);
+                client.disconnect;
+        });
+
+        // Handle connection errors and failures
+        client.on('error',          function(e) { console.log('ERROR: ' + e); });
+        client.on('connect_failed', function(e) { console.log('ERROR: ' + e); });
 }

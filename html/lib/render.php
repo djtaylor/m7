@@ -697,6 +697,15 @@ class Render extends D3JS {
 		// Construct the world map code
 		$world_map = $this->mapHostDetails();
 		$world_map .=  $this->mapKey(); 
+		$world_map .= '<div id="alert_box_container"></div>';
+		$world_map .= '<div id="server_time" class="m7_server_clock"><div class="m7_date_label">Server Time:</div>';
+		$world_map .= '<div class="m7_date_unit" id="year">' . date('Y') . '</div><div class="m7_date_seperator">-</div>';
+		$world_map .= '<div class="m7_date_unit" id="month">' . date('m') . '</div><div class="m7_date_seperator">-</div>';
+		$world_map .= '<div class="m7_date_unit" id="day">' . date('d') . '</div>';
+		$world_map .= '<div class="m7_date_unit" id="hour">' . date('H') . '</div><div class="m7_date_seperator">:</div>';
+		$world_map .= '<div class="m7_date_unit" id="minute">' . date('i') . '</div><div class="m7_date_seperator">:</div>';
+		$world_map .= '<div class="m7_date_unit" id="second">' . date('s') . '</div>';
+		$world_map .= '</div>';
 		$world_map .= '<div id="map_container"></div>';
 		$world_map .= '<script>';
 	
@@ -896,5 +905,3 @@ class Render extends D3JS {
 		return $plan_menu_html;
 	}
 }
-
-?>
