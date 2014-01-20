@@ -139,7 +139,7 @@ sub forkTest {
 		mkpath($m7d_next_run_dir, 0, 0755);
 		
 		# If clearing the runtime marker
-		if (not defined($m7d_id)) {
+		if ($m7d_int eq 'clear') {
 			unlink($m7d_next_run_marker);
 		} else {
 			
@@ -219,7 +219,7 @@ sub forkTest {
 			system($m7d_cmd_string) != 1
 				or $m7d->forkFail($$ . ': Failed to execute shell command: ' . $m7d_cmd_string . ' - exit code: ' . $?);
 			$m7d->log->info($$ . ': Successfully executed shell command: [' . $m7d_cmd_string . '] - exit code: ' . $?);
-			$m7d->socket->dashAlert('Test plan ' . $m7d_id . ' successfully launched - next run in ' . $m7d_int . ' seconds.');
+			$m7d->socket->dashAlert('info', 'Test plan ' . $m7d_id . ' successfully launched - next run in ' . $m7d_int . ' seconds.');
 			
 			# Execution complete
 			$m7d->log->info($$ . ': Test plan execution complete - next run in ' . $m7d_int . ' seconds');
@@ -227,7 +227,7 @@ sub forkTest {
 			sleep($m7d_int);
 			
 			# Clear the next runtime marker
-			get_delay(undef);
+			get_delay($m7d_id, 'clear');
 			
 		} while(1);	
 	}

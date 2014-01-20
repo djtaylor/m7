@@ -16,19 +16,19 @@ function M7Client(server) {
 	function alert_box(type, msg) {
 		switch(type) {
 			case 'fatal':
-				$("#alert_box_container").prepend("<div class='alert_box' id='alert_" + this.alert_box_count + "'><div class='alert_box_fatal'>Fatal:</div><div class='alert_box_msg'>" + msg + "</div></div>");
+				$("#alert_box_container").prepend("<div class='alert_box' id='alert_" + this.alert_box_count + "'><div class='alert_box_msg'><div class='alert_box_fatal'>Fatal:</div>" + msg + "</div></div>");
 				break;
 			case 'error':
-				$("#alert_box_container").prepend("<div class='alert_box' id='alert_" + this.alert_box_count + "'><div class='alert_box_error'>Error:</div><div class='alert_box_msg'>" + msg + "</div></div>");
+				$("#alert_box_container").prepend("<div class='alert_box' id='alert_" + this.alert_box_count + "'><div class='alert_box_msg'><div class='alert_box_error'>Error:</div>" + msg + "</div></div>");
 				break;
 			case 'warn':
-				$("#alert_box_container").prepend("<div class='alert_box' id='alert_" + this.alert_box_count + "'><div class='alert_box_warn'>Warn:</div><div class='alert_box_msg'>" + msg + "</div></div>");
+				$("#alert_box_container").prepend("<div class='alert_box' id='alert_" + this.alert_box_count + "'><div class='alert_box_msg'><div class='alert_box_warn'>Warn:</div>" + msg + "</div></div>");
 				break;
 			case 'info':
-				$("#alert_box_container").prepend("<div class='alert_box' id='alert_" + this.alert_box_count + "'><div class='alert_box_info'>Info:</div><div class='alert_box_msg'>" + msg + "</div></div>");
+				$("#alert_box_container").prepend("<div class='alert_box' id='alert_" + this.alert_box_count + "'><div class='alert_box_msg'><div class='alert_box_info'>Info:</div>" + msg + "</div></div>");
 				break;
 			default:
-				$("#alert_box_container").prepend("<div class='alert_box' id='alert_" + this.alert_box_count + "'>" + type + ": " + msg + "</div>");
+				$("#alert_box_container").prepend("<div class='alert_box' id='alert_" + this.alert_box_count + "'>" + type + ": " + qmsg + "</div>");
 				break;
 		}
 		
