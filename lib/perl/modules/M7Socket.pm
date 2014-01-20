@@ -41,13 +41,36 @@ sub dashAlert {
 		# Construct the command string
 		my $m7s_node_cmd = 'node ~/bin/m7-ws-client ' . $m7s->config->get('sio_ip') .
 						   ' ' . $m7s->config->get('sio_port') . ' ' . $m7s->config->get('sio_proto') .
-						   ' web_transmit \'' . $m7s_json . '\' ' . $m7s->config->get('sio_secret');
+						   ' web_transmit \'' . $m7s_json . '\' ' . $m7s->config->get('sio_secret') . ' &> /opt/vpls/m7/log/node.log';
 		
 		# Transmit the message
 		system($m7s_node_cmd);
-		
 	} else {
 		return undef;	
+	}
+}
+
+# Update Service Status \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\ #
+sub serviceUpdate {
+	my $m7s = shift;
+	my ($m7s_service, $m7s_status) = @_;
+	my $m7s_host = hostname;
+	
+	# Make sure the service type is valid
+	if ($m7s_service eq 'scheduler' or $m7s_service eq 'socketio') {
+		
+		# Construct the JSON string
+		my $m7s_json = '{ "event": "service-update", "host":"' . $m7s_host . '", "service":"' . $m7s_service . '", "status":"' . $m7s_status . '"}';
+		
+		# Construct the command string
+		my $m7s_node_cmd = 'node ~/bin/m7-ws-client ' . $m7s->config->get('sio_ip') .
+						   ' ' . $m7s->config->get('sio_port') . ' ' . $m7s->config->get('sio_proto') .
+						   ' web_transmit \'' . $m7s_json . '\' ' . $m7s->config->get('sio_secret') . ' &> /opt/vpls/m7/log/node.log';
+		
+		# Transmit the message
+		system($m7s_node_cmd);
+	} else {
+		return undef;
 	}
 }
 

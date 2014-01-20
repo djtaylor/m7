@@ -1,6 +1,5 @@
 #!/usr/bin/perl
 use strict;
-use Log::Log4perl;
 use File::Find;
 use File::Slurp;
 use Term::ANSIColor;
@@ -9,6 +8,7 @@ use feature 'switch';
 # Load the M7 configuration
 use lib '/opt/vpls/m7/lib/perl/modules';
 use M7Config;
+use M7Socket;
 
 # \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\ #
 # Init Info \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\ #
@@ -31,24 +31,15 @@ use M7Config;
 
 # Load the configuration values
 my $m7c = M7Config->new();
+my $m7s = M7Socket->new();
 my $retval = undef;
 
 # Set the service variables
 my %service = (
 	'name'	=> $m7c->get('sio_name'),
 	'pid'	=> $m7c->get('sio_pid'),
-	'lock'	=> $m7c->get('sio_lock'),
-	'log'	=> $m7c->get('sio_log')
+	'lock'	=> $m7c->get('sio_lock')
 );
-
-# Set the log file and read the configuration into memory
-my $log_conf	= $m7c->get('sio_log_conf');
-   $log_conf	= read_file($log_conf);
-   $log_conf	=~ s/__LOGFILE__/$service{log}/;
-   
- # Initialize the logger
-Log::Log4perl::init(\$log_conf);
-my $log			= Log::Log4perl->get_logger;
 
 sub success {
 	print color 'green';
@@ -56,11 +47,11 @@ sub success {
 	print color 'reset';
 }
 sub failed {
-	my ($log_msg) = @_;
+	my ($current_status) = @_;
 	print color 'red';
 	print "FAILED\n";
 	print color 'reset';
-	$log->logdie($log_msg);
+	$m7s->serviceUpdate('socketio', $current_status);
 }
 
 sub status {
@@ -94,14 +85,20 @@ sub start {
 		exit $retval;
 	}
 	print "Starting the " . $service{name} . " daemon: ";
-	$log->info('Initializing ' . $service{name} . ' server process');
 	
-	system('nohup ~/bin/' . $service{name} . ' "' . $m7c->get('sio_ip') . '" "' . $m7c->get('sio_port') . '" "' . $m7c->get('sio_proto') . '" "' . $m7c->get('sio_secret') . '" >/dev/null 2>&1 &') == 0
+	system('nohup node ~/bin/' . $service{name} . ' "' . $m7c->get('sio_ip') . '" "' . $m7c->get('sio_port') . '" "' . $m7c->get('sio_proto') . '" "' . $m7c->get('sio_secret') . '" >/dev/null 2>&1 &') == 0
 		or &failed('Failed to start ' . $service{name} . ' process');
+	
+	# Get the PID of the process and create the pidfile
+	my $pid_num = qx(pidof node);
+	open(my $pid_fh, '>', $service{pid})
+		or &failed('stopped', 'Failed to open PID file');
+	print $pid_num $service{pid};
+	close($pid_fh);
 	
 	# Create the lockfile
 	open(LOCKFILE, '>' . $service{lock})
-		or &failed('Failed to create lock file');
+		or &failed('stopped', 'Failed to create lock file');
 		
 	# Process started
 	&success;
@@ -120,19 +117,17 @@ sub stop {
 	
 	# Stop the process
 	print "Stopping the " . $service{name} . " daemon: ";
-	$log->info('Sending SIGTERM to ' . $service{name} . ' process - PID ' . $pid_num);
 	kill('15', $pid_num)
 		or &failed('Failed to terminate ' . $service{name} . 'process - PID ' . $pid_num);
 	
 	# Delete the PID and lock files
 	unlink($service{pid})
-		or &failed('Failed to remove PID file');
+		or &failed('running', 'Failed to remove PID file');
 	unlink($service{lock})
-		or &failed('Failed to remove lock file');
+		or &failed('running', 'Failed to remove lock file');
 		
 	# Process stopped
 	&success;
-	$log->info('Terminated ' . $service{name} . ' process');
 }
 
 sub restart {

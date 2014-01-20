@@ -69,6 +69,12 @@ function M7Client(server) {
 		}); 
 	};
 	
+	// Update server/socket status
+	this.service_update = service_update;
+	function service_update(elem, status) {
+		$('#' + elem).replaceWith('<div class="m7_server_status_right ' + status + '" id="' + elem + '">' + status + '</div>');
+	}
+	
 	// Testing animations
 	this.test_animate = test_animate;
 	function test_animate(action, host) {
@@ -99,6 +105,8 @@ function M7Client(server) {
 	// Render initial page state
 	this.render_page = render_page;
 	function render_page(json) {
+		this.service_update('scheduler', json.cluster.scheduler.status);
+		this.service_update('socketio', json.cluster.socketio.status);
 		for (var node in json.cluster.nodes) {
 			var node_plans = json.cluster.nodes[node].plans;
 			var node_tag = node.replace('-','_');
@@ -140,6 +148,11 @@ m7.io_client.on('connect', function() {
 				m7.test_animate('start', json.host);
 				break;
 			
+			// Update service status
+			case 'service-update':
+				m7.service_update(json.service, json.status);
+				break;
+				
 			// Test execution stopped
 			case 'test-stop':
 				m7.test_animate('stop', json.host);

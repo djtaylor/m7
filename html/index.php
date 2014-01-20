@@ -31,7 +31,6 @@ $m7->varCheck();
 		<div class="m7_dashboard_nav">
 			<form id="test_params" action="index.php" action="post">
 				<div class="m7_dashboard_content">
-					<div class="m7_configure">Configure</div>
 					<div class="m7_test_submit">Submit</div>
 					<?php echo $m7->planMenu(); ?>	
 	        	</div>

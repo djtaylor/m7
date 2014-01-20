@@ -698,14 +698,19 @@ class Render extends D3JS {
 		$world_map = $this->mapHostDetails();
 		$world_map .=  $this->mapKey(); 
 		$world_map .= '<div id="alert_box_container"></div>';
-		$world_map .= '<div id="server_time" class="m7_server_clock"><div class="m7_date_label">Server Time:</div>';
+		$world_map .= '<div id="server_info" class="m7_server_info">';
+		$world_map .= '<div class="m7_server_clock">';
+		$world_map .= '<div class="m7_date_label">Server Time:</div>';
 		$world_map .= '<div class="m7_date_unit" id="year">' . date('Y') . '</div><div class="m7_date_seperator">-</div>';
 		$world_map .= '<div class="m7_date_unit" id="month">' . date('m') . '</div><div class="m7_date_seperator">-</div>';
 		$world_map .= '<div class="m7_date_unit" id="day">' . date('d') . '</div>';
 		$world_map .= '<div class="m7_date_unit" id="hour">' . date('H') . '</div><div class="m7_date_seperator">:</div>';
 		$world_map .= '<div class="m7_date_unit" id="minute">' . date('i') . '</div><div class="m7_date_seperator">:</div>';
-		$world_map .= '<div class="m7_date_unit" id="second">' . date('s') . '</div>';
-		$world_map .= '</div>';
+		$world_map .= '<div class="m7_date_unit" id="second">' . date('s') . '</div></div>';
+		$world_map .= '<div class="m7_server_status">';
+		$world_map .= '<div class="m7_server_status_block"><div class="m7_server_status_left">Scheduler: </div><div class="m7_server_status_right" id="scheduler"></div></div>';
+		$world_map .= '<div class="m7_server_status_block"><div class="m7_server_status_left">SocketIO: </div><div class="m7_server_status_right" id="socketio"></div></div>';
+		$world_map .= '</div></div>';
 		$world_map .= '<div id="map_container"></div>';
 		$world_map .= '<script>';
 	

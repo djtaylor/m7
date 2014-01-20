@@ -9,6 +9,7 @@ use feature 'switch';
 # Load the M7 configuration
 use lib '/opt/vpls/m7/lib/perl/modules';
 use M7Config;
+use M7Socket;
 
 # \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\ #
 # Init Info \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\ #
@@ -22,7 +23,7 @@ use M7Config;
 # \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\ #
 # Chkconfig Info \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\ #
 #
-# libvirtd:          Intengine listener daemon
+# m7d:               M7 Test Scheduler
 # chkconfig:         345 97 03
 # description:       Server process to run M7 scheduler based on user-defined
 #					 configurations in the M7 database.
@@ -31,6 +32,7 @@ use M7Config;
 
 # Load the configuration values
 my $m7c = M7Config->new();
+my $m7s = M7Socket->new();
 my $retval = undef;
 
 # Set the service variables
@@ -56,10 +58,11 @@ sub success {
 	print color 'reset';
 }
 sub failed {
-	my ($log_msg) = @_;
+	my ($current_status, $log_msg) = @_;
 	print color 'red';
 	print "FAILED\n";
 	print color 'reset';
+	$m7s->serviceUpdate('scheduler', $current_status);
 	$log->logdie($log_msg);
 }
 
@@ -98,14 +101,15 @@ sub start {
 	
 	# Start the M7 server process
 	system('source ~/.bash_profile; nohup ~/bin/' . $service{name} . ' >/dev/null 2>&1 &') == 0
-		or &failed('Failed to start ' . $service{name} . ' process');
+		or &failed('stopped', 'Failed to start ' . $service{name} . ' process');
 	
 	# Create the lockfile
 	open(LOCKFILE, '>' . $service{lock})
-		or &failed('Failed to create lock file');
+		or &failed('stopped', 'Failed to create lock file');
 		
 	# Process started
 	&success;
+	$m7s->serviceUpdate('scheduler', 'running');
 }
 
 sub stop {
@@ -123,17 +127,18 @@ sub stop {
 	print "Stopping the " . $service{name} . " daemon: ";
 	$log->info('Sending SIGTERM to ' . $service{name} . ' process - PID ' . $pid_num);
 	kill('15', $pid_num)
-		or &failed('Failed to terminate ' . $service{name} . 'process - PID ' . $pid_num);
+		or &failed('running', 'Failed to terminate ' . $service{name} . 'process - PID ' . $pid_num);
 	
 	# Delete the PID and lock files
 	unlink($service{pid})
-		or &failed('Failed to remove PID file');
+		or &failed('running', 'Failed to remove PID file');
 	unlink($service{lock})
-		or &failed('Failed to remove lock file');
+		or &failed('running', 'Failed to remove lock file');
 		
 	# Process stopped
 	&success;
 	$log->info('Terminated ' . $service{name} . ' process');
+	$m7s->serviceUpdate('scheduler', 'stopped');
 }
 
 sub restart {

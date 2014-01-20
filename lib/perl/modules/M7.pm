@@ -1411,7 +1411,8 @@ sub getStatusJSON {
 	# Initialize the status hash
 	$m7_cluster_status = {
 		'cluster' => {
-			'server' => {},
+			'scheduler' => {},
+			'socketio' => {},
 			'nodes' => {}
 		}
 	};
@@ -1419,26 +1420,45 @@ sub getStatusJSON {
 	# If the node is the director
 	if ($m7->is_dir) {
 		
-		# Check if the server is running
+		# Check if the schediler is running
 		system('service m7d status &> /dev/null');
-		my $m7_server_code = $? >> 8;
+		my $m7_scheduler_code = $? >> 8;
 		
 		# If the server is running
-		my $m7_server_status;
-		if ($m7_server_code == 0) {
-			$m7_server_status = {
+		my $m7_scheduler_status;
+		if ($m7_scheduler_code == 0) {
+			$m7_scheduler_status = {
 				'host'   => $m7->local->{name},
 				'status' => 'running'
 			};
 		} else {
-			$m7_server_status = {
+			$m7_scheduler_status = {
 				'host'   => $m7->local->{name},
 				'status' => 'stopped'
 			};
 		}
 		
-		# Append the hash
-		$m7_cluster_status->{cluster}->{server} = $m7_server_status;
+		# Check if the socket server is running
+		system('service m7-ws-server status &> /dev/null');
+		my $m7_socketio_code = $? >> 8;
+		
+		# If the socket server is running
+		my $m7_socketio_status;
+		if ($m7_socketio_code == 0) {
+			$m7_socketio_status = {
+				'host'	 => $m7->local->{name},
+				'status' => 'running'
+			};
+		} else {
+			$m7_sockiet_status = {
+				'host'	 => $m7->local->{name},
+				'status' => 'stopped'
+			};
+		}
+		
+		# Append the hashes
+		$m7_cluster_status->{cluster}->{scheduler} = $m7_scheduler_status;
+		$m7_cluster_status->{cluster}->{socketio} = $m7_socketio_status;
 	}
 	
 	# Process each cluster node
