@@ -7,16 +7,20 @@
  * 
  * argv[2]: The IP address the server should listen on
  * argv[3]: The port the server should bind to
+ * argv[4]: The protocol to use (HTTP/HTTPS)
+ * argv[5]: The shared secret between clients
  * 
  * This server should be handled using system upstart scripts, using the 'service'
- * command to start, stop, and restart the server.
+ * command to start, stop, and restart the server. Configuration options are stored
+ * in ~/lib/perl/modules/M7Config.pm.
  */
 
 // Define and validate server information
 server = {
 	ip:  	process.argv[2],
     port:	process.argv[3],
-    secret: 'gsh9a875qnva7ontv75sn5it3qcae',
+    proto:  process.argv[4],
+    secret: process.argv[5],
     validate: function() {
     	
     	// Make sure the IP address is specified
@@ -34,22 +38,28 @@ server = {
 if (!server.validate()) {
     console.log('Must define server IP and port to run...');
 } else {
+	if (server.proto == null || server.proto == undefined) {
+		server.proto = 'http';
+	}
+	var io;
 
-    // Import the HTTPS and FS modules
-    var https = require('https').globalAgent.options.rejectUnauthorized = false;
-    var fs    = require('fs');
-
-    // Set the SSL options
-    var options = {
-    	key:    fs.readFileSync('/etc/pki/tls/private/m7.key'),
-    	cert:   fs.readFileSync('/etc/pki/tls/certs/m7.crt'),
-    	ca:		fs.readFileSync('/etc/pki/tls/private/m7.csr')
-    };
-
-    // Create the HTTPS server
-    var https = https.createServer(options);
-    var io = require('socket.io').listen(https);
-    https.listen(server.port, server.ip);
+    // HTTPS
+    if (server.proto == 'https') {
+    	var https = require('https');
+        var fs    = require('fs');
+    	var ssl_options = {
+    		key:    fs.readFileSync('/etc/pki/tls/private/m7.key'),
+    	    cert:   fs.readFileSync('/etc/pki/tls/certs/m7.crt'),
+    	    ca:		fs.readFileSync('/etc/pki/tls/private/m7.csr')	
+    	}
+    	https = https.createServer(options);
+    	io = require('socket.io').listen(https);
+        https.listen(server.port, server.ip);
+    
+    // HTTP
+    } else {
+    	io = require('socket.io').listen(server.port, server.ip);
+    }
 
     // Handle client authentication
     io.configure(function() {

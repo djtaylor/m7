@@ -7,7 +7,8 @@
  */
 
 function M7Client(server) {
-	this.secret = 'gsh9a875qnva7ontv75sn5it3qcae';	
+	this.secret = 'gsh9a875qnva7ontv75sn5it3qcae';
+	this.proto  = 'http';
 	
 	// Popup alert
 	this.alert_box_count = 1;
@@ -39,8 +40,11 @@ function M7Client(server) {
 	// Initialize connection
 	this.io_connect = io_connect;
 	function io_connect(server) {
-		io_connection = io.connect(server, {secure: true, query: 'secret=' + this.secret});
-		console.log(io_connection);
+		if (this.proto == 'https') {
+			io_connection = io.connect('https://' + server, {secure: true, query: 'secret=' + this.secret});
+		} else {
+			io_connection = io.connect('http://' + server, {query: 'secret=' + this.secret});
+		}
 		io_connection.on('error', function(e) {
 			alert_box('error', 'Unhandled socket.io connection issue: ' + e);
 			return null;
@@ -110,7 +114,7 @@ function M7Client(server) {
 };
 
 // Initialize the object
-var m7 = new M7Client('https://110.34.221.34:61000');
+var m7 = new M7Client('110.34.221.34:61000');
 
 // Render the initial page state
 m7.render_page(cluster_status);

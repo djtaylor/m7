@@ -12,8 +12,8 @@
  */
 
 // Import the socket.io-client libraries and enable self-signed SSL certificate validation
-var io  = require("socket.io-client");
-require('https').globalAgent.options.rejectUnauthorized = false;
+var io		= require("socket.io-client");
+var proto	= 'http';
 
 // Define client arguments and secret
 data = {
@@ -43,25 +43,32 @@ data = {
 
 // Make sure the required arguments are supplied before proceeding
 if (!data.validate()) {
-        console.log('ERROR: Must define target host, port, data type, and JSON string...');
+    console.log('ERROR: Must define target host, port, data type, and JSON string...');
 } else {
+	var client;
+	
+	// HTTPS
+	if (proto == 'https') {
+		client = io.connect("https://" + data.host + ":" + data.port, {secure: true, query: 'secret=' + data.secret});
+		
+	// HTTP
+	} else {
+		client = io.connect("http://" + data.host + ":" + data.port, {query: 'secret=' + data.secret});
+	}
 
-        // Establish the connection with the server and send the secret
-        var client = io.connect("https://" + data.host + ":" + data.port, {secure: true, query: 'secret=' + data.secret});
+    // Construct the JSON object
+    var json = {
+    	'type':   data.type,
+        'json':   data.json
+    };
 
-        // Construct the JSON object
-        var json = {
-                'type':   data.type,
-                'json':   data.json
-        };
+    // Transmit JSON object on connection
+    client.on('connect', function() {
+        client.emit('init', json);
+        client.disconnect;
+    });
 
-        // Transmit JSON object on connection
-        client.on('connect', function() {
-                client.emit('init', json);
-                client.disconnect;
-        });
-
-        // Handle connection errors and failures
-        client.on('error',          function(e) { console.log('ERROR: ' + e); });
-        client.on('connect_failed', function(e) { console.log('ERROR: ' + e); });
+    // Handle connection errors and failures
+    client.on('error',          function(e) { console.log('ERROR: ' + e); });
+    client.on('connect_failed', function(e) { console.log('ERROR: ' + e); });
 }

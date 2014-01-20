@@ -15,6 +15,7 @@ BEGIN {
 	use DBD::mysql;
 	use DateTime;
 	use DateTime::Duration;
+	use Time::Piece;
 	use lib $ENV{HOME} . '/lib/perl/modules';
 	use M7Config;
 }
@@ -125,7 +126,7 @@ sub forkTest {
 		}
 		
 		# Generate the next runtime marker directory
-		my $m7d_next_run_dir = $ENV{HOME} . '/run/plan'
+		my $m7d_next_run_dir = $ENV{HOME} . '/run/plan';
 		my $m7d_next_run_marker = $m7d_next_run_dir . '/' . $m7d_id;
 		mkpath($m7d_next_run_dir, 0, 0755);
 		
