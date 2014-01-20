@@ -41,9 +41,9 @@ function M7Client(server) {
 	this.io_connect = io_connect;
 	function io_connect(server) {
 		if (this.proto == 'https') {
-			io_connection = io.connect('https://' + server, {secure: true, query: 'secret=' + this.secret});
+			io_connection = io.connect(this.proto + '://' + server, {secure: true, query: 'secret=' + this.secret});
 		} else {
-			io_connection = io.connect('http://' + server, {query: 'secret=' + this.secret});
+			io_connection = io.connect(this.proto + '://' + server, {query: 'secret=' + this.secret});
 		}
 		io_connection.on('error', function(e) {
 			alert_box('error', 'Unhandled socket.io connection issue: ' + e);
@@ -53,6 +53,7 @@ function M7Client(server) {
 			alert_box('error', 'Failed to connect to socket.io server: ' + e);
 			return null;
 		});
+		io_connection.emit('join', { room: 'web-client' });
 		return io_connection;
 	}
 	
@@ -121,26 +122,32 @@ m7.render_page(cluster_status);
 
 // Handle incoming socket.io connections
 m7.io_client.on('connect', function() {
-	m7.io_client.on('web_receive', function(json) {
-		event = json.packet[0].event;
-		host  = json.packet[0].host;
+	m7.io_client.on('web_receive', function(json_string) {
+		console.log(json_string);
+		var json = $.parseJSON(json_string);
+		console.log(json);
 		
 		// Process base on the event
-		switch(event) {
+		switch(json.event) {
+		
+			// Alert message
+			case 'alert':
+				m7.alert_box(json.type, json.msg);
+				break;
 		
 			// Test execution started
 			case 'test-start':
-				m7.test_animate('start', host);
+				m7.test_animate('start', json.host);
 				break;
 			
 			// Test execution stopped
 			case 'test-stop':
-				m7.test_animate('stop', host);
+				m7.test_animate('stop', json.host);
 				break;
 			
 			// Invalid event received
 			default:
-				console.log('Received invalid event: ' + event);
+				console.log('Received invalid event: ' + json.event);
 		}
 	});
 });

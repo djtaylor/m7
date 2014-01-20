@@ -6,7 +6,6 @@ package M7D;
 # Module Dependencies \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\ #
 BEGIN {
 	use strict;
-	use warnings;
 	use Log::Log4perl;
 	use File::Slurp;
 	use File::Path;

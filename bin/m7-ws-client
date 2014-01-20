@@ -7,6 +7,7 @@
  * 
  * argv[2]: The IP address or hostname to connect to
  * argv[3]: The port to connect to
+ * argv[4]: The protocol to use (HTTP/HTTPS)
  * argv[4]: A supported data type string
  * argv[5]: A JSON object to transmit. This will be interpreted by the dashboard
  */
@@ -15,60 +16,108 @@
 var io		= require("socket.io-client");
 var proto	= 'http';
 
-// Define client arguments and secret
-data = {
+// Define client and server connection parameters
+client = {
+		
+	// Server Parameters
 	host:   process.argv[2],
     port:   process.argv[3],
-    type:   process.argv[4],
-    json:   process.argv[5],
-    secret: 'gsh9a875qnva7ontv75sn5it3qcae',
+    proto:  process.argv[4],
+    
+    // Client Parameters
+    type:   process.argv[5],
+    json:   process.argv[6],
+    secret: process.argv[7],
+    
+    // Error code handling
+    error: function(e) {
+    	switch(e) {
+    		case 100:
+    			console.log('ERROR ' + e + ': You must specify the server IP/hostname as argument 1');
+    			break;
+    		case 101:
+    			console.log('ERROR ' + e + ': You must specify the server port as argument 2');
+    			break;
+    		case 102:
+    			console.log('ERROR ' + e + ': You must specify either "http" or "https" as argument 3');
+    			break;
+    		case 103:
+    			console.log('ERROR ' + e + ': Invalid protocol - must be "http" or "https" as argument 4');
+    			break;
+    		case 104:
+    			console.log('ERROR ' + e + ': You must specify a client connection type as argument 5');
+    			break;
+    		case 105:
+    			console.log('ERROR ' + e + ': You must specify a JSON data string as argument 6');
+    			break;
+    		case 106:
+    			console.log('ERROR ' + e + ': You must specify the shared secret as argument 7');
+    			break;
+    		default:
+    			console.log('ERROR: Unhandled return code: ' + e);
+    			break;
+    	}
+    },
+    
+    // Socket.IO object
+    io:		require('socket.io-client'),
+    init:   function() {
+    	var sock;
+    	
+    	// HTTPS
+    	if (this.proto == 'http') {
+    		sock = io.connect(client.proto + "://" + client.host + ":" + client.port, {query: 'secret=' + client.secret});
+    	}
+    	
+    	// HTTP
+    	if (this.proto == 'https') {
+    		sock = this.io.connect(client.proto + "://" + client.host + ":" + client.port, {secure: true, query: 'secret=' + client.secret});
+    	}
+    	return sock;
+    },
+    socket: null,
+    
+    // Connection properties validation
     validate: function() {
-        
-    	// Make sure the target host/IP is defined
-    	if (this.host == null || this.host == undefined) { return false; }
-    	
-    	// Make sure the target port is defined
-    	else if (this.port == null || this.port == undefined) { return false; }
-    	
-    	// Make sure the data type is defined
-    	else if (this.type == null || this.type == undefined) { return false; }
-    	
-    	// Make sure a JSON object is defined
-    	else if (this.json == null || this.json == undefined) { return false; }
-    	
-    	// All properties defined, return true
-    	else { return true; }
+    	if (this.host == null || this.host == undefined) { 
+    		this.error(100);	// No server hostname/IP specified
+    	} else if (this.port == null || this.port == undefined) { 
+    		this.error(101);	// No server port specified
+    	} else if (this.proto == null || this.proto == undefined) {
+    		this.error(102); 	// No connection protocol specified
+    	} else if (this.proto != 'http' && this.proto != 'https') {
+    		this.error(103);	// Invalid protocol
+    	} else if (this.type == null || this.type == undefined) { 
+    		this.error(104);	// No client connection type specified
+    	} else if (this.json == null || this.json == undefined) { 
+    		this.error(105);	// No JSON data string defined
+    	} else if (this.secret == null || this.secret == undefined) { 
+    		this.error(106);	// No shared secret defined
+        } else { 
+    		return true; 
+    	}
     }
 };
 
 // Make sure the required arguments are supplied before proceeding
-if (!data.validate()) {
-    console.log('ERROR: Must define target host, port, data type, and JSON string...');
+if (!client.validate()) {
+    console.log('Client validation failed. Please check your command line arguments...');
 } else {
-	var client;
 	
-	// HTTPS
-	if (proto == 'https') {
-		client = io.connect("https://" + data.host + ":" + data.port, {secure: true, query: 'secret=' + data.secret});
-		
-	// HTTP
-	} else {
-		client = io.connect("http://" + data.host + ":" + data.port, {query: 'secret=' + data.secret});
-	}
-
+	// Construct the Socket.IO client and join the 'node-client' room
+	client.socket = client.init();
+	client.socket.emit('join', { room: 'node-client' });
+	
     // Construct the JSON object
-    var json = {
-    	'type':   data.type,
-        'json':   data.json
-    };
+    var json = { 'type': client.type, 'json': client.json };
 
     // Transmit JSON object on connection
-    client.on('connect', function() {
-        client.emit('init', json);
-        client.disconnect;
+    client.socket.on('connect', function() {
+        client.socket.emit('init', json);
+        client.socket.disconnect;
     });
 
     // Handle connection errors and failures
-    client.on('error',          function(e) { console.log('ERROR: ' + e); });
-    client.on('connect_failed', function(e) { console.log('ERROR: ' + e); });
+    client.socket.on('error',          function(e) { console.log('ERROR: ' + e); });
+    client.socket.on('connect_failed', function(e) { console.log('ERROR: ' + e); });
 }

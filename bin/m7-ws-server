@@ -17,53 +17,101 @@
 
 // Define and validate server information
 server = {
-	ip:  	process.argv[2],
-    port:	process.argv[3],
-    proto:  process.argv[4],
-    secret: process.argv[5],
+		
+	// Core Parameters
+	ip:  	  process.argv[2],	// IP
+    port:	  process.argv[3],	// Port
+    proto:    process.argv[4],	// Protocol (HTTP/HTTPS)
+    secret:   process.argv[5],	// Secret
+    
+    // SSL Parameters
+    ssl_cert: process.argv[6],	// Certificate
+    ssl_key:  process.argv[7],  // Key
+    ssl_ca:	  process.argv[8],  // CA
+    
+    // Error code handling
+    error: function(e) {
+    	switch(e) {
+    		case 100:
+    			console.log('ERROR ' + e + ': You must specify an IP address to bind to as argument 1');
+    			break;
+    		case 101:
+    			console.log('ERROR ' + e + ': You must specify a port to bind to as argument 2');
+    			break;
+    		case 102:
+    			console.log('ERROR ' + e + ': You must specify either "http" or "https" as argument 3');
+    			break;
+    		case 103:
+    			console.log('ERROR ' + e + ': Invalid protocol - must be "http" or "https" as argument 3');
+    			break;
+    		case 104:
+    			console.log('ERROR ' + e + ': You must specify the server secret as argument 4');
+    			break;
+    		default:
+    			console.log('ERROR: Unhandled return code: ' + e);
+    			break;
+    	}
+    },
+    
+    // Socket.IO object
+    init:   function() {
+    	var sock;
+    	
+    	// HTTPS
+    	if (this.proto == 'http') {
+    		var io	 = require('socket.io');
+    		var http = require('http').createServer();
+    		http.listen(server.port, server.ip);
+    		sock = io.listen(http);
+    	}
+    	
+    	// HTTP
+    	if (this.proto == 'https') {
+    		var io	  = require('socket.io');
+    		var https = require('https');
+            var fs    = require('fs');
+        	var ssl_options = {
+        		key:    fs.readFileSync(server.ssl_key),
+        	    cert:   fs.readFileSync(server.ssl_cert),
+        	    ca:		fs.readFileSync(server.ssl_ca)	
+        	}
+        	https = https.createServer(options);
+        	https.listen(server.port, server.ip);
+        	sock  = io.listen(https);
+    	}
+    	return sock;
+    },
+    socket: null,
+    
+    // Server properties validation
     validate: function() {
-    	
-    	// Make sure the IP address is specified
-    	if (this.ip == null || this.ip == undefined) { return false; } 
-    	
-    	// Make sure the port is specified
-    	else if (this.port == null || this.port == undefined) { return false; } 
-    	
-    	// All information supplied, return true
-    	else { return true; }
+    	if (this.ip == null || this.ip == undefined) { 
+    		this.error(100);	// No IP address specified 
+    	} else if (this.port == null || this.port == undefined) { 
+    		this.error(101);	// No port number specified
+    	} else if (this.proto == null || this.proto == undefined) { 
+    		this.error(102);	// No protocol specified
+    	} else if (this.proto != 'http' && this.proto != 'https') { 
+    		this.error(103);	// Invalid protocol specified
+    	} else if (this.secret == null || this.secret == undefined) {
+    		this.error(104);	// No secret specified
+    	} else { 
+    		return true; 
+    	}
     }
 };
 
-// Abort if the IP address and port are not defined
-if (!server.validate()) {
-    console.log('Must define server IP and port to run...');
+// Validate the server before initializing
+if (server.validate() != true) {
+	console.log('Server validation failed. Please check your command line arguments...');
 } else {
-	if (server.proto == null || server.proto == undefined) {
-		server.proto = 'http';
-	}
-	var io;
-
-    // HTTPS
-    if (server.proto == 'https') {
-    	var https = require('https');
-        var fs    = require('fs');
-    	var ssl_options = {
-    		key:    fs.readFileSync('/etc/pki/tls/private/m7.key'),
-    	    cert:   fs.readFileSync('/etc/pki/tls/certs/m7.crt'),
-    	    ca:		fs.readFileSync('/etc/pki/tls/private/m7.csr')	
-    	}
-    	https = https.createServer(options);
-    	io = require('socket.io').listen(https);
-        https.listen(server.port, server.ip);
-    
-    // HTTP
-    } else {
-    	io = require('socket.io').listen(server.port, server.ip);
-    }
+	
+	// Construct the Socket.IO listener
+	server.socket = server.init();
 
     // Handle client authentication
-    io.configure(function() {
-    	io.set('authorization', function(authData, callback) {
+    server.socket.configure(function() {
+    	server.socket.set('authorization', function(authData, callback) {
     		console.log(authData);
         	console.log('Validating client secret: ' + authData.query.secret);
         	if (authData.query.secret != server.secret) {
@@ -77,17 +125,27 @@ if (!server.validate()) {
     });
     
     // Handle client connections
-    io.sockets.on('connection', function(socket) {  
+    server.socket.sockets.on('connection', function(socket) {  
     	console.log('Opened connection for client ' + socket.id);
+    	
+    	// Join the client to the appropriate room
+    	socket.on('join', function(data) {
+    		console.log('Joining client [' + socket.id + '] to room [' + data.room + ']');
+    		socket.join(data.room);
+    	});
+    
+    	// Initialize and transmit incoming messages
     	socket.on('init', function(client) {	
 			console.log('Received client data type: ' + client.type);
 			switch(client.type) {
+			
+				// Dashboard messages
 				case 'web_transmit':
-					io.sockets.clients('web').forEach(function (web_socket) {
-	    				var socket_id = web_socket.id;
-	                    web_socket.emit('web_receive', client.json);
-	                });
+					server.socket.sockets.in('web-client').emit('web_receive', client.json);
+					socket.disconnect();
 					break;
+					
+				// Unsupported client data type
 				default:
 					console.log('Unsupported client data type: ' + client.type);
 					break;

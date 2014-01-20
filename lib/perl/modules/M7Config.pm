@@ -55,6 +55,7 @@ sub get  {
 		when ('sio_pid')	  { return $m7c->home . '/run/m7-ws-server.pid'; }
 		when ('sio_lock')	  { return $m7c->home . '/lock/subsys/m7-ws-server'; }
 		when ('sio_log')	  { return $m7c->home . '/log/socket-io.log'; }
+		when ('sio_log_conf') { return $m7c->home . '/lib/perl/log/m7-ws-server.conf'; }
 		when ('sio_ip')       { return 'localhost'; }
 		when ('sio_port')     { return '1337'; }
 		when ('sio_proto')    { return 'http'; }
