@@ -1090,7 +1090,7 @@ sub testExec {
 	
 	# Run the test based on category
 	$m7->updateNodeStatus('active');
-	$m7->socket->dashAlert('Running test plan ' . $m7->plan_id . ' on node ' . $m7->local->{name});
+	$m7->socket->dashAlert('info', 'Running test plan ' . $m7->plan_id . ' on node ' . $m7->local->{name});
 	given ($m7->plan_cat) {
 		
 		# DNS testing
@@ -1348,7 +1348,7 @@ sub mergeLocal {
 		# Delete the output directory
 		rmtree($m7->out_dir);
 		$m7->updateNodeStatus('idle');
-		$m7->socket->dashAlert('Test plan ' . $m7->plan_id . ' execution complete on node ' . $m7->local->{name});
+		$m7->socket->dashAlert('info', 'Test plan ' . $m7->plan_id . ' execution complete on node ' . $m7->local->{name});
 	} else {
 		
 		# Copy the results file to the final directory and delete the output path
@@ -1390,7 +1390,7 @@ sub monitor {
 		
 		# Parse the XML results into the database
 		$m7->log->info('Parsing XML results into M7 database');
-		$m7->socket->dashAlert('Parsing test results to database for plan ' . $m7->plan_id);
+		$m7->socket->dashAlert('info', 'Parsing test results to database for plan ' . $m7->plan_id);
 		$m7->updateNodeStatus('parsing');
 		system('m7p "' . $m7->plan_id . '" "' . $m7->plan_runtime . '"');
 		
@@ -1399,7 +1399,7 @@ sub monitor {
 		rmtree($m7_results_dir)
 			or $m7->log->warn('Failed to clear XML results directory: ' . $m7_results_dir);
 		$m7->updateNodeStatus('idle');
-		$m7->socket->dashAlert('All test results parsed for plan ' . $m7->plan_id . ' - test run complete.');
+		$m7->socket->dashAlert('info', 'All test results parsed for plan ' . $m7->plan_id . ' - test run complete.');
 	}
 }
 
