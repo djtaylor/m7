@@ -50,3 +50,5 @@ sub dashAlert {
 		return undef;	
 	}
 }
+
+1;
