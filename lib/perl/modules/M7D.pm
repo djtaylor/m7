@@ -119,7 +119,7 @@ sub forkTest {
 		my ($m7d_id, $m7d_int) = @_;
 		sub set_next_run {
 			my ($m7d_int, $m7d_next_run_marker) = @_;
-			my $m7d_datetime = DateTime->now();
+			my $m7d_datetime = DateTime->now(time_zone => 'local');
 			
 			# Find the next runtime
 			$m7d_datetime->add(seconds => $m7d_int);
@@ -144,7 +144,7 @@ sub forkTest {
 		} else {
 			
 			# Initialize the datetime object and delay variable
-			my $m7d_datetime = DateTime->now();
+			my $m7d_datetime = DateTime->now(time_zone => 'local');
 			my $m7d_delay;
 			
 			# Get the current datetime

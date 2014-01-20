@@ -1006,7 +1006,7 @@ sub testInit {
 		}
 		
 		# Set the plan runtime
-		my $m7_dt	= DateTime->now();
+		my $m7_dt	= DateTime->now(time_zone => 'local');
 		my $m7_date = $m7_dt->ymd;
 		my $m7_time = $m7_dt->hms;
 		$m7->{_plan_runtime} = $m7_date . ' ' . $m7_time;
