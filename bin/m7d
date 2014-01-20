@@ -5,7 +5,7 @@ use strict;
 use lib $ENV{HOME} . '/lib/perl/modules';
 use M7D;
 
-# Create the M7 server object
+# Create the M7 server and 'socket.io' object
 my $m7d = M7D->new();
 
 # Process each test plan in the configuration table

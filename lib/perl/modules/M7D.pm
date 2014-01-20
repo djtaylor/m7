@@ -17,6 +17,7 @@ BEGIN {
 	use Time::Piece;
 	use lib $ENV{HOME} . '/lib/perl/modules';
 	use M7Config;
+	use M7Socket;
 }
 
 # \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\ #
@@ -27,6 +28,7 @@ sub new {
 	my $m7d = {
 		_config		=> M7Config->new(),
 		_libxml		=> XML::LibXML->new(),
+		_socket		=> M7Socket->new(),
 		_log		=> undef,
 		_db			=> undef,
 		_plans		=> undef,
@@ -44,6 +46,7 @@ sub new {
 # Subroutine Shortcuts \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\ #
 sub config     { return shift->{_config};     }
 sub libxml     { return shift->{_libxml};     }
+sub socket	   { return shift->{_socket};     }
 sub log		   { return shift->{_log};        }
 sub db		   { return shift->{_db};         }
 sub plans	   { return shift->{_plans};      }
@@ -105,6 +108,12 @@ sub planConfig {
 }
 
 # Fork Child Test Process \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\ #
+sub forkFail {
+	my $m7d = shift;
+	my ($m7d_msg) = @_;
+	$m7d->socket->dashAlert('fatal', $m7d_msg);
+	$m7d->log->logdie($msg);
+}
 sub forkTest {
 	sub get_delay {
 		my ($m7d_id, $m7d_int) = @_;
@@ -208,8 +217,9 @@ sub forkTest {
 			
 			# Run the fork shell command
 			system($m7d_cmd_string) != 1
-				or $m7d->log->logdie($$ . ': Failed to execute shell command: ' . $m7d_cmd_string . ' - exit code: ' . $?);
+				or $m7d->forkFail($$ . ': Failed to execute shell command: ' . $m7d_cmd_string . ' - exit code: ' . $?);
 			$m7d->log->info($$ . ': Successfully executed shell command: [' . $m7d_cmd_string . '] - exit code: ' . $?);
+			$m7d->socket->dashAlert('Test plan ' . $m7d_id . ' successfully launched - next run in ' . $m7d_int . ' seconds.');
 			
 			# Execution complete
 			$m7d->log->info($$ . ': Test plan execution complete - next run in ' . $m7d_int . ' seconds');
