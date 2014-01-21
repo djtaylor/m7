@@ -67,7 +67,7 @@ find $M7_HOME -type f -exec chmod 644 {} \;
 
 # Make sure required files are executable
 chmod +x $M7_HOME/bin/*
-chmod +x $M7_HOME/lib/init.d/m7d
+chmod +x $M7_HOME/lib/init.d/*
 find $M7_HOME/lib/perl -type f -exec chmod +x {} \;
 
 # Set SSH directory permissions

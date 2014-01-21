@@ -91,6 +91,7 @@ sub start {
 	
 	# Get the PID of the process and create the pidfile
 	my $pid_num = qx(pidof node);
+	chomp($pid_num);
 	open(my $pid_fh, '>', $service{pid})
 		or &failed('stopped', 'Failed to open PID file');
 	print $pid_num $service{pid};
