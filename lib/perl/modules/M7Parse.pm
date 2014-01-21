@@ -200,7 +200,7 @@ sub addIPRef {
 	
 		# Check if the IP exists in the database
 		my $m7p_ipref_check	= $m7p->db->selectcol_arrayref("SELECT * FROM net_ipref WHERE ip='" . $m7p_ipref{ip} . "'");
-		if (@$m7p_ipref_check) {
+		if (@{$m7p_ipref_check}) {
 			$m7p->log->info('Updating entry in IP reference table for: ' . $m7p_ipref{ip});
 			my $m7p_ipref_update = "UPDATE `" . $m7p->config->get('db_name') . "`.`net_ipref` SET " .
 								   "asn='" . $m7p_ipref_asn . "', " .
