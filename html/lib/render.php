@@ -41,7 +41,7 @@ class Render extends D3JS {
 			// If not director, draw a path to the director node
 			} else {
 				if ($this->m7_ready === false) {
-					$map_hosts_js .= 'svg.append("path")' . "\n";
+					$map_hosts_js .= 'features.insert("path")' . "\n";
 					$map_hosts_js .= '.datum({type: "LineString", coordinates: [["' . $m7_cluster_dir_lon . '","' . $m7_cluster_dir_lat . '"],["' . $m7_cluster_hosts_row['longitude'] . '","' . $m7_cluster_hosts_row['latitude'] . '"]]})';
 					$map_hosts_js .= '.style("stroke", "#0087BD")';
 					$map_hosts_js .= '.style("fill", "none")';
@@ -49,16 +49,17 @@ class Render extends D3JS {
 					$map_hosts_js .= '.attr("d", path);';
 				}
 			}
-				
+			
 			// Define the JS block
 			$map_hosts_js .= 'var coords_' . $m7_host_alias . ' = projection(["' . $m7_host_lon . '","' . $m7_host_lat . '"]);';
-			$map_hosts_js .= 'var x_' . $m7_host_alias . ' = coords_' . $m7_host_alias . '[0] - 10;';
-			$map_hosts_js .= 'var y_' . $m7_host_alias . ' = coords_' . $m7_host_alias . '[1] - 10;';
-			$map_hosts_js .= 'svg.append("foreignObject").attr("height", "100%").attr("width", "100%")';
-			$map_hosts_js .= '.append("xhtml:body").append("div")';
-			$map_hosts_js .= '.style("left", x_' . $m7_host_alias . '+"px")';
-			$map_hosts_js .= '.style("top", y_' . $m7_host_alias . '+"px")';
-			$map_hosts_js .= '.attr("class", "m7_map_host' . $m7_dir_class . '").attr("id", "map_host_' . $m7_host_alias . '").attr("host_tooltip_' . $m7_host_alias . '", " ");' . "\n";
+			$map_hosts_js .= 'var x_' . $m7_host_alias . ' = coords_' . $m7_host_alias . '[0];';
+			$map_hosts_js .= 'var y_' . $m7_host_alias . ' = coords_' . $m7_host_alias . '[1];';
+			$map_hosts_js .= 'features.insert("foreignObject")';
+			$map_hosts_js .= '.attr("x", coords_' . $m7_host_alias . '[0])';
+			$map_hosts_js .= '.attr("y", coords_' . $m7_host_alias . '[1])';
+			$map_hosts_js .= '.attr("class", "fobj_' . $m7_host_alias . '")';
+			$map_hosts_js .= '.append("xhtml:div")';
+			$map_hosts_js .= '.attr("class", "m7_map_host' . $m7_dir_class . '").attr("id", "map_host_' . $m7_host_alias . '").attr("host_tooltip_' . $m7_host_alias . '", " ").on("click", function() { toggle_host("map_host_' . $m7_host_alias . '"); });' . "\n";
 		}
 		return $map_hosts_js;
 	}
@@ -81,8 +82,28 @@ class Render extends D3JS {
 			$m7_host_alias = $m7_cluster_hosts_row['name'];
 			$m7_host_alias = preg_replace( "/-/", "_", $m7_host_alias);
 			$map_hosts_html .= '<div class="m7_map_host_details_info" id="map_host_details_' . $m7_host_alias . '">';
-			$map_hosts_html .= $m7_cluster_hosts_row;
+			
+			// Top Row
+			$map_hosts_html .= '<div class="m7_node_info_top">';
+			// Top Left Column
+			$map_hosts_html .= '<div class="m7_node_info_left">';
+			$map_hosts_html .= '<div class="m7_host_nic_cheader"><p>Ethernet Adapters</p></div>';
+			$m7_node_nic_query = $this->m7_db->query("SELECT * FROM nodes_nic WHERE name='" . $m7_cluster_hosts_row['name'] . "'");
+			while ($m7_node_nic_row = $m7_node_nic_query->fetch_assoc()) {
+				$map_hosts_html .= '<div class="m7_node_nic">';
+				$map_hosts_html .= '<div class="m7_node_nic_name"><div class="nic_name_title">Adapter: </div><div class="nic_name_val">' . $m7_node_nic_row['nic'] . '</div></div>';
+				$map_hosts_html .= '<div class="m7_node_nic_ip"><div class="nic_ip_title">IP: </div><div class="nic_ip_val">' . $m7_node_nic_row['ip'] . '</div></div>';
+				$map_hosts_html .= '<div class="m7_node_nic_asn"><div class="nic_asn_title">ASN Inbound: </div><div class="nic_asn_val">' . $m7_node_nic_row['asn_in'] . '</div></div>';
+				$map_hosts_html .= '</div>';
+			}
 			$map_hosts_html .= '</div>';
+			// Top Right Column
+			$map_hosts_html .= '<div class="m7_node_info_right">';
+			$map_hosts_html .= '<div class="m7_host_status_cheader"><p>System Status</p></div></div>';
+			$map_hosts_html .= '</div></div>';
+			// Bottom Row
+			
+			
 			
 			// Push to the tooltip items array
 			array_push($map_hosts_tooltip_items, 'host_tooltip_' . $m7_host_alias);
@@ -160,7 +181,7 @@ class Render extends D3JS {
 							if ($m7_ping_slat != '*' && $m7_ping_slon != '*' && $m7_ping_dlat != '*' && $m7_ping_dlon != '*') {
 								$m7_coords_str = '[' . $m7_ping_slon . ',' . $m7_ping_slat . '],';
 								$m7_coords_str .= '[' . $m7_ping_dlon . ',' . $m7_ping_dlat . ']';
-								$m7_paths_js .= 'svg.append("path")' . "\n";
+								$m7_paths_js .= 'features.append("path")' . "\n";
 								$m7_paths_js .= '.datum({type: "LineString", coordinates: [' . $m7_coords_str . ']})' . "\n";
 								$m7_paths_js .= '.style("stroke", function(d) { return color(' . $m7_stroke_count . '); })' . "\n";
 								$m7_paths_js .= '.style("fill", "none")' . "\n";
@@ -185,7 +206,7 @@ class Render extends D3JS {
 									}
 								}
 							}
-							$m7_paths_js .= 'svg.append("path")' . "\n";
+							$m7_paths_js .= 'features.append("path")' . "\n";
 							$m7_paths_js .= '.datum({type: "LineString", coordinates: [' . $m7_hop_coords_str . ']})' . "\n";
 							$m7_paths_js .= '.style("stroke", function(d) { return color(' . $m7_stroke_count . '); })' . "\n";
 							$m7_paths_js .= '.style("fill", "none")' . "\n";
@@ -210,7 +231,7 @@ class Render extends D3JS {
 									}
 								}
 							}
-							$m7_paths_js .= 'svg.append("path")' . "\n";
+							$m7_paths_js .= 'features.append("path")' . "\n";
 							$m7_paths_js .= '.datum({type: "LineString", coordinates: [' . $m7_hop_coords_str . ']})' . "\n";
 							$m7_paths_js .= '.style("stroke", function(d) { return color(' . $m7_stroke_count . '); })' . "\n";
 							$m7_paths_js .= '.style("fill", "none")' . "\n";
@@ -715,8 +736,8 @@ class Render extends D3JS {
 		$world_map .= '<script>';
 	
 		// Window dimensions
-		$world_map .= 'var width = window.innerWidth;';
-		$world_map .= 'var height = window.innerHeight;';
+		$world_map .= 'var width = $(window).width();';
+		$world_map .= 'var height = $(window).height() - 50;';
 		
 		// Map projection
 		$world_map .= 'var projection = d3.geo.mercator()';
@@ -739,25 +760,58 @@ class Render extends D3JS {
 		$world_map .= '.attr("class", "graticule")';
 		$world_map .= '.attr("d", path);';
 		
+		// Define map features
+		$world_map .= 'var features = svg.append("g");';
+		$world_map .= 'var maphosts = svg.append("g");';
+		
+		// Construct the world map
+		$world_map .= 'd3.json("' . $map_json . '", function(error, world) {';
+		
+		// Define zooming behavior
+		$world_map .= 'var zoom = d3.behavior.zoom()';
+		$world_map .= '.scaleExtent([1, 8])';
+		$world_map .= '.on("zoom", zoomed);';
+		
+		// Create the mouse actions overlay
+		$world_map .= 'svg.append("rect")';
+		$world_map .= '.attr("class", "overlay")';
+		$world_map .= '.attr("width", width)';
+		$world_map .= '.attr("height", height)';
+		$world_map .= '.call(zoom);';
+		
+		// Insert the world map land objects
+		$world_map .= 'features.insert("path", ".graticule")';
+		$world_map .= '.datum(topojson.feature(world, world.objects.land))';
+		$world_map .= '.attr("class", "land")';
+		$world_map .= '.attr("d", path);';
+		
+		// Inser the land mass boundaries
+		$world_map .= 'features.insert("path", ".graticule")';
+		$world_map .= '.datum(topojson.mesh(world, world.objects.countries, function(a, b) { return a !== b; }))';
+		$world_map .= '.attr("class", "boundary")';
+		$world_map .= '.attr("d", path);';
+		
 		// Render the cluster node map points
-		$world_map .= $this->mapHosts();;
+		$world_map .= $this->mapHosts();
 		
 		// Render testing map paths if global rendering is true
 		if($this->m7_ready) {
 			$world_map .= $this->mapPaths();
 		}
 		
-		// Construct the world map
-		$world_map .= 'd3.json("' . $map_json . '", function(error, world) {';
-		$world_map .= 'svg.insert("path", ".graticule")';
-		$world_map .= '.datum(topojson.feature(world, world.objects.land))';
-		$world_map .= '.attr("class", "land")';
-		$world_map .= '.attr("d", path);';
-		$world_map .= 'svg.insert("path", ".graticule")';
-		$world_map .= '.datum(topojson.mesh(world, world.objects.countries, function(a, b) { return a !== b; }))';
-		$world_map .= '.attr("class", "boundary")';
-		$world_map .= '.attr("d", path);';
+		// Define the zoom function
+		$world_map .= 'function zoomed() {';
+		$world_map .= 'var t = d3.event.translate;';
+		$world_map .= 'var s = d3.event.scale;';
+		$world_map .= 'zscale = s;';
+		$world_map .= 'var h = height/4;';
+		$world_map .= 't[0] = Math.min((width / height) * (s - 1), Math.max(width * (1 - s), t[0]));';
+		$world_map .= 't[1] = Math.min(h * (s - 1) + h * s, Math.max(height * (1 - s) - h * s, t[1]));';
+		$world_map .= 'zoom.translate(t);';
+		$world_map .= 'features.style("stroke-width", 1 / s).attr("transform", "translate(" + t + "),scale(" + s + ")");}';
 		$world_map .= '});';
+		
+		// Use the world map container
 		$world_map .= 'd3.select(self.frameElement).style("height", height + "px");';
 		$world_map .= '</script>';
 		return $world_map;

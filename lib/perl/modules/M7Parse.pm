@@ -13,6 +13,7 @@ BEGIN {
 	use Geo::IP;
 	use Data::Validate::IP;
 	use Net::Nslookup;
+	use Net::Whois::RIS;
 	use lib $ENV{HOME} . '/lib/perl/modules';
 	use M7Config;
 }
@@ -25,6 +26,7 @@ sub new {
 	my $m7p = {
 		_config			=> M7Config->new(),
 		_libxml			=> XML::LibXML->new(),
+		_ris			=> Net::Whois::RIS->new(),
 		_geoip			=> undef,
 		_plan_id		=> undef,
 		_plan_desc		=> undef,
@@ -53,6 +55,7 @@ sub new {
 # Subroutine Shortcuts \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\ #
 sub config        { return shift->{_config};        }
 sub libxml        { return shift->{_libxml};        }
+sub ris			  { return shift->{_ris};           }
 sub plan_id       { return shift->{_plan_id};       }
 sub plan_desc     { return shift->{_plan_desc};     }
 sub plan_cat      { return shift->{_plan_cat};      }
@@ -159,41 +162,77 @@ sub setPlan {
 	$m7p->{_runtime}	= $m7p_plan_runtime;
 }
 
-# Add Destination IP \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\ #
-sub addDestIP {
+# Add IP Reference \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\ #
+sub addIPRef {
 	my $m7p = shift;
-	my ($m7p_destip_val, $m7p_destip_alias) = @_;
+	my (%m7p_ipref) = @_;
 	
-	# Only valid for network tests
-	my $m7p_plan_cat = $m7p->plan_cat . "";
-	if ($m7p_plan_cat eq 'net') {
+	# Only proceed if the IP address is valid
+	if (is_ipv4($m7p_ipref{ip}) && !is_unroutable_ipv4($m7p_ipref{ip}) && !is_private_ipv4($m7p_ipref{ip})) {
+	
+		# Set the IP types
+		my $m7p_ipref_types_sql;
+		if (defined($m7p_ipref{is_src}))  { $m7p_ipref_types_sql .= "is_src='" . $m7p_ipref{is_src} . "', "; }
+		if (defined($m7p_ipref{is_hop}))  { $m7p_ipref_types_sql .= "is_hop='" . $m7p_ipref{is_hop} . "', "; }
+		if (defined($m7p_ipref{is_dest})) { $m7p_ipref_types_sql .= "is_dest='" . $m7p_ipref{is_dest} . "', "; }
+		my $m7p_ipref_type = {
+			'src'  => ( defined($m7p_ipref{is_src})  ? $m7p_ipref{is_src}  : 0 ),
+			'hop'  => ( defined($m7p_ipref{is_hop})  ? $m7p_ipref{is_hop}  : 0 ),
+			'dest' => ( defined($m7p_ipref{is_dest}) ? $m7p_ipref{is_dest} : 0 )
+		};
+	
+		# Attempt to map the IP address to a hostname
+		my $m7p_ipref_hostname = nslookup(host => $m7p_ipref{ip}, type => 'PTR', timeout => '5');
+		if (defined $m7p_ipref_hostname) { $m7p_ipref_hostname = lc($m7p_ipref_hostname); }
+	
+		# Retrieve the geo information for the IP address
+		my $m7p_ipref_geo		= $m7p->geoip->record_by_addr($m7p_ipref{ip});
+		my $m7p_ipref_region	= $m7p_ipref_geo->country_code;
+		my $m7p_ipref_lat		= $m7p_ipref_geo->latitude;
+		my $m7p_ipref_lon		= $m7p_ipref_geo->longitude;
 		
-		# Attempt to get the hostname mapping
-		my $m7p_destip_hostname = nslookup(host => $m7p_destip_val, type => 'PTR', timeout => '5');
-		if (not defined $m7p_destip_hostname) { $m7p_destip_hostname = 'unknown'; }
-		$m7p_destip_hostname = lc($m7p_destip_hostname);
-		
-		# Get the region, latitude, and longitude
-		my $m7p_destip_geo		= $m7p->geoip->record_by_addr($m7p_destip_val);
-		my $m7p_destip_region	= $m7p_destip_geo->country_code;
-		my $m7p_destip_lat		= $m7p_destip_geo->latitude;
-		my $m7p_destip_lon		= $m7p_destip_geo->longitude;
-		
-		# Create or update the destination IP entry
-		my $m7p_destip_check	= $m7p->db->selectcol_arrayref("SELECT * FROM destips WHERE ip='" . $m7p_destip_val . "'");
+		# Get the IP routing information
+		$m7p->ris->getIPInfo($m7p_ipref{ip});
+		my $m7p_ipref_route = $m7p->ris->{get}->{route};
+		my $m7p_ipref_desc  = $m7p->ris->{get}->{descr};
+		my $m7p_ipref_asn   = $m7p->ris->{get}->{origin};
+		$m7p_ipref_asn      =~ s/^AS(\d+)/$1/g;
+	
+		# Check if the IP exists in the database
+		my $m7p_ipref_check	= $m7p->db->selectcol_arrayref("SELECT * FROM net_ipref WHERE ip='" . $m7p_ipref{ip} . "'");
 		if (@$m7p_destip_check) {
-			$m7p->log->info('Updating destination IP entry: IP=' . $m7p_destip_val . ', Alias=' . $m7p_destip_alias . ', Hostname=' . $m7p_destip_hostname);
-			my $m7p_destip_update = "UPDATE `" . $m7p->config->get('db_name') . "`.`destips` SET alias='" . $m7p_destip_alias . "', hostname='" . $m7p_destip_hostname . "' WHERE ip=' . $m7_destip_val'";
-			$m7p->db->do($m7p_destip_update)
-				or $m7p->log->warn('Failed to update database entry');
+			$m7p->log->info('Updating entry in IP reference table for: ' . $m7p_ipref{ip});
+			my $m7p_ipref_update = "UPDATE `" . $m7p->config->get('db_name') . "`.net_ipref` SET " .
+								   "asn='" . $m7p_ipref_asn . "', " .
+								   "route='" . $m7p_ipref_route . "', " .
+								   "desc='" . $m7p_ipref_desc . "', " .
+								   "alias='" . $m7p_ipref{alias} . "', " .
+								   "hostname='" . $m7p_ipref_hostname . "', " . 
+								   "region='" . $m7p_ipref_region . "', " .
+								   "latitude='" . $m7p_ipref_lat . "', " .
+								   $m7p_ipref_types_sql .
+								   "longitude='" . $m7p_ipref_lon . "', " .
+								   "WHERE ip='" . $m7p_ipref{ip} . "'";
+			$m7p->db->do($m7p_ipref_update) or $m7p->log->warn('Failed to update IP reference database entry for: ' . $m7p_ipref{ip});
 		} else {
-			$m7p->log->info('Creating destination IP entry: IP=' . $m7p_destip_val . ', Alias=' . $m7p_destip_alias . ', Hostname=' . $m7p_destip_hostname);
-			my $m7p_destip_create = "INSERT INTO `" . $m7p->config->get('db_name') . "`.`destips`(" .
-								 "`alias`, `ip`, `hostname`, `region`, `latitude`, `longitude`) VALUES(" . 
-							     "'" . $m7p_destip_alias . "','" . $m7p_destip_val . "','" . $m7p_destip_hostname . "','" . $m7p_destip_region . "','" . $m7p_destip_lat . "','" . $m7p_destip_lon . "')";
-			$m7p->db->do($m7p_destip_create)
-				or $m7p->log->warn('Failed to create database entry');
-		}	
+			$m7p->log->info('Creating entry in IP reference table for: ' . $m7p_ipref{ip});
+			my $m7p_ipref_update = "INSERT INTO `" . $m7p->config->get('db_name') . "`.net_ipref`(" .
+								   "`ip`,`asn`,`route`,`desc`,`alias`,`hostname`,`region`,`latitude`,`longitude`,`is_src`,`is_hop`,`is_dest`) VALUES(" .
+								   "asn='" . $m7p_ipref_asn . "', " .
+								   "route='" . $m7p_ipref_route . "', " .
+								   "desc='" . $m7p_ipref_desc . "' " .
+								   "alias='" . $m7p_ipref{alias} . "', " .
+								   "hostname='" . $m7p_ipref_hostname . "', " . 
+								   "region='" . $m7p_ipref_region . "', " .
+								   "latitude='" . $m7p_ipref_lat . "', " .
+								   "longitude='" . $m7p_ipref_lon . "', " .
+								   "is_src='" . $m7p_ipref_type->{is_src} . "', " .
+								   "is_hop='" . $m7p_ipref_type->{is_hop} . "', " .
+								   "is_dest='" . $m7p_ipref_type->{is_dest} . "')";
+			$m7p->db->do($m7p_ipref_update) or $m7p->log->warn('Failed to create IP reference database entry for: ' . $m7p_ipref{ip});
+		}
+	} else {
+		$m7p->log->warn('Invalid IP address - failed to add to reference table: ' . $m7p_ipref{ip});
 	}
 }
 
@@ -222,7 +261,7 @@ sub initPlanDB {
 		for my $m7p_host_tree ($m7p->plan_xtree->findnodes('plan/params/hosts/host')) {
 			my $m7p_host_alias  = $m7p_host_tree->findvalue('@name');
 			my $m7p_host_ip		= $m7p->plan_xtree->findvalue('plan/params/hosts/host[@name="' . $m7p_host_alias . '"]');
-			$m7p->addDestIP($m7p_host_ip, $m7p_host_alias);
+			
 		}
 	}
 }
@@ -356,6 +395,13 @@ sub setTestHost {
 	$m7p->test_host->{name}   = $m7p_test_host ;
     $m7p->test_host->{ip}     = $m7p->getXMLText('plan/host/@ip');
     
+    # Add the IP reference
+    $m7p->addIPRef(
+		'ip'     => $m7p->test_host->{ip},
+		'alias'	 => $m7p->test_host->{name},
+		'is_src' => 1
+	); 
+    
     # Set the database friendly host name
     $m7p->test_host->{name} =~ s/-/_/g;
 }
@@ -469,6 +515,13 @@ sub loadXMLResults {
                 my $m7p_ping_max_time 	= $m7p->getXMLText('plan/test[@id="' . $m7p_test_id . '"]/host[@name="' . $m7p_ping_host . '"]/maxTime');
                 my $m7p_ping_avg_dev  	= $m7p->getXMLText('plan/test[@id="' . $m7p_test_id . '"]/host[@name="' . $m7p_ping_host . '"]/avgDev');
                         
+                # Add the IP reference
+                $m7p->addIPRef(
+					'ip'      => $m7p_ping_ip,
+					'alias'   => $m7p_ping_host,
+					'is_dest' => 1
+				); 
+                       
                 # Define the SQL insert string
                 my $m7p_ping_sql_string = "('" . $m7p->plan_id . "'" .
                 	",'" . $m7p->test_host->{ip} . "'" .
@@ -503,6 +556,13 @@ sub loadXMLResults {
             for my $m7p_troute_host_name_tree ($m7p->results_xtree->findnodes('plan/test[@id="' . $m7p_test_id . '"]/host')) {
             	my $m7p_troute_host			= $m7p_troute_host_name_tree->findvalue('@name');
                 my $m7p_troute_dest_ip		= $m7p->getXMLText('plan/test[@id="' . $m7p_test_id . '"]/host[@name="' . $m7p_troute_host . '"]/@ip');
+                    
+                # Add the IP reference
+                $m7p->addIPRef(
+					'ip'      => $m7p_troute_dest_ip,
+					'alias'   => $m7p_troute_host,
+					'is_dest' => 1
+				); 
                     	
                 # Process the hop definitions
                 for my $m7p_troute_hops_tree ($m7p->results_xtree->findnodes('plan/test[@id="' . $m7p_test_id . '"]/host[@name="' . $m7p_troute_host . '"]/hops/hop')) {
@@ -525,6 +585,12 @@ sub loadXMLResults {
                     	$m7p_troute_ip_lat		= "";
                     	$m7p_troute_ip_lon		= "";
                     }
+                        
+                    # Add the IP reference
+                	$m7p->addIPRef(
+						'ip'     => $m7p_troute_ip,
+						'is_hop' => 1
+					); 
                         	
                     # Define the SQL insert string
 	                my $m7p_troute_sql_string = "('" . $m7p->plan_id . "'" .
@@ -562,6 +628,13 @@ sub loadXMLResults {
             for my $m7p_mtr_host_name_tree ($m7p->results_xtree->findnodes('plan/test[@id="' . $m7p_test_id . '"]/host')) {
             	my $m7p_mtr_host			= $m7p_mtr_host_name_tree->findvalue('@name');
                 my $m7p_mtr_dest_ip			= $m7p->getXMLText('plan/test[@id="' . $m7p_test_id . '"]/host[@name="' . $m7p_mtr_host . '"]/@ip');
+                    
+                # Add the IP reference
+                $m7p->addIPRef(
+					'ip'      => $m7p_mtr_dest_ip,
+					'alias'   => $m7p_mtr_host,
+					'is_dest' => 1
+				); 
                     	
                 # Process the hop definitions
                 for my $m7p_mtr_hops_tree ($m7p->results_xtree->findnodes('plan/test[@id="' . $m7p_test_id . '"]/host[@name="' . $m7p_mtr_host . '"]/hops/hop')) {
@@ -575,6 +648,12 @@ sub loadXMLResults {
                     for my $m7p_mtr_ip_tree ($m7p->results_xtree->findnodes('plan/test[@id="' . $m7p_test_id . '"]/host[@name="' . $m7p_mtr_host . '"]/hops/hop[@number="' . $m7p_mtr_hop . '"]/ips')) {
                     	my $m7p_mtr_hop_ip =  $m7p_mtr_ip_tree->findvalue('ip');
                     	$m7p_mtr_hop_ip .= "";
+                            
+                        # Add the IP reference
+                		$m7p->addIPRef(
+							'ip'     => $m7p_mtr_hop_ip,
+							'is_hop' => 1
+						); 
                             	
                         # Get the hop IP geolocation
 	                    if (is_ipv4($m7p_mtr_hop_ip) && !is_unroutable_ipv4($m7p_mtr_hop_ip) && !is_private_ipv4($m7p_mtr_hop_ip)) {

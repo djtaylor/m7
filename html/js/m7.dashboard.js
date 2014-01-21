@@ -1,3 +1,6 @@
+/**
+ * Position Test/Host Details
+ */
 function position_details() {
 	var test_details_top	= ($(window).height() / 2) - ($('.m7_test_details_content').height() / 2);
 	var test_details_left	= ($(window).width() / 2) - ($('.m7_test_details_content').width() / 2);
@@ -10,6 +13,9 @@ function position_details() {
 
 }
 
+/**
+ * Clock Counter
+ */
 function clock() {
 	
 	// Get the current time objects
@@ -57,42 +63,54 @@ function clock() {
 	setTimeout(clock, 1000);
 }
 
+/**
+ * Position Map Key
+ */
 function position_key() {
 	var map_key_top			= ($(window).height() / 2) - ($('.m7_map_key').height() / 2);
 	$('.m7_map_key').css('top', map_key_top+'px');
 }
 
+/**
+ * Toggle Map Host Details
+ */
+function toggle_host(elem) {
+	var clicked_host = elem.match(/^map_host_(.*$)/)[1];
+	var host_details = '#map_host_details_' + clicked_host;
+	$('.m7_map_host_details').fadeIn("fast", function() {
+		$(host_details).fadeIn("fast");
+	});
+}
+
+// On page ready
 $(document).ready(function() {
 	position_details();
 	position_key();
 	clock();
+	
+	// Show test details
     $('.m7_test_details_show').click(function() {
     	$('.m7_test_details').fadeIn('fast');
 	});
+    
+    // Fade out test details
 	$('.m7_test_details_bg').click(function() {
 		$('.m7_test_details').fadeOut('fast');
 	});
+	
+	// Submit updated test render parameters
 	$('.m7_test_submit').click(function() {
 		$('#test_params').submit();
-	});
-	$('.m7_configure').click(function() {
-		window.location.href = '/configure.php';
-	});
+	});	
 	
-	$('.m7_map_host').click(function(event) {
-		var clicked_id = event.target.id;
-		var clicked_host = clicked_id.match(/^map_host_(.*$)/)[1];
-		var host_details = "map_host_details_"+clicked_host;
-		$('.m7_map_host_details').fadeIn("fast", function() {
-			$(host_details).fadeIn("fast");
-		});
-	});
+	// Fade out map host details
 	$(".m7_map_host_details_bg").click(function() {
 		$(".m7_map_host_details_info").fadeOut("fast", function() {
 			$(".m7_map_host_details").fadeOut("fast");
 		});
 	});
 	
+	// Test details functionality
 	if (test_details_render === true) {
 		
 		// Set the test details column width
@@ -113,6 +131,8 @@ $(document).ready(function() {
 	}
 });
 
+
+// On window resize
 $(window).resize(function() {
 	position_details();
 	position_key();

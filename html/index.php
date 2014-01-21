@@ -19,13 +19,14 @@ $m7->varCheck();
 		<meta charset="utf-8">
 		<?php echo $m7->loadClusterState(); ?>
 		<script><?php echo 'var test_details_render = ',($m7->m7_ready === true ? 'true;' : 'false;'); ?></script>
-		<script src="js/d3.v3.min.js"></script>
-		<script src="js/topojson.v1.min.js"></script>
-		<script src="js/jquery-1.10.2.min.js"></script>
-		<script src="js/jquery-ui-1.10.3.min.js"></script>
-		<script src="js/socket.io.min.js"></script>
-		<script src="js/dashboard.js"></script>
+		<script src="js/vendor/d3.v3.min.js"></script>
+		<script src="js/vendor/topojson.v1.min.js"></script>
+		<script src="js/vendor/jquery-1.10.2.min.js"></script>
+		<script src="js/vendor/jquery-ui-1.10.3.min.js"></script>
+		<script src="js/vendor/socket.io.min.js"></script>
+		<script src="js/m7.dashboard.js"></script>
 		<link rel="stylesheet" type="text/css" href="css/dashboard.css">
+		<link rel="icon" href="favicon.ico" type="image/x-ixon">
 	</head>
 	<body>
 		<div class="m7_dashboard_nav">

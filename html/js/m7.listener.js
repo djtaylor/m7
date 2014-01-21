@@ -69,6 +69,12 @@ function M7Client(server) {
 		}); 
 	};
 	
+	// Update system statistics
+	this.sysstat_update = sysstat_update();
+	function sysstat_update(host, stats) {
+		
+	}
+	
 	// Update server/socket status
 	this.service_update = service_update;
 	function service_update(elem, status) {
@@ -151,6 +157,11 @@ m7.io_client.on('connect', function() {
 			// Update service status
 			case 'service-update':
 				m7.service_update(json.service, json.status);
+				break;
+			
+			// System status
+			case 'sysstat':
+				m7.sysstat_update(json.host, json.stats);
 				break;
 				
 			// Test execution stopped
