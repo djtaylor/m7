@@ -13,7 +13,7 @@ use M7Socket;
 # \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\ #
 # Init Info \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\ #
 #
-# Provides:          m7d
+# Provides:          m7socket
 # Default-Start:     3 4 5
 # Short-Description: M7 Socket.IO Server
 # Description:       Server process to run facilitate real-time communication
@@ -26,8 +26,8 @@ use M7Socket;
 # chkconfig:         345 97 03
 # description:       Server process to run facilitate real-time communication
 #					 between the dashboard and cluster nodes.
-# processname:       m7-ws-server
-# pidfile:           /var/run/m7-ws-server.pid
+# processname:       m7socket
+# pidfile:           /var/run/m7socket.pid
 
 # Load the configuration values
 my $m7c = M7Config->new();
