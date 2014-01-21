@@ -202,7 +202,7 @@ sub addIPRef {
 		my $m7p_ipref_check	= $m7p->db->selectcol_arrayref("SELECT * FROM net_ipref WHERE ip='" . $m7p_ipref{ip} . "'");
 		if (@$m7p_destip_check) {
 			$m7p->log->info('Updating entry in IP reference table for: ' . $m7p_ipref{ip});
-			my $m7p_ipref_update = "UPDATE `" . $m7p->config->get('db_name') . "`.net_ipref` SET " .
+			my $m7p_ipref_update = "UPDATE `" . $m7p->config->get('db_name') . "`.`net_ipref` SET " .
 								   "asn='" . $m7p_ipref_asn . "', " .
 								   "route='" . $m7p_ipref_route . "', " .
 								   "desc='" . $m7p_ipref_desc . "', " .
@@ -221,7 +221,7 @@ sub addIPRef {
 								   "'" . $m7p_ipref{ip} . "', " .
 								   "'" . $m7p_ipref_asn . "', " .
 								   "'" . $m7p_ipref_route . "', " .
-								   "'" . $m7p_ipref_desc . "' " .
+								   "'" . $m7p_ipref_desc . "', " .
 								   "'" . $m7p_ipref{alias} . "', " .
 								   "'" . $m7p_ipref_hostname . "', " . 
 								   "'" . $m7p_ipref_region . "', " .
