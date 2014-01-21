@@ -51,7 +51,7 @@ sub get  {
 		when ('log_file_m7d') { return $m7c->home . '/log/server.log'; }
 		
 		# Socket.IO Options
-		when ('sio_name')	  { return 'm7-ws-server'; }
+		when ('sio_name')	  { return 'm7socket'; }
 		when ('sio_pid')	  { return $m7c->home . '/run/m7socket.pid'; }
 		when ('sio_lock')	  { return $m7c->home . '/lock/subsys/m7socket'; }
 		when ('sio_log')	  { return $m7c->home . '/log/socket-io.log'; }
