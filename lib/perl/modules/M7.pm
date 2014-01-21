@@ -1439,7 +1439,7 @@ sub getStatusJSON {
 		}
 		
 		# Check if the socket server is running
-		system('service m7-ws-server status &> /dev/null');
+		system('service m7socket status &> /dev/null');
 		my $m7_socketio_code = $? >> 8;
 		
 		# If the socket server is running

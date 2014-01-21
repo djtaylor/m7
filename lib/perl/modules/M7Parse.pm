@@ -216,7 +216,7 @@ sub addIPRef {
 			$m7p->db->do($m7p_ipref_update) or $m7p->log->warn('Failed to update IP reference database entry for: ' . $m7p_ipref{ip});
 		} else {
 			$m7p->log->info('Creating entry in IP reference table for: ' . $m7p_ipref{ip});
-			my $m7p_ipref_update = "INSERT INTO `" . $m7p->config->get('db_name') . "`.net_ipref`(" .
+			my $m7p_ipref_update = "INSERT INTO `" . $m7p->config->get('db_name') . "`.`net_ipref`(" .
 								   "`ip`,`asn`,`route`,`desc`,`alias`,`hostname`,`region`,`latitude`,`longitude`,`is_src`,`is_hop`,`is_dest`) VALUES(" .
 								   "'" . $m7p_ipref{ip} . "', " .
 								   "'" . $m7p_ipref_asn . "', " .
