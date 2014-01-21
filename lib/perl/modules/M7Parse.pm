@@ -200,7 +200,7 @@ sub addIPRef {
 	
 		# Check if the IP exists in the database
 		my $m7p_ipref_check	= $m7p->db->selectcol_arrayref("SELECT * FROM net_ipref WHERE ip='" . $m7p_ipref{ip} . "'");
-		if (@$m7p_destip_check) {
+		if (@$m7p_ipref_check) {
 			$m7p->log->info('Updating entry in IP reference table for: ' . $m7p_ipref{ip});
 			my $m7p_ipref_update = "UPDATE `" . $m7p->config->get('db_name') . "`.`net_ipref` SET " .
 								   "asn='" . $m7p_ipref_asn . "', " .
@@ -227,9 +227,9 @@ sub addIPRef {
 								   "'" . $m7p_ipref_region . "', " .
 								   "'" . $m7p_ipref_lat . "', " .
 								   "'" . $m7p_ipref_lon . "', " .
-								   "'" . $m7p_ipref_type->{is_src} . "', " .
-								   "'" . $m7p_ipref_type->{is_hop} . "', " .
-								   "'" . $m7p_ipref_type->{is_dest} . "')";
+								   "'" . $m7p_ipref_type->{src} . "', " .
+								   "'" . $m7p_ipref_type->{hop} . "', " .
+								   "'" . $m7p_ipref_type->{dest} . "')";
 			$m7p->db->do($m7p_ipref_update) or $m7p->log->warn('Failed to create IP reference database entry for: ' . $m7p_ipref{ip});
 		}
 	} else {
