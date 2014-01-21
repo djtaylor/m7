@@ -218,17 +218,18 @@ sub addIPRef {
 			$m7p->log->info('Creating entry in IP reference table for: ' . $m7p_ipref{ip});
 			my $m7p_ipref_update = "INSERT INTO `" . $m7p->config->get('db_name') . "`.net_ipref`(" .
 								   "`ip`,`asn`,`route`,`desc`,`alias`,`hostname`,`region`,`latitude`,`longitude`,`is_src`,`is_hop`,`is_dest`) VALUES(" .
-								   "asn='" . $m7p_ipref_asn . "', " .
-								   "route='" . $m7p_ipref_route . "', " .
-								   "desc='" . $m7p_ipref_desc . "' " .
-								   "alias='" . $m7p_ipref{alias} . "', " .
-								   "hostname='" . $m7p_ipref_hostname . "', " . 
-								   "region='" . $m7p_ipref_region . "', " .
-								   "latitude='" . $m7p_ipref_lat . "', " .
-								   "longitude='" . $m7p_ipref_lon . "', " .
-								   "is_src='" . $m7p_ipref_type->{is_src} . "', " .
-								   "is_hop='" . $m7p_ipref_type->{is_hop} . "', " .
-								   "is_dest='" . $m7p_ipref_type->{is_dest} . "')";
+								   "'" . $m7p_ipref{ip} . "', " .
+								   "'" . $m7p_ipref_asn . "', " .
+								   "'" . $m7p_ipref_route . "', " .
+								   "'" . $m7p_ipref_desc . "' " .
+								   "'" . $m7p_ipref{alias} . "', " .
+								   "'" . $m7p_ipref_hostname . "', " . 
+								   "'" . $m7p_ipref_region . "', " .
+								   "'" . $m7p_ipref_lat . "', " .
+								   "'" . $m7p_ipref_lon . "', " .
+								   "'" . $m7p_ipref_type->{is_src} . "', " .
+								   "'" . $m7p_ipref_type->{is_hop} . "', " .
+								   "'" . $m7p_ipref_type->{is_dest} . "')";
 			$m7p->db->do($m7p_ipref_update) or $m7p->log->warn('Failed to create IP reference database entry for: ' . $m7p_ipref{ip});
 		}
 	} else {
