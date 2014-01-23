@@ -144,13 +144,13 @@ sub forkTest {
 		} else {
 			
 			# Initialize the datetime object and delay variable
-			my $m7d_datetime = DateTime->now(time_zone => 'local');
+			my $m7d_datetime  = DateTime->now(time_zone => 'local');
 			my $m7d_delay;
 			
 			# Get the current datetime
-			my $m7d_this_date     = $m7d_datetime->ymd;
-			my $m7d_this_time     = $m7d_datetime->hms;
-			my $m7d_this_run      = $m7d_this_date . ' ' . $m7d_this_time;
+			my $m7d_this_date = $m7d_datetime->ymd;
+			my $m7d_this_time = $m7d_datetime->hms;
+			my $m7d_this_run  = $m7d_this_date . ' ' . $m7d_this_time;
 			
 			# If the runtime marker already exists
 			if (-e $m7d_next_run_marker) {
@@ -163,19 +163,14 @@ sub forkTest {
 				# Calculate the delay in seconds until next run
 				my $m7d_time_one = Time::Piece->strptime($m7d_this_run, '%Y-%m-%d %H:%M:%S');
 				my $m7d_time_two = Time::Piece->strptime($m7d_next_run, '%Y-%m-%d %H:%M:%S');
-				my $m7d_delay = $m7d_time_two - $m7d_time_one;
+				my $m7d_delay    = $m7d_time_two - $m7d_time_one;
 				
 				# If the delay is negative (next run date already passed)
 				if ($m7d_delay != abs($m7d_delay)) {
-					
-					# Set the next runtime and delay
 					set_next_run($m7d_int, $m7d_next_run_marker);
 					$m7d_delay = 0;
 				}
-				
 			} else {
-				
-				# Set the next runtime and delay
 				set_next_run($m7d_int, $m7d_next_run_marker);
 				$m7d_delay = 0;
 			}
@@ -195,7 +190,6 @@ sub forkTest {
 
 	# If command is being run once
 	if ($m7d_int == '0') {
-	
 		$m7d->log->info($$ . ': Starting single test run for ID: ' . $m7d_id);
 		$m7d->log->info($$ . ': Preparing to run test plan: ' . $m7d_plan);
 		$m7d->shellRun($m7d_cmd_str);
@@ -207,8 +201,6 @@ sub forkTest {
 		# Start the server process
 		do {
 			$m7d_delay = get_delay($m7d_id, $m7d_int);
-			
-			# Delay the run if restarting the server
 			sleep($m7d_delay);
 			
 			# Run the fork command
@@ -228,7 +220,6 @@ sub forkTest {
 			
 			# Clear the next runtime marker
 			get_delay($m7d_id, 'clear');
-			
 		} while(1);	
 	}
 }

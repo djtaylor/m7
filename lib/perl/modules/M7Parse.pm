@@ -211,12 +211,13 @@ sub addIPRef {
 								   "region='" . $m7p_ipref_region . "', " .
 								   "latitude='" . $m7p_ipref_lat . "', " .
 								   $m7p_ipref_types_sql .
-								   "longitude='" . $m7p_ipref_lon . "', " .
+								   "longitude='" . $m7p_ipref_lon . "' " .
 								   "WHERE ip='" . $m7p_ipref{ip} . "'";
+			print "SQL (Update): " . $m7p_ipref_update . "\n";
 			$m7p->db->do($m7p_ipref_update) or $m7p->log->warn('Failed to update IP reference database entry for: ' . $m7p_ipref{ip});
 		} else {
 			$m7p->log->info('Creating entry in IP reference table for: ' . $m7p_ipref{ip});
-			my $m7p_ipref_update = "INSERT INTO `" . $m7p->config->get('db_name') . "`.`net_ipref`(" .
+			my $m7p_ipref_create = "INSERT INTO `" . $m7p->config->get('db_name') . "`.`net_ipref`(" .
 								   "`ip`,`asn`,`route`,`desc`,`alias`,`hostname`,`region`,`latitude`,`longitude`,`is_src`,`is_hop`,`is_dest`) VALUES(" .
 								   "'" . $m7p_ipref{ip} . "', " .
 								   "'" . $m7p_ipref_asn . "', " .
@@ -230,7 +231,8 @@ sub addIPRef {
 								   "'" . $m7p_ipref_type->{src} . "', " .
 								   "'" . $m7p_ipref_type->{hop} . "', " .
 								   "'" . $m7p_ipref_type->{dest} . "')";
-			$m7p->db->do($m7p_ipref_update) or $m7p->log->warn('Failed to create IP reference database entry for: ' . $m7p_ipref{ip});
+			print "SQL (Create): " . $m7p_ipref_create . "\n";
+			$m7p->db->do($m7p_ipref_create) or $m7p->log->warn('Failed to create IP reference database entry for: ' . $m7p_ipref{ip});
 		}
 	} else {
 		$m7p->log->warn('Invalid IP address - failed to add to reference table: ' . $m7p_ipref{ip});
